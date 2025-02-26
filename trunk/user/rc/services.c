@@ -277,7 +277,8 @@ restart_zram(void)
 }
 #endif
 #if defined(APP_DOH)
-int is_doh_run(void){
+int is_doh_run(void)
+{
 	if (check_if_file_exist("/usr/sbin/https_dns_proxy"))
 	{
 		if (pids("https_dns_proxy"))
@@ -286,25 +287,39 @@ int is_doh_run(void){
 	return 0;
 }
 
-void stop_doh(void){
+void stop_doh(void)
+{
 	eval("/usr/bin/doh_proxy.sh", "stop");
 }
 
-void start_doh(void){
+int start_doh(void)
+{
 	int doh_mode = nvram_get_int("doh_enable");
 
 	if (doh_mode == 1)
-		eval("/usr/bin/doh_proxy.sh", "start");
+	{
+		return eval("/usr/bin/doh_proxy.sh", "start");
+	}
+	return 0;
 }
 
-void restart_doh(void){
+void restart_doh(void)
+{
 	stop_doh();
-	start_doh();
-	restart_dhcpd();
+	if (start_doh() == 0)
+	{
+		restart_dhcpd();
+	}
+	else
+	{
+		nvram_set_int("doh_enable", 0);
+		restart_dhcpd();
+	}
 }
 #endif
 #if defined(APP_STUBBY)
-int is_stubby_run(void){
+int is_stubby_run(void)
+{
 	if (check_if_file_exist("/usr/sbin/stubby"))
 	{
 		if (pids("stubby"))
@@ -313,21 +328,34 @@ int is_stubby_run(void){
 	return 0;
 }
 
-void stop_stubby(void){
+void stop_stubby(void)
+{
 	eval("/usr/bin/stubby.sh", "stop");
 }
 
-void start_stubby(void){
+int start_stubby(void)
+{
 	int stubby_mode = nvram_get_int("stubby_enable");
 
 	if (stubby_mode == 1)
-		eval("/usr/bin/stubby.sh", "start");
+	{
+		return eval("/usr/bin/stubby.sh", "start");
+	}
+	return 0;
 }
 
-void restart_stubby(void){
+void restart_stubby(void)
+{
 	stop_stubby();
-	start_stubby();
-	restart_dhcpd();
+	if (start_stubby() == 0)
+	{
+		restart_dhcpd();
+	}
+	else
+	{
+		nvram_set_int("stubby_enable", 0);
+		restart_dhcpd();
+	}
 }
 #endif
 #if defined(APP_ZAPRET)
