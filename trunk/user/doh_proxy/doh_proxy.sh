@@ -6,9 +6,15 @@ FIRST_PORT="65055"
 
 log()
 {
-  [ -n "$@" ] || return
-  echo "$@"
-  logger -t "https_dns_proxy" "$@"
+    [ -n "$@" ] || return
+    echo "$@"
+    logger -t "https_dns_proxy" "$@"
+}
+
+error()
+{
+    log "$@"
+    exit 1
 }
 
 start_service()
@@ -18,15 +24,15 @@ start_service()
         return
     fi
 
-    unset started
-    start_doh() {
+    start_doh()
+    {
         [ "$2" ] || return
         local bootstrap_dns=""
         [ "$3" ] && bootstrap_dns="-b $3"
 
         $DOH_BIN -p $1 -r $2 $bootstrap_dns -a 127.0.0.1 -u nobody -g nogroup -4 -d
-        if pgrep -x "$DOH_BIN" 2>&1 >/dev/null; then
-            [ ! "$started" ] && log "started, version $($DOH_BIN -V)" && started=1
+        if pgrep -f "$DOH_BIN -p $1 -r $2 " 2>&1 >/dev/null; then
+            [ ! -f "$PIDFILE" ] && log "started, version $($DOH_BIN -V)"
             log "start resolving to $2 : $1"
             touch "$PIDFILE"
         fi
@@ -35,6 +41,8 @@ start_service()
     for i in 1 2 3; do
         start_doh $(($FIRST_PORT+$i-1)) "$(nvram get doh_server$i)" "$(nvram get doh_server_ip$i)"
     done
+
+    [ ! -f "$PIDFILE" ] && error "failed to start"
 }
 
 stop_service()

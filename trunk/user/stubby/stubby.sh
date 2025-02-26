@@ -32,12 +32,19 @@ $MARK
 EOF
 }
 
-log() {
-  [ -n "$@" ] || return
-  echo "$@"
-  local pid
-  [ -f "$PIDFILE" ] && pid="[$(cat "$PIDFILE" 2>/dev/null)]"
-  logger -t "stubby$pid" "$@"
+log()
+{
+    [ -n "$@" ] || return
+    echo "$@"
+    local pid
+    [ -f "$PIDFILE" ] && pid="[$(cat "$PIDFILE" 2>/dev/null)]"
+    logger -t "stubby$pid" "$@"
+}
+
+error()
+{
+    log "$@"
+    exit 1
 }
 
 check_config()
@@ -78,9 +85,16 @@ start_service()
         make_config_servers "$(nvram get stubby_server$i)" "$(nvram get stubby_server_ip$i)"
     done
 
-    $STUBBY_BIN -g
-    if pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null; then
-        log "started, version $($STUBBY_BIN -V | awk '{print $2}')"
+    res=$($STUBBY_BIN -i 2>&1 | grep -o "Error parsing config file")
+    if [ "$res" ]; then
+        error "failed to start: $res"
+    else
+        $STUBBY_BIN -g
+        if pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null; then
+            log "started, version $($STUBBY_BIN -V | awk '{print $2}')"
+        else
+            error "failed to start"
+        fi
     fi
 }
 
