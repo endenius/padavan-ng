@@ -1,8 +1,9 @@
+# https://openssl-library.org/source
+# https://www.ccadb.org/resources
+# https://wiki.mozilla.org/CA/Included_Certificates
+
 SRC_NAME=openssl-3.0.16
 SRC_URL=https://github.com/openssl/openssl/releases/download/$(SRC_NAME)/$(SRC_NAME).tar.gz
-
-SRC_CA_NAME=ca-certificates_20241223
-SRC_CA_URL=http://ftp.debian.org/debian/pool/main/c/ca-certificates/$(SRC_CA_NAME).tar.xz
 
 # openssl use CROSS_COMPILE prefix
 CC = gcc
@@ -44,16 +45,16 @@ ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) $(CONFIG_FIRMWARE_INCLUD
 OPENSSL_OPTIONS += no-ec
 endif
 
-all: download_test extract_test ca config_test
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
-download_test: download_ca
+download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
 		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL) \
 			|| rm -f $(SRC_NAME).tar.gz; \
 	fi )
 
-extract_test: extract_ca
+extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar zxf $(SRC_NAME).tar.gz; \
 		find "$(shell pwd)"/patches -type f -name "*.patch" -print0 \
@@ -80,30 +81,9 @@ configure:
 		$(OPENSSL_OPTIONS); \
 	)
 
-clean: clean_ca
+clean:
 	[ ! -f $(SRC_NAME)/Makefile ] || $(MAKE) -C $(SRC_NAME) clean
 	rm -f config_done
-
-ca: clean_ca
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_CA_NAME)
-	find $(SRC_CA_NAME) -type f -name "*.crt" -print0 \
-	    | xargs -r -0 -n 1 cat > ca-certificates.crt
-
-download_ca:
-	( if [ ! -f $(SRC_CA_NAME).tar.xz ]; then \
-		wget -t5 -T20 --no-check-certificate -O $(SRC_CA_NAME).tar.xz $(SRC_CA_URL) \
-		    || rm -f $(SRC_CA_NAME).tar.xz; \
-	fi )
-
-extract_ca:
-	( if [ ! -d $(SRC_CA_NAME) ]; then \
-		mkdir -p $(SRC_CA_NAME); \
-		tar -C $(SRC_CA_NAME) --strip-components=2 -xJf \
-		    $(SRC_CA_NAME).tar.xz ca-certificates/mozilla; \
-	fi )
-
-clean_ca:
-	[ ! -f $(SRC_CA_NAME)/Makefile ] || $(MAKE) -C $(SRC_CA_NAME) clean
 
 install:
 	$(MAKE) -C $(SRC_NAME) install_sw DESTDIR="$(STAGEDIR)"
