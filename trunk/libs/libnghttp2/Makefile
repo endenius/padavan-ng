@@ -1,28 +1,26 @@
 # https://github.com/nghttp2/nghttp2
 
-SRC_NAME=nghttp2-1.64.0
-SRC_URL=https://github.com/nghttp2/nghttp2/releases/download/v1.64.0/$(SRC_NAME).tar.xz
-THISDIR = $(shell pwd)
+SRC_NAME=nghttp2-1.65.0
+SRC_URL=https://github.com/nghttp2/nghttp2/releases/download/v1.65.0/$(SRC_NAME).tar.xz
 
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 
 all: download_test extract_test config_test
-#all: config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
-		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL) || rm -f $(SRC_NAME).tar.xz; \
+		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL) \
+		    || rm -f $(SRC_NAME).tar.xz; \
 	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar --xz -xf $(SRC_NAME).tar.xz; \
-		[ ! -d $(THISDIR)/patches ] || \
-		find $(THISDIR)/patches -type f -name '*.patch' -print0 \
-		  | sort -z \
-		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
+		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
+		    | sort -z \
+		    | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
 	fi )
 
 config_test:
