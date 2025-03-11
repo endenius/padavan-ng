@@ -6,7 +6,7 @@ FIRST_PORT="65055"
 
 log()
 {
-    [ -n "$@" ] || return
+    [ -n "$*" ] || return
     echo "$@"
     logger -t "https_dns_proxy" "$@"
 }
