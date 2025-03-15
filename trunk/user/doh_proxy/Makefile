@@ -2,19 +2,22 @@
 
 SRC_NAME = https_dns_proxy-master
 SRC_URL = https://github.com/aarond10/https_dns_proxy/archive/refs/heads/master.tar.gz
-THISDIR = $(shell pwd)
 
 CFLAGS  += -O2 -ffunction-sections -fdata-sections -fvisibility=hidden -fPIC
 LDFLAGS += -Wl,--gc-sections,-rpath-link,$(STAGEDIR)/lib -lcurl -lssl -lcrypto -lz
 
-all: extract_test config_test
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL) || rm -f $(SRC_NAME).tar.gz; \
+	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar zxf $(SRC_NAME).tar.gz; \
-		[ ! -d $(THISDIR)/patches ] || \
-		find $(THISDIR)/patches -type f -name '*.patch' -print0 \
+		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
 		  | sort -z \
 		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
 	fi )
