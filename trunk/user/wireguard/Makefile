@@ -22,3 +22,4 @@ clean:
 
 romfs:
 	$(ROMFSINST) $(SRC_NAME)/wg /usr/sbin/wg
+	$(ROMFSINST) /usr/bin/wg.sh
