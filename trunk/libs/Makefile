@@ -135,6 +135,8 @@ dir_$(LIBS_INCLUDE_LIBUSB_0)			+= libusb
 dir_$(LIBS_INCLUDE_LIBUSB_1)			+= libusb-1.0
 dir_y						+= libnfnetlink
 
+dir_$(CONFIG_FIRMWARE_INCLUDE_WIREGUARD)	+= libqrencode
+
 # ipset shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libnetfilter_queue
