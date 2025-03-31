@@ -4,6 +4,14 @@ set -o pipefail
 
 ### default vars
 
+# wg_private - router private key, getting from: wg genkey
+# wg_iface - internal interface name, default: wg0
+# wg_iface_addr - internal interface address (/24 mask) ending in 1, default: 10.127.0.1
+# wg_wan_port - external port wan for incoming connections, default: 51820
+
+# not in use yet
+# wg_wan_addr - external address wan (ip or domain name), use only for creating client config
+
 unset need_commit
 
 [ ! "$(nvram get wg_private)" ] && nvram set wg_private="$(wg genkey)" && need_commit=1
@@ -11,19 +19,19 @@ unset need_commit
 [ ! "$(nvram get wg_iface_addr)" ] && nvram set wg_iface_addr="10.127.0.1" && need_commit=1
 [ ! "$(nvram get wg_wan_port)" ] && nvram set wg_wan_port="51820" && need_commit=1
 
-# todo: нужно уточнить что пишется в wan0_ipaddr для разных типов подключений
-[ ! "$(nvram get wg_wan_addr)" -o "$(nvram get wg_wan_addr)" = "0.0.0.0" ] \
-    && nvram set wg_wan_addr="$(nvram get wan0_ipaddr)" && need_commit=1
-
 [ "$need_commit" ] && nvram commit
 
 ###
 
-# todo: нужно уточнить что пишется в wan_ifname для разных типов подключений
 WAN=$(nvram get wan_ifname)
-# it is possible to specify in wg_wan_addr a domain name from ddns (for client config)
-WAN_ADDR=$(nvram get wg_wan_addr)
-# to use dns router (ex. DoT/DoH)
+
+if [ "$(nvram get ddns_enable_x)" = "1" ]; then
+    WAN_ADDR="$(nvram get ddns_hostname_x)"
+else
+    WAN_ADDR=$(nvram get wan0_ipaddr)
+fi
+
+# lan addr is used to access the router's dns (ex. DoT/DoH)
 LAN_ADDR=$(nvram get lan_ipaddr)
 IFACE="$(nvram get wg_iface)"
 IFACE_ADDR="$(nvram get wg_iface_addr)"
@@ -33,16 +41,10 @@ CLIENTS="/etc/storage/wireguard/clients"
 
 ###
 
-R=$'\e[91m'; G=$'\e[92m'; Y=$'\e[93m'; B=$'\033[94m'; P=$'\e[95m'; O=$'\e[33m'; NC=$'\e[0m'
-
 FW_RULES() ( echo "
 $1 INPUT -i ${WAN} -p udp -m udp --dport ${PORT} -j ACCEPT
 $1 INPUT -i ${IFACE} -j ACCEPT
-$1 FORWARD -i ${IFACE} -o ${IFACE} -j ACCEPT
-$1 FORWARD -i ${IFACE} -o br0 -j ACCEPT
-$1 FORWARD -i br0 -o ${IFACE} -j ACCEPT
-$1 FORWARD -i ${IFACE} -o ${WAN} -j ACCEPT
-$1 FORWARD -i ${WAN} -o ${IFACE} -j ACCEPT
+$1 FORWARD -i ${IFACE} -j ACCEPT
 ")
 
 FW_NAT_RULES()( echo "
@@ -123,7 +125,7 @@ wg_fw_stop()
 
 wg_fw_start()
 {
-    wg_fw -I
+    wg_fw -A
 }
 
 wg_stop()
@@ -221,13 +223,15 @@ EOF
     wg_setconf
     if [ $? -eq 0 ]; then
         if [ -x /usr/bin/qrencode ]; then
-            echo "$client_config_private" | qrencode -t ANSIUTF8
-            # echo "$client_config_private" | qrencode -t SVG -o "/tmp/$client_name.svg"
+            echo "$client_config_private" | qrencode -t UTF8i
+            #echo "$client_config_private" | qrencode -t SVG -o "/tmp/$client_name.svg"
         fi
         echo
-        echo -e "${O}### one-time showing config for $client_name ###${NC}"
-        echo -e "${G}$client_config_private${NC}"
-        echo -e "${O}### end config ###${NC}"
+        echo "### one-time showing config for $client_name ###"
+        echo
+        echo "$client_config_private" # | tee "/tmp/$client_name.conf"
+        echo
+        echo "### end config ###"
         echo
         log "client \"$client_name\" added"
     else
@@ -271,15 +275,30 @@ wg_listclients()
     if ! is_started; then
         echo "$clients" | while read i; do
             public=$(cat "$CLIENTS/$i" | grep -Ei "^PublicKey|^AllowedIPs" | cut -d '=' -f2- | tr -d " ")
-            printf "${Y}%-${w}s${NC} ${O}%s${NC} %s\n" "$i" $public
+            printf "%-${w}s %s %s\n" "$i" $public
         done
         return
     fi
 
-    peers=$(wg show ${IFACE} dump | awk 'NR>1 {print $1, $5, $6, $7, $3, $4}')
+    peers=$(wg show ${IFACE} dump | awk '
+        function bf(bytes){
+            if (bytes >= 1024^3) printf "%.2fG", bytes/(1024^3);
+            else if (bytes >= 1024^2) printf "%.2fM", bytes/(1024^2);
+            else if (bytes >= 1024) printf "%.2fK", bytes/1024;
+            else printf "%d", bytes;
+        }
+        function tf(n){
+            diff = systime() - n;
+            if (diff < 0 || n == 0) return "never";
+            h = int(diff / 3600);
+            m = int( (diff - h * 3600) / 60);
+            s = diff - m * 60 - h * 3600;
+            printf "%02d:%02d:%02d", h, m, s;
+        } NR>1 {print $1, tf($5), bf($6), bf($7), gensub("[)(]", "", "", $3), $4}')
+
     echo "$clients" | while read i; do
-        public=$(awk -F'=' '/^PublicKey/{print $2}' "$CLIENTS/$i")
-        printf "${Y}%-${w}s${NC} ${O}%s${NC} %s ${B}%s${NC} ${B}%s${NC} %s %s\n" "$i" $(echo "$peers" | grep $public)
+        public=$(awk -F= '/^PublicKey/{print $2}' "$CLIENTS/$i")
+        printf "%-${w}s %s %s %s↓ %s↑ %s %s\n" "$i" $(echo "$peers" | grep $public)
     done
 }
 
