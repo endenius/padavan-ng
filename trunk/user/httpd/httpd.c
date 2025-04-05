@@ -339,6 +339,10 @@ is_safe_ifname(const char *ifname)
 	if (strcmp(ifname, IFNAME_SERVER_TUN) == 0)
 		return 1;
 #endif
+#if defined(APP_WIREGUARD)
+	if (strcmp(ifname, IFNAME_SERVER_WG) == 0)
+		return 1;
+#endif
 	if (strncmp(ifname, "ppp", 3) == 0 && atoi(ifname+3) >= 10)
 		return 1;
 	return 0;

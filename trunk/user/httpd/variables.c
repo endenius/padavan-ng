@@ -86,7 +86,7 @@
 
 	struct variable variables_LANHostConfig_VPNSACLList[] = {
 			{"vpns_user_x", "32", NULL, FALSE},
-			{"vpns_pass_x", "32", NULL, FALSE},
+			{"vpns_pass_x", "44", NULL, FALSE},
 			{"vpns_addr_x", "3", NULL, FALSE},
 			{"vpns_rnet_x", "20", NULL, FALSE},
 			{"vpns_rmsk_x", "20", NULL, FALSE},
@@ -625,6 +625,12 @@
 			{"vpnc_dgw", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_rnet", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_rmsk", "", NULL, EVM_RESTART_VPNCLI},
+#if defined(APP_WIREGUARD)
+			{"vpns_wg_port", "", NULL, EVM_RESTART_VPNSVR},
+			{"vpns_wg_private", "", NULL, EVM_RESTART_VPNSVR},
+			{"vpns_wg_public", "", NULL, EVM_RESTART_VPNSVR},
+			{"vpns_wg_ext_addr", "", NULL, EVM_RESTART_VPNSVR},
+#endif
 #if defined(APP_OPENVPN)
 			{"vpns_ov_mode", "", NULL, EVM_RESTART_VPNSVR},
 			{"vpns_ov_prot", "", NULL, EVM_RESTART_VPNSVR},

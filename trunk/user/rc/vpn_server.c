@@ -176,6 +176,10 @@ start_vpn_server(void)
 	if (i_type == 2)
 		return start_openvpn_server();
 #endif
+#if defined(APP_WIREGUARD)
+	if (i_type == 3)
+		return start_wireguard_server();
+#endif
 
 	mkdir("/tmp/ppp", 0777);
 	symlink("/sbin/rc", VPNS_PPP_UP_SCRIPT);
@@ -209,7 +213,7 @@ start_vpn_server(void)
 	fp = fopen(vpns_sec, "w+");
 	if (fp) {
 		char *acl_user, *acl_pass;
-		char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
+		char acl_user_var[32], acl_pass_var[44], acl_addr_var[32];
 		unsigned int vp_a;
 		int i_max = nvram_get_int("vpns_num_x");
 		
@@ -278,6 +282,9 @@ stop_vpn_server(void)
 #if defined(APP_OPENVPN)
 	stop_openvpn_server();
 #endif
+#if defined(APP_WIREGUARD)
+	stop_wireguard_server();
+#endif
 
 	unlink(VPN_SERVER_LEASE_FILE);
 }
@@ -316,6 +323,11 @@ reapply_vpn_server(void)
 #if defined(APP_OPENVPN)
 	if (i_type == 2)
 		restart_openvpn_server();
+	else
+#endif
+#if defined(APP_WIREGUARD)
+	if (i_type == 3)
+		restart_wireguard_server();
 	else
 #endif
 		gen_vpns_pppd_options(i_type);
@@ -365,7 +377,7 @@ vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add)
 {
 	int i, i_max;
 	char *acl_user, *acl_rnet, *acl_rmsk, *lnet, *lmsk;
-	char acl_user_var[16], acl_rnet_var[16], acl_rmsk_var[16];
+	char acl_user_var[32], acl_rnet_var[16], acl_rmsk_var[16];
 
 	lnet = nvram_safe_get("lan_ipaddr");
 	lmsk = nvram_safe_get("lan_netmask");

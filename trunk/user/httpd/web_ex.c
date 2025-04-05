@@ -354,7 +354,7 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 				chmod(real_path, 0644);
 			ret = 1;
 			if (nvram_get_int("nvram_manual") != 1)
-				doSystem("/sbin/mtd_storage.sh %s", "save");			
+				doSystem("/sbin/mtd_storage.sh %s", "save");
 		}
 	}
 
@@ -2028,6 +2028,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_ovpn = 0;
 #endif
+#if defined(APP_WIREGUARD)
+	int found_app_wg = 1;
+#else
+	int found_app_wg = 0;
+#endif
 #if defined(APP_MINIDLNA)
 	int found_app_dlna = 1;
 #else
@@ -2269,6 +2274,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp,
 		"function found_utl_hdparm() { return %d;}\n"
 		"function found_app_ovpn() { return %d;}\n"
+		"function found_app_wg() { return %d;}\n"
 		"function found_app_dlna() { return %d;}\n"
 		"function found_app_ffly() { return %d;}\n"
 		"function found_app_torr() { return %d;}\n"
@@ -2292,6 +2298,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_xupnpd() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
+		found_app_wg,
 		found_app_dlna,
 		found_app_ffly,
 		found_app_trmd,
@@ -2730,6 +2737,16 @@ static int ej_get_vpns_client(int eid, webs_t wp, int argc, char **argv)
 	int first_client;
 	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
 
+#if defined(APP_WIREGUARD)
+	if (nvram_get_int("vpns_enable") == 1)
+	{
+		if (nvram_get_int("vpns_type") == 3)
+		{
+			doSystem("/usr/bin/wgs.sh leases\n");
+		}
+	}
+#endif
+
 	fp = fopen("/tmp/vpns.leases", "r");
 	if (!fp) {
 		return 0;
@@ -3052,6 +3069,55 @@ apply_cgi(const char *url, webs_t wp)
 		websRedirect(wp, current_url);
 		return 0;
 	}
+	else if (!strcmp(value, " wg_genkey "))
+	{
+		char key[64] = {0};
+#if defined(APP_WIREGUARD)
+		if (get_login_safe())
+		{
+			FILE *fp;
+			fp = popen("/usr/sbin/wg genkey", "r");
+			if (fp == NULL) {
+				return 1;
+			}
+
+			if (fgets(key, sizeof(key), fp) == NULL) {
+				pclose(fp);
+				return 1;
+			}
+			pclose(fp);
+		}
+#endif
+		websWrite(wp, key);
+		return 0;
+	}
+	else if (!strcmp(value, " wg_pubkey "))
+	{
+		char key[64] = {0};
+#if defined(APP_WIREGUARD)
+		if (get_login_safe())
+		{
+			FILE *fp;
+			char command[256];
+			char *privkey = websGetVar(wp, "privkey", "");
+
+			snprintf(command, sizeof(command), "echo '%s' | /usr/sbin/wg pubkey", privkey);
+
+			fp = popen(command, "r");
+			if (fp == NULL) {
+				return 1;
+			}
+
+			if (fgets(key, sizeof(key), fp) == NULL) {
+				pclose(fp);
+				return 1;
+			}
+			pclose(fp);
+		}
+#endif
+		websWrite(wp, key);
+		return 0;
+	}
 	else if (!strcmp(value, " ClearLog "))
 	{
 		// current only syslog implement this button
@@ -3101,6 +3167,17 @@ apply_cgi(const char *url, webs_t wp)
 			common_name = "client@ovpn";
 		if (get_login_safe())
 			sys_result = doSystem("/sbin/ovpn_export_client '%s' %s %d", common_name, rsa_bits, days_valid);
+#endif
+		websWrite(wp, "{\"sys_result\": %d}", sys_result);
+		return 0;
+	}
+	else if (!strcmp(value, " ExportConfWGC "))
+	{
+		int sys_result = 1;
+#if defined(APP_WIREGUARD)
+		char *common_name = websGetVar(wp, "common_name", "");
+		if (get_login_safe() && strlen(common_name) > 0)
+			sys_result = doSystem("/usr/bin/wgs.sh export '%s'", common_name);
 #endif
 		websWrite(wp, "{\"sys_result\": %d}", sys_result);
 		return 0;
@@ -3610,6 +3687,18 @@ do_export_ovpn_client(const char *url, FILE *stream)
 }
 #endif
 
+#if defined(APP_WIREGUARD)
+static void
+do_export_wg_client(const char *url, FILE *stream)
+{
+	const char *tmp_wg_conf = "/tmp/client-wg.conf";
+
+	if (get_login_safe())
+		do_file(tmp_wg_conf, stream);
+	unlink(tmp_wg_conf);
+}
+#endif
+
 static char syslog_txt[] =
 "Content-Disposition: attachment;\r\n"
 "filename=syslog.txt"
@@ -3664,6 +3753,9 @@ struct mime_handler mime_handlers[] = {
 	{ "syslog.txt", "application/force-download", syslog_txt, NULL, do_syslog_file, 1 },
 #if defined(APP_OPENVPN)
 	{ "client.ovpn", "application/force-download", NULL, NULL, do_export_ovpn_client, 1 },
+#endif
+#if defined(APP_WIREGUARD)
+	{ "client-wg.conf", "application/force-download", NULL, NULL, do_export_wg_client, 1 },
 #endif
 
 	/* no-cached POST objects */

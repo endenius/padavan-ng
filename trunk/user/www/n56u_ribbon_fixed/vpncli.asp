@@ -58,6 +58,8 @@ function initial(){
 			o.remove(2);
 		}
 	}
+	if (!found_app_wg())
+		document.form.vpnc_type.remove(3);
 
 	if (fw_enable_x == "0"){
 		var o1 = document.form.vpnc_sfw;
@@ -181,13 +183,14 @@ function change_vpnc_enabled() {
 function change_vpnc_type() {
 	var mode = document.form.vpnc_type.value;
 	var is_ov = (mode == "2") ? 1 : 0;
+	var is_wg = (mode == "3") ? 1 : 0;
 
-	showhide_div('row_vpnc_auth', !is_ov);
-	showhide_div('row_vpnc_mppe', !is_ov);
-	showhide_div('row_vpnc_pppd', !is_ov);
-	showhide_div('row_vpnc_mtu', !is_ov);
-	showhide_div('row_vpnc_mru', !is_ov);
-	showhide_div('tbl_vpnc_route', !is_ov);
+	showhide_div('row_vpnc_auth', !is_ov && !is_wg);
+	showhide_div('row_vpnc_mppe', !is_ov && !is_wg);
+	showhide_div('row_vpnc_pppd', !is_ov && !is_wg);
+	showhide_div('row_vpnc_mtu', !is_ov && !is_wg);
+	showhide_div('row_vpnc_mru', !is_ov && !is_wg);
+	showhide_div('tbl_vpnc_route', !is_ov && !is_wg);
 
 	showhide_div('row_vpnc_ov_port', is_ov);
 	showhide_div('row_vpnc_ov_prot', is_ov);
@@ -211,9 +214,9 @@ function change_vpnc_type() {
 	}
 	else {
 		showhide_div('row_vpnc_ov_cnat', 0);
-		
-		showhide_div('row_vpnc_user', 1);
-		showhide_div('row_vpnc_pass', 1);
+
+		showhide_div('row_vpnc_user', !is_wg);
+		showhide_div('row_vpnc_pass', !is_wg);
 	}
 
 	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
@@ -372,6 +375,9 @@ function getHash(){
                                             <option value="0" <% nvram_match_x("", "vpnc_type", "0","selected"); %>>PPTP</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                             <option value="2" <% nvram_match_x("", "vpnc_type", "2","selected"); %>>OpenVPN</option>
+<!--
+                                            <option value="3" <% nvram_match_x("", "vpnc_type", "3","selected"); %>>Wireguard</option>
+-->
                                         </select>
                                         <span id="certs_hint" style="display:none" class="label label-warning"><#OVPN_Hint#></span>
                                     </td>

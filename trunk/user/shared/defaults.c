@@ -780,6 +780,11 @@ struct nvram_pair router_defaults[] = {
 	{ "vpnc_ov_compress", "2" },
 	{ "vpnc_ov_atls", "0" },
 
+	{ "vpns_wg_port", "51820" },
+	{ "vpns_wg_private", "" },
+	{ "vpns_wg_public", "" },
+	{ "vpns_wg_ext_addr", "" },
+
 	{ 0, 0 }
 };
 

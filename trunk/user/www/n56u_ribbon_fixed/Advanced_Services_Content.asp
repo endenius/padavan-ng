@@ -900,7 +900,7 @@ function change_crond_enabled(){
                                                     <option value="https://family.dot.dns.yandex.net/dns-query">Yandex: family</option>
                                                     <option value="https://safe.dot.dns.yandex.net/dns-query">Yandex: security</option>
                                                 </select>
-                                                <div class="icon icon-remove" onclick="doh_clean(1)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
                                         <tr id="row_doh_conf2" style="display:none">
@@ -909,7 +909,7 @@ function change_crond_enabled(){
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="doh_server2" value="<% nvram_get_x("", "doh_server2"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="doh_server_ip2" value="<% nvram_get_x("", "doh_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
                                                 <select class="input" id="doh_server_list2" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_doh_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
-                                                <div class="icon icon-remove" onclick="doh_clean(2)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
                                         <tr id="row_doh_conf3" style="display:none">
@@ -918,7 +918,7 @@ function change_crond_enabled(){
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="doh_server3" value="<% nvram_get_x("", "doh_server3"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="doh_server_ip3" value="<% nvram_get_x("", "doh_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
                                                 <select class="input" id="doh_server_list3" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_doh_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
-                                                <div class="icon icon-remove" onclick="doh_clean(3)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
 
@@ -965,7 +965,7 @@ function change_crond_enabled(){
                                                     <option value="family.freedns.controld.com" valueip="76.76.2.4">ControlD: + adult content</option>
                                                     <option value="dns.de.futuredns.eu.org" valueip="162.55.52.228">FutureDNS</option>
                                                 </select>
-                                                <div class="icon icon-remove" onclick="stubby_clean(1)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
                                         <tr id="row_stubby_conf2" style="display:none">
@@ -974,7 +974,7 @@ function change_crond_enabled(){
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="stubby_server2" value="<% nvram_get_x("", "stubby_server2"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="stubby_server_ip2" value="<% nvram_get_x("", "stubby_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
                                                 <select class="input" id="stubby_server_list2" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_stubby_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
-                                                <div class="icon icon-remove" onclick="stubby_clean(2)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
                                         <tr id="row_stubby_conf3" style="display:none">
@@ -983,7 +983,7 @@ function change_crond_enabled(){
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="stubby_server3" value="<% nvram_get_x("", "stubby_server3"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="stubby_server_ip3" value="<% nvram_get_x("", "stubby_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
                                                 <select class="input" id="stubby_server_list3" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_stubby_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
-                                                <div class="icon icon-remove" onclick="stubby_clean(3)" style="margin-top:2px; margin-left:10px; cursor:pointer;"></div>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
 

@@ -19,6 +19,7 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/help.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
@@ -65,6 +66,8 @@ function initial(){
 			o.remove(2);
 		}
 	}
+	if (!found_app_wg())
+		document.form.vpns_type.remove(3);
 
 	if (openssl_util_found() && login_safe()) {
 		if (!support_openssl_ec()) {
@@ -165,7 +168,12 @@ function validForm(){
 		return true;
 
 	var mode = document.form.vpns_type.value;
-	if (mode == "2") {
+	if (mode == "3") {
+		if(!validate_range(document.form.vpns_wg_port, 1, 65535))
+			return false;
+		if(!valid_vpn_subnet(document.form.vpns_vnet))
+			return false;
+	} else if (mode == "2") {
 		if(!validate_range(document.form.vpns_ov_port, 1, 65535))
 			return false;
 		
@@ -261,6 +269,7 @@ function change_vpns_enabled(){
 function change_vpns_type(){
 	var mode = document.form.vpns_type.value;
 	var is_ov = (mode == "2") ? 1 : 0;
+	var is_wg = (mode == "3") ? 1 : 0;
 
 	var o = document.form.vpns_vuse;
 	free_options(o);
@@ -271,11 +280,11 @@ function change_vpns_type(){
 
 	showhide_div('tab_vpns_ssl', is_ov);
 
-	showhide_div('row_vpns_auth', !is_ov);
-	showhide_div('row_vpns_mppe', !is_ov);
-	showhide_div('row_vpns_mtu', !is_ov);
-	showhide_div('row_vpns_mru', !is_ov);
-	showhide_div('row_vpns_script', 1);
+	showhide_div('row_vpns_auth', !is_ov && !is_wg);
+	showhide_div('row_vpns_mppe', !is_ov && !is_wg);
+	showhide_div('row_vpns_mtu', !is_ov && !is_wg);
+	showhide_div('row_vpns_mru', !is_ov && !is_wg);
+	showhide_div('row_vpns_script', !is_wg);
 
 	showhide_div('row_vpns_ov_mode', is_ov);
 	showhide_div('row_vpns_ov_prot', is_ov);
@@ -293,13 +302,30 @@ function change_vpns_type(){
 
 	textarea_ovpn_enabled(is_ov);
 
-	if (is_ov){
+	showhide_div('row_vpns_wg_port', is_wg);
+	showhide_div('row_vpns_wg_private', is_wg);
+	showhide_div('row_vpns_wg_public', is_wg);
+	showhide_div('row_vpns_wg_ext_addr', is_wg);
+
+	document.form.vpns_pass_x_0.value = "";
+	document.form.vpns_user_x_0.value = "";
+	document.form.vpns_addr_x_0.value = "";
+	document.form.vpns_rnet_x_0.value = "";
+	document.form.vpns_rmsk_x_0.value = "";
+	showhide_div('button_client_genkey', is_wg)
+	$("wnd_vpns_cli_stat").innerHTML = "<#RouterConfig_GWStaticIF_itemname#>";
+
+	if (is_wg){
+		$("col_pass").innerHTML = "<#WG_Private_key#>:";
+		$("div_acl_info").innerHTML = "<#VPNS_Accnt_Info5#>";
+		$("wnd_vpns_cli_stat").innerHTML = "<#VPNS_LatestHandshake#>";
+		inputCtrl(document.form.vpns_pass_x_0, 1);
+	} else if (is_ov){
 		showhide_div('row_vpns_cast', 0);
 		
 		$("col_pass").innerHTML = "";
 		$("div_acl_info").innerHTML = "<#VPNS_Accnt_Info2#></br><#VPNS_Accnt_Info3#>";
 		inputCtrl(document.form.vpns_pass_x_0, 0);
-		document.form.vpns_pass_x_0.value = "";
 		
 		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found()) {
 			if (!support_openssl_ec()) {
@@ -375,7 +401,16 @@ function change_vpns_vnet_enable(){
 	var vnet_show;
 	var rnet_show;
 	var is_openvpn = (document.form.vpns_type.value == "2") ? 1 : 0;
+	var is_wg = (document.form.vpns_type.value == "3") ? 1 : 0;
 
+	if (is_wg){
+		vnet_show = 1;
+		rnet_show = vnet_show;
+		showhide_div('tab_vpns_acl', vnet_show);
+		showhide_div('row_vpns_vuse', 0);
+		showhide_div('row_vpns_cast', 0);
+		showhide_div('row_vpns_actl', (vnet_show && fw_enable_x == "1"));
+	}else
 	if (is_openvpn){
 		vnet_show = (document.form.vpns_ov_mode.value == "1") ? 1 : 0;
 		rnet_show = vnet_show;
@@ -396,8 +431,8 @@ function change_vpns_vnet_enable(){
 	inputCtrl(document.form.vpns_rnet_x_0, rnet_show);
 	inputCtrl(document.form.vpns_rmsk_x_0, rnet_show);
 
-	show_pool_controls(vnet_show, is_openvpn);
-	showACLList(vnet_show, rnet_show, is_openvpn);
+	show_pool_controls(vnet_show, is_openvpn || is_wg);
+	showACLList(vnet_show, rnet_show, is_openvpn, is_wg);
 }
 
 function change_vpns_ov_atls() {
@@ -419,6 +454,10 @@ function change_vpns_ov_tcv2() {
 	inputCtrl(document.form['ovpnsvr.stc2.key'], v);
 }
 
+function isValidString_letters_numbers(str) {
+	return /^[a-zA-Z0-9-_]+$/.test(str);
+}
+
 function markGroupACL(o, c, b) {
 	var acl_addr;
 	document.form.group_id.value = "VPNSACLList";
@@ -427,21 +466,35 @@ function markGroupACL(o, c, b) {
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
 		}
-		
+
 		if (document.form.vpns_user_x_0.value==""){
 			alert("<#JS_fieldblank#>");
 			document.form.vpns_user_x_0.focus();
 			document.form.vpns_user_x_0.select();
 			return false;
 		}
+
+		if (!isValidString_letters_numbers(document.form.vpns_user_x_0.value)){
+			alert("<#JS_field_noletter#>");
+			document.form.vpns_user_x_0.focus();
+			document.form.vpns_user_x_0.select();
+			return false;
+		}
 		
-		if (document.form.vpns_type.value == "2" && document.form.vpns_addr_x_0.value == "") {
+		if ( (document.form.vpns_type.value == "2" || document.form.vpns_type.value == "3") && document.form.vpns_addr_x_0.value == "") {
 			alert("<#JS_fieldblank#>");
 			document.form.vpns_addr_x_0.focus();
 			document.form.vpns_addr_x_0.select();
 			return false;
 		}
-		
+
+		if ( document.form.vpns_type.value == "3" && document.form.vpns_pass_x_0.value == "") {
+			alert("<#JS_fieldblank#>");
+			document.form.vpns_pass_x_0.focus();
+			document.form.vpns_pass_x_0.select();
+			return false;
+		}
+
 		acl_addr = parseInt(document.form.vpns_addr_x_0.value);
 		if ((document.form.vpns_addr_x_0.value != "") && (acl_addr<2 || acl_addr>254)){
 			alert("IP octet value should be between 2 and 254!");
@@ -499,6 +552,59 @@ function reset_btn_exp(){
 	var $btn=$j('#vpns_exp_bn');
 	$btn.removeClass('alert-error').removeClass('alert-success');
 	$btn.val('<#VPNS_Export#>');
+}
+
+function wg_pubkey(key){
+	if (!login_safe())
+		return false;
+
+	var privkey = document.form.vpns_wg_private.value;
+	if (!privkey.lenght == 44) {
+		document.form.vpns_wg_public.value = "";
+		return;
+	}
+
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' wg_pubkey ',
+		'privkey': privkey
+	},
+	function(response){
+		document.form.vpns_wg_public.value = response;
+	});
+}
+
+function wg_genkey(){
+	if (!login_safe())
+		return false;
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' wg_genkey '
+	},
+	function(response){
+		document.form.vpns_wg_private.value = response;
+
+		$j.post('/apply.cgi',
+		{
+			'action_mode': ' wg_pubkey ',
+			'privkey': document.form.vpns_wg_private.value
+		},
+		function(response){
+			document.form.vpns_wg_public.value = response;
+		});
+	});
+}
+
+function wg_client_genkey(){
+	if (!login_safe())
+		return false;
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' wg_genkey ',
+	},
+	function(response){
+		document.form.vpns_pass_x_0.value = response;
+	});
 }
 
 function create_server_cert(){
@@ -575,7 +681,29 @@ function export_client_ovpn(cn){
 	});
 }
 
-function showACLList(vnet_show,rnet_show,is_openvpn){
+function export_client_wg(cn){
+	if (!login_safe())
+		return false;
+	if (cn == '') return false;
+
+	$j.ajax({
+		type: "post",
+		url: "/apply.cgi",
+		data: {
+			action_mode: " ExportConfWGC ",
+			common_name: cn
+		},
+		dataType: "json",
+		success: function(response) {
+			var sys_result = (response != null && typeof response === 'object' && "sys_result" in response)
+				? response.sys_result : -1;
+			if(sys_result == 0)
+				location.href = 'client-wg.conf';
+		}
+	});
+}
+
+function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 	var code;
 	var acl_pass;
 	var acl_addr;
@@ -599,6 +727,11 @@ function showACLList(vnet_show,rnet_show,is_openvpn){
 					acl_rnet = ACLList[i][3] + ' / ' + ACLList[i][4];
 			}
 			
+			if (is_wg){
+				acl_pass = '<a href="javascript:export_client_wg(\'' + ACLList[i][0] + '\');"><#VPNS_Export_download#></a>';
+				acl_pass += '&nbsp;&nbsp;&nbsp;';
+				acl_pass += '<a href="javascript:export_wg_client_qr(\'' + ACLList[i][0] + '\');"><#VPNS_Export_QR#></a>';
+			} else
 			if (is_openvpn){
 				if (openssl_util_found() && openvpn_srv_cert_found() && login_safe())
 					acl_pass = '<a href="javascript:export_client_ovpn(\'' + ACLList[i][0] + '\');"><#VPNS_Export#></a>';
@@ -611,10 +744,10 @@ function showACLList(vnet_show,rnet_show,is_openvpn){
 				acl_addr = addr_part + ACLList[i][2];
 			
 			code += '<tr id="row' + i + '">';
-			code += '<td width="20%">&nbsp;' + ACLList[i][0] + '</td>';
-			code += '<td width="20%">&nbsp;' + acl_pass + '</td>';
-			code += '<td width="20%">&nbsp;' + acl_addr + '</td>';
-			code += '<td width="35%">&nbsp;' + acl_rnet + '</td>';
+			code += '<td width="19%">&nbsp;' + ACLList[i][0] + '</td>';
+			code += '<td width="25%">&nbsp;' + acl_pass + '</td>';
+			code += '<td width="17%">&nbsp;' + acl_addr + '</td>';
+			code += '<td width="34%">&nbsp;' + acl_rnet + '</td>';
 			code += '<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 			code += '</tr>';
 		}
@@ -806,6 +939,7 @@ function getHash(){
                                             <option value="0" <% nvram_match_x("", "vpns_type", "0","selected"); %>>PPTP</option>
                                             <option value="1" <% nvram_match_x("", "vpns_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                             <option value="2" <% nvram_match_x("", "vpns_type", "2","selected"); %>>OpenVPN</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_type", "3","selected"); %>>Wireguard</option>
                                         </select>
                                         <span id="certs_hint" style="display:none" class="label label-warning"><#OVPN_Hint#></span>
                                     </td>
@@ -873,6 +1007,35 @@ function getHash(){
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
                                     </td>
                                 </tr>
+
+                                <tr id="row_vpns_wg_ext_addr" style="display:none">
+                                    <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,1);"><#WG_External_address#>:</a></th>
+                                    <td>
+                                        <input type="text" maxlength="44" size="5" name="vpns_wg_ext_addr" class="input" value="<% nvram_get_x("", "vpns_wg_ext_addr"); %>"/>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_wg_port" style="display:none">
+                                    <th><#OVPN_Port#></th>
+                                    <td>
+                                        <input type="text" maxlength="5" size="5" name="vpns_wg_port" class="input" value="<% nvram_get_x("", "vpns_wg_port"); %>" onkeypress="return is_number(this,event);"/>
+                                        &nbsp;<span style="color:#888;">[ 51820 ]</span>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_wg_private" style="display:none">
+                                    <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,2);"><#WG_Private_key#>:</a></th>
+                                    <td>
+                                        <input type="text" maxlength="44" size="5" name="vpns_wg_private" oninput="wg_pubkey();" class="input" value="<% nvram_get_x("", "vpns_wg_private"); %>"/>
+                                        <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genkey();" value="<#CTL_refresh#>"/>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_wg_public" style="display:none">
+                                    <th><#WG_Public_key#>:</th>
+                                    <td>
+                                        <input readonly type="text" maxlength="44" size="5" name="vpns_wg_public" class="input" value="<% nvram_get_x("", "vpns_wg_public"); %>"/>
+                                    </td>
+                                </tr>
+
+
                                 <tr id="row_vpns_ov_mdig" style="display:none">
                                     <th><#VPNS_Auth#></th>
                                     <td>
@@ -1163,26 +1326,27 @@ function getHash(){
                             <div id="div_acl_info" class="alert alert-info" style="margin: 10px;"></div>
                             <table class="table">
                                 <tr>
-                                    <th width="20%" style="border-top: 0 none;"><#VPNS_CName#>:</th>
-                                    <th width="20%" style="border-top: 0 none;" id="col_pass"><#ISP_Authentication_pass#></th>
-                                    <th width="20%" style="border-top: 0 none;"><#VPNS_FixIP#></th>
-                                    <th width="35%" style="border-top: 0 none;"><#VPNS_RNet#></th>
-                                    <th width="5%"  style="border-top: 0 none;">&nbsp;</th>
+                                    <th width="120px" style="border-top: 0 none;"><#VPNS_CName#>:</th>
+                                    <th width="166px" style="border-top: 0 none; padding-left: 0; padding-right: 0;" id="col_pass"><#ISP_Authentication_pass#></th>
+                                    <th width="120px" style="border-top: 0 none; padding-right: 0;"><#VPNS_FixIP#></th>
+                                    <th width="240px" style="border-top: 0 none; padding-right: 2; padding-left: 0;"><#VPNS_RNet#></th>
+                                    <th width="30px"  style="border-top: 0 none;">&nbsp;</th>
                                 </tr>
                                 <tr>
                                     <td>
                                         <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" value="<% nvram_get_x("", "vpns_user_x_0"); %>" onkeypress="return is_string(this,event);" />
                                     </td>
-                                    <td>
-                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />
+                                    <td style="padding-left: 0; padding-right: 0;">
+                                        <input style="width: 128px;" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />&#8203;
+                                        <input id="button_client_genkey" type="button" class="btn btn-small" style="display: none; width: 20px; padding-left:4px; outline:0" onclick="wg_client_genkey();" value="🗘"/>
                                     </td>
-                                    <td>
-                                        <span id="vpnip3"></span>
-                                        <input type="text" size="2" maxlength="3" style="width: 25px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
+                                    <td style="padding-right: 0;">
+                                        <span id="vpnip3"></span>&#8203;
+                                        <input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
                                     </td>
-                                    <td>
-                                        <input type="text" size="14" maxlength="15" style="width: 90px;" name="vpns_rnet_x_0" value="<% nvram_get_x("", "vpns_rnet_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />&nbsp;/
-                                        <input type="text" size="14" maxlength="15" style="width: 90px;" name="vpns_rmsk_x_0" value="<% nvram_get_x("", "vpns_rmsk_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />
+                                    <td style="padding-right: 0; padding-left: 0;">
+                                        <input type="text" size="14" maxlength="15" style="width: 92px;" name="vpns_rnet_x_0" value="<% nvram_get_x("", "vpns_rnet_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />&nbsp;/
+                                        <input type="text" size="14" maxlength="15" style="width: 92px;" name="vpns_rmsk_x_0" value="<% nvram_get_x("", "vpns_rmsk_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />
                                     </td>
                                     <td>
                                         <button class="btn" type="submit" onclick="return markGroupACL(this, 50, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
@@ -1205,9 +1369,9 @@ function getHash(){
                             <table class="table" style="width: 100%">
                                 <tr>
                                     <th width="20%" style="border-top: 0 none;"><#IPLocal#></th>
-                                    <th width="35%" style="border-top: 0 none;"><#IPRemote#></th>
-                                    <th width="25%" style="border-top: 0 none;"><#VPNS_CName#></th>
-                                    <th width="20%" style="border-top: 0 none;"><#RouterConfig_GWStaticIF_itemname#></th>
+                                    <th width="30%" style="border-top: 0 none;"><#IPRemote#></th>
+                                    <th width="30%" style="border-top: 0 none;"><#VPNS_CName#></th>
+                                    <th width="20%" style="border-top: 0 none;" id="wnd_vpns_cli_stat"><#RouterConfig_GWStaticIF_itemname#></th>
                                 </tr>
                             </table>
                         </div>

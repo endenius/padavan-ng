@@ -417,6 +417,15 @@ int ovpn_client_script_main(int argc, char **argv);
 int ovpn_server_expcli_main(int argc, char **argv);
 #endif
 
+#if defined (APP_WIREGUARD)
+/* wireguard.c */
+int start_wireguard_server(void);
+int start_wireguard_client(void);
+void stop_wireguard_server(void);
+void stop_wireguard_client(void);
+void restart_wireguard_server(void);
+#endif
+
 /* net_wifi.c */
 void mlme_state_wl(int is_on);
 void mlme_state_rt(int is_on);

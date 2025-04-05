@@ -114,6 +114,9 @@
 #define IFNAME_SERVER_TUN		"tun1"
 #define IFNAME_CLIENT_TUN		"tun0"
 
+#define IFNAME_SERVER_WG		"wg1"
+#define IFNAME_CLIENT_WG		"wg0"
+
 #define IFNAME_USBNET1			"wwan0"
 #define IFNAME_USBNET2			"weth0"
 

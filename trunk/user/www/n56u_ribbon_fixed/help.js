@@ -1,4 +1,4 @@
-var helpcontent = new Array(25);
+var helpcontent = new Array(26);
 var help_enable = '<% nvram_get_x("", "help_enable"); %>';
 
 helpcontent[0] = new Array("");
@@ -182,6 +182,11 @@ helpcontent[25] = new Array("",
 				"<#Adm_Svc_zapret_desc#>",
 				"<#Adm_Svc_doh_desc#>",
 				"<#Adm_Svc_stubby_desc#>");
+
+// VPN
+helpcontent[26] = new Array("",
+				"<#WG_External_address_desc#>",
+				"<#WG_Private_key_desc#>");
 
 function openTooltip(obj, hint_array_id, hint_show_id)
 {
