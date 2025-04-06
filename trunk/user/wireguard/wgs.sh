@@ -270,7 +270,7 @@ wg_listclients()
             else if (bytes >= 1024) printf "%.2f\xE2\x80\xA8KiB", bytes/1024
             else printf "%d\xE2\x80\xA8B", bytes
         } NR>1 {
-        print $1, $5, bf($6), bf($7), gensub("[)(]|:.*", "", "", $3), $4}
+        print $1, $5, bf($6), bf($7), gensub("[)(]|:[0-9]+$", "", "", $3), $4}
     ')
 
     if [ ! "$peers" ]; then

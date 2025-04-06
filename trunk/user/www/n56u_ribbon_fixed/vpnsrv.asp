@@ -20,6 +20,7 @@
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/qrcode.min.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
@@ -681,6 +682,30 @@ function export_client_ovpn(cn){
 	});
 }
 
+function export_client_wg_qr(num){
+	if (!login_safe())
+		return false;
+	for(var i = 0; i < ACLList.length; i++){
+		if (i == num) continue;
+		showhide_div('ACLList_Block_qr'+i, 0);
+	}
+	spoiler_toggle('ACLList_Block_qr'+num);
+
+	if ($("qrcode_client" + num).innerHTML) return;
+
+	var common_name = ACLList[num][0];
+	if (!common_name) return
+
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' ExportWGConf ',
+		'common_name': common_name
+	},
+	function(response){
+		new QRCode(document.getElementById("qrcode_client" + num), response);
+	});
+}
+
 function export_client_wg(cn){
 	if (!login_safe())
 		return false;
@@ -730,7 +755,7 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 			if (is_wg){
 				acl_pass = '<a href="javascript:export_client_wg(\'' + ACLList[i][0] + '\');"><#VPNS_Export_download#></a>';
 				acl_pass += '&nbsp;&nbsp;&nbsp;';
-				acl_pass += '<a href="javascript:export_wg_client_qr(\'' + ACLList[i][0] + '\');"><#VPNS_Export_QR#></a>';
+				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_QR#></a>';
 			} else
 			if (is_openvpn){
 				if (openssl_util_found() && openvpn_srv_cert_found() && login_safe())
@@ -750,6 +775,14 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 			code += '<td width="34%">&nbsp;' + acl_rnet + '</td>';
 			code += '<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 			code += '</tr>';
+			if (is_wg){
+
+				code += '<tr id="ACLList_Block_qr' + i + '" style="display: none;">';
+				code += '<td colspan="5" style="padding-top: 8px; padding-bottom: 12px; border: 0 none">';
+				code += '<div align=center id="qrcode_client' + i + '"></div>';
+				code += '</td>';
+				code += '</tr>';
+			}
 		}
 		code += '<tr>';
 		code += '<td colspan="4" style="padding-bottom: 0px;">&nbsp;</td>'

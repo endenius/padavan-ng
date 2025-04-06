@@ -3182,6 +3182,18 @@ apply_cgi(const char *url, webs_t wp)
 		websWrite(wp, "{\"sys_result\": %d}", sys_result);
 		return 0;
 	}
+	else if (!strcmp(value, " ExportWGConf "))
+	{
+#if defined(APP_WIREGUARD)
+		char *common_name = websGetVar(wp, "common_name", "");
+		if (get_login_safe() && strlen(common_name) > 0) {
+			doSystem("/usr/bin/wgs.sh export '%s'", common_name);
+			do_file("/tmp/client-wg.conf", wp);
+			unlink("/tmp/client-wg.conf");
+		}
+#endif
+		return 0;
+	}
 	else if (!strcmp(value, " CreateCertOVPNS "))
 	{
 		int sys_result = 1;
