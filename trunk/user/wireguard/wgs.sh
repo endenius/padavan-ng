@@ -25,6 +25,7 @@ IFACE="wg1"
 IFACE_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
 PORT="$(nvram get vpns_wg_port)"
 EXPORT_CONF="/tmp/client-wg.conf"
+LEASES_FILE="/tmp/vpns.leases"
 
 ###
 
@@ -88,18 +89,19 @@ _net_to_prefix()
 
 wg_setconf()
 {
+    local pass rnet rmsk prefix i rlan max peers nvram_modified
+
     is_started || return 0
 
-    local pass rnet rmsk prefix i rlan max peers
-
     max="$(nvram get vpns_num_x)"
-    [ "$max" ] || return 0
-    [ $max -eq 0 ] && return
-    [ $max -gt 0 ] && max=$((max-1))
-
-    for i in $(seq 0 $max); do
+    for i in $(seq 0 $((max-1))); do
         pass=$(nvram get vpns_pass_x$i | wg pubkey 2>/dev/null)
         [ "$pass" ] || continue
+        if [ ! "$(nvram get vpns_public_x$i)" == "$pass" ]; then
+        # save public keys to speed up creation of leases
+            nvram set vpns_public_x$i="$pass"
+            nvram_modified=1
+        fi
 
         rlan=""
         rnet=$(nvram get vpns_rnet_x$i)
@@ -115,6 +117,8 @@ wg_setconf()
                 echo "AllowedIPs=$(nvram get vpns_vnet | sed 's/\.0$/./')$(nvram get vpns_addr_x$i)$rlan"
                 echo "$peers")
     done
+
+    [ "$nvram_modified" ] && nvram commit
 
     cat > "/tmp/${IFACE}.conf.$$" <<EOF
 [Interface]
@@ -173,6 +177,8 @@ wg_stop()
 
 wg_start()
 {
+    [ "$(nvram get vpns_type)" == "3" -a "$(nvram get vpns_enable)" == "1" ] || die "disabled"
+
     is_started && die "already started"
     wg_prepare
 
@@ -188,18 +194,9 @@ wg_start()
     fi
 
     wg_fw_start
-    wg_setconf
-}
-
-wg_reload()
-{
-    if is_started; then
-        wg_fw_stop
-        wg_fw_start
-        wg_setconf
-    else
-        wg_start
-    fi
+    wg_setconf && wg show ${IFACE} allowed-ips | awk '$3 {print $3}' | while read ip; do
+        ip route add $ip dev $IFACE
+    done
 }
 
 wg_addclient()
@@ -208,33 +205,27 @@ wg_addclient()
 
     local max nums free_num addr key config
 
-    [ ! "$WAN_ADDR" -o "$WAN_ADDR" = "0.0.0.0" ] && error "WAN interface address not recognized"
-
     max="$(nvram get vpns_num_x)"
-    [ "$max" ] || return 0
-    [ $max -eq 0 ] && return
-    [ $max -gt 0 ] && max=$((max-1))
-
-    nums=$(for i in $(seq 0 $max); do
+    nums=$(for i in $(seq 0 $((max-1))); do
         nvram get vpns_addr_x$i
     done)
 
     [ ! "$nums" ] && ips=1
     free_num=$(seq 2 255 | grep -vwF "$nums" | head -n1)
 
-    name="client$free_num.wg"
+    name="client${free_num}_wg"
     [ "$1" ] && name="$1"
 
-    for i in $(seq 0 $max); do
-        [ $(nvram get vpns_user_x$i) == "$name" ] && die "already exist"
+    for i in $(seq 0 $((max-1))); do
+        [ "$(nvram get vpns_user_x$i)" == "$name" ] && die "already exist"
     done
 
     addr="$(echo $IFACE_ADDR | sed 's/\.1$//').$free_num"
     key=$(wg genkey)
 
-    max="$(nvram get vpns_num_x)"
     nvram set vpns_user_x$max=$name
     nvram set vpns_pass_x$max=$key
+    nvram set vpns_public_x$max=$(echo $key | wg pubkey)
     nvram set vpns_addr_x$max=$free_num
     nvram set vpns_rnet_x$max=""
     nvram set vpns_rmsk_x$max=""
@@ -256,78 +247,90 @@ EOF
     wg_setconf || return
 
     if [ -x /usr/bin/qrencode ]; then
-        echo "$config" | qrencode -t UTF8i -m 2
-        #echo "$client_config_private" | qrencode -t SVG -o "/tmp/$client_name.svg"
+        echo "$config" | qrencode -t UTF8
     fi
     log "client \"$name\" added"
-    echo
+    echo ---------------------------------------------------------
     echo "$config"
     echo
 }
 
-wg_delclient()
-{
-    echo "todo"
-}
-
 wg_listclients()
 {
-    local peers public user max net addr
+    local peers public_list users_list max
 
     max="$(nvram get vpns_num_x)"
-    [ "$max" ] || return 0
-    [ $max -eq 0 ] && return
-    [ $max -gt 0 ] && max=$((max-1))
+    [ "$max" == "0" ] && return
 
-    peers=$(wg show ${IFACE} dump 2>/dev/null| awk '
+    peers=$(wg show ${IFACE} dump 2>/dev/null | awk '
         function bf(bytes){
-            if (bytes >= 1024^3) printf "%.2fG", bytes/(1024^3)
-            else if (bytes >= 1024^2) printf "%.2fM", bytes/(1024^2)
-            else if (bytes >= 1024) printf "%.2fK", bytes/1024
-            else printf "%d", bytes
+            if (bytes >= 1024^4) printf "%.2f\xE2\x80\xA8TiB", bytes/(1024^3)
+            else if (bytes >= 1024^3) printf "%.2f\xE2\x80\xA8GiB", bytes/(1024^3)
+            else if (bytes >= 1024^2) printf "%.2f\xE2\x80\xA8MiB", bytes/(1024^2)
+            else if (bytes >= 1024) printf "%.2f\xE2\x80\xA8KiB", bytes/1024
+            else printf "%d\xE2\x80\xA8B", bytes
+        } NR>1 {
+        print $1, $5, bf($6), bf($7), gensub("[)(]|:.*", "", "", $3), $4}
+    ')
+
+    if [ ! "$peers" ]; then
+        for i in $(seq 0 $((max-1))); do
+            rnet=$(nvram get vpns_rnet_x$i)
+            rmsk=$(nvram get vpns_rmsk_x$i)
+
+            rlan=""
+            if [ "$rnet" -a "$rmsk" ]; then
+                prefix=$(_net_to_prefix $rmsk)
+                rlan=",$rnet/$prefix"
+            fi
+            printf "%-12s %s %s%s\n" $(nvram get vpns_user_x$i) $(nvram get vpns_public_x$i) \
+                $(nvram get vpns_vnet | sed 's/\.0$/./')$(nvram get vpns_addr_x$i) "$rlan"
+        done
+        return
+    fi
+
+    users_list=$(nvram show all | grep -E "vpns_user_x[0-9]+=.+" \
+            | sed -E "s/vpns_user_x([0-9]*)=/vpns_public_x\1|/")
+    public_list=$(nvram show all | grep -E "vpns_public_x[0-9]+=.+" \
+            | sed -E "s/vpns_public_x([0-9]*)=/vpns_public_x\1|/")
+
+    echo "$peers" | awk -v list1="$users_list" -v list2="$public_list" '
+    BEGIN {
+        split(list1, parts1, "\n");
+        for (i in parts1) {
+            split(parts1[i], keyval, "|");
+            a[keyval[1]] = keyval[2];
         }
-        function tf(n){
-            diff = systime() - n
-            if (diff < 0 || n == 0) return "never"
-            h = int(diff / 3600)
-            m = int( (diff - h * 3600) / 60)
-            s = diff - m * 60 - h * 3600
-            printf "%02d:%02d:%02d", h, m, s
-        } NR>1 {print $1, tf($5), bf($6), bf($7), gensub("[)(]|:.*", "", "", $3)}')
 
-    net="$(nvram get vpns_vnet | sed 's/\.0$/./')"
+        split(list2, parts2, "\n");
+        for (i in parts2) {
+            split(parts2[i], keyval, "|");
+            b[keyval[1]] = keyval[2]
+        }
 
-    for i in $(seq 0 $max); do
-        public="$(nvram get vpns_pass_x$i | wg pubkey 2>/dev/null)"
-        [ "$public" ] || continue
-        user="$(nvram get vpns_user_x$i)"
-        addr="$(nvram get vpns_addr_x$i)"
-
-        if [ "$peers" ]; then
-            printf "%-12s %s %s %s↓ %s↑ %s %s\n" "$user" $(echo "$peers" | grep $public) "$net$addr"
-        else
-            printf "%-12s %s %s\n" "$user" "$public" "$net$addr"
-        fi
-    done
+        for (key in a) {
+            if (key in b) {
+                c[b[key]] = a[key];
+            }
+        }
+    } { printf "%-12s %s %s ↓%s ↑%s %s %s\n", c[$1], $1, $2, $3, $4, $5, $6, $7}'
 }
 
 wg_leases()
 {
-    is_started && wg_listclients | awk '$3 != "never" && $7 {print $3, $7, $6, $1, $4, $5}' >/tmp/vpns.leases
+    is_started && wg_listclients | awk '$3 && $7 {print $3, gensub("\/.+", "", "", $7), $6, $1, $4, $5}' >$LEASES_FILE
 }
 
 wg_export()
 {
     [ "$1" ] || return
 
-    local i default max
+    local i max
+
+    rm -f "$EXPORT_CONF"
 
     max="$(nvram get vpns_num_x)"
-    [ "$max" ] || return
-    [ $max -eq 0 ] && return
-    [ $max -gt 0 ] && max=$((max-1))
-
-    for i in $(seq 0 $max); do
+    for i in $(seq 0 $((max-1))); do
         [ ! "$(nvram get vpns_user_x$i)" == "$1" ] && continue
 
         tee "$EXPORT_CONF" <<EOF
@@ -344,7 +347,7 @@ AllowedIPs = 0.0.0.0/0
 EOF
     done
 
-    chmod 0600 "$EXPORT_CONF"
+    chmod 0600 "$EXPORT_CONF" || die "not found"
 }
 
 case "$1" in
@@ -361,10 +364,6 @@ case "$1" in
         wg_start
     ;;
 
-    reload)
-        wg_reload
-    ;;
-
     export)
         wg_export "$2"
     ;;
@@ -377,27 +376,16 @@ case "$1" in
         wg_leases
     ;;
 
-    client)
-        shift
-        case "$1" in
-            add)
-                shift
-                wg_addclient "$@"
-            ;;
+    add)
+        wg_addclient "$2"
+    ;;
 
-            del|remove)
-                shift
-                wg_delclient "$@"
-            ;;
-
-            list|"")
-                wg_listclients
-            ;;
-        esac
+    list)
+        wg_listclients
     ;;
 
     *)
-        echo "Usage: $0 {start|stop|restart| client [ add|del|list ] }" >&2
+        echo "Usage: $0 { start|stop|restart|list| { export|add [client name] } }" >&2
         exit 1
     ;;
 esac

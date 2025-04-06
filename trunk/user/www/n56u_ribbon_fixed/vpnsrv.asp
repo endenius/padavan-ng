@@ -455,7 +455,7 @@ function change_vpns_ov_tcv2() {
 }
 
 function isValidString_letters_numbers(str) {
-	return /^[a-zA-Z0-9-_]+$/.test(str);
+	return /^[a-zA-Z0-9-_.]+$/.test(str);
 }
 
 function markGroupACL(o, c, b) {
@@ -767,14 +767,30 @@ function changeBgColor(obj, num){
 
 function createBodyTable(){
 	var t_body = '';
+	var traffic;
+	var options = {
+		month: 'long',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: 'numeric'
+	};
+	var is_wg = (document.form.vpns_type.value == "3") ? 1 : 0;
 	if(vpn_clients.length > 0){
 		try{
 			$j.each(vpn_clients, function(i, client){
+				var date = new Date(client[3] * 1000);
 				t_body += '<tr class="client">\n';
 				t_body += '  <td>'+client[0]+'</td>\n';
 				t_body += '  <td>'+client[1]+'</td>\n';
-				t_body += '  <td>'+client[2]+'</td>\n';
-				t_body += '  <td>'+client[3]+'</td>\n';
+				if (is_wg) {
+					traffic = client[2].replace("↓", "<br><i class=\"icon-arrow-down\"/>");
+					traffic = traffic.replace("↑", "&nbsp;&nbsp;<i class=\"icon-arrow-up\"/>");
+					t_body += '  <td>'+traffic+'</td>\n';
+					t_body += '  <td>'+date.toLocaleString($j("preferred_lang").value, options)+'</td>\n';
+				} else {
+					t_body += '  <td>'+client[2]+'</td>\n';
+					t_body += '  <td>'+client[3]+'</td>\n';
+				}
 				t_body += '</tr>\n';
 			});
 		}
