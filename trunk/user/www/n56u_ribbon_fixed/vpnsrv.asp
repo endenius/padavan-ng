@@ -685,21 +685,30 @@ function export_client_ovpn(cn){
 function export_client_wg_qr(num){
 	if (!login_safe())
 		return false;
+	if (!ACLList[num][0]) return
+
+	var chevron_down = '<i style="scale: 75%; margin-top: 4px" class="icon-chevron-down"/>';
+	var chevron_up = '<i style="scale: 75%; margin-top: 4px" class="icon-chevron-up"/>';
+
 	for(var i = 0; i < ACLList.length; i++){
 		if (i == num) continue;
-		showhide_div('ACLList_Block_qr'+i, 0);
+		$('showqr' + i).innerHTML = chevron_down;
+		showhide_div('ACLList_Block_qr' + i, 0);
 	}
-	spoiler_toggle('ACLList_Block_qr'+num);
 
-	if ($("qrcode_client" + num).innerHTML) return;
+	spoiler_toggle('ACLList_Block_qr' + num);
 
-	var common_name = ACLList[num][0];
-	if (!common_name) return
+	if ($("ACLList_Block_qr" + num).style.display == "none")
+		$('showqr' + num).innerHTML = chevron_down;
+	else
+		$('showqr' + num).innerHTML = chevron_up;
+
+	if ($('qrcode_client' + num).innerHTML) return;
 
 	$j.post('/apply.cgi',
 	{
 		'action_mode': ' ExportWGConf ',
-		'common_name': common_name
+		'common_name': ACLList[num][0]
 	},
 	function(response){
 		new QRCode(document.getElementById("qrcode_client" + num), response);
@@ -754,8 +763,8 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 			
 			if (is_wg){
 				acl_pass = '<a href="javascript:export_client_wg(\'' + ACLList[i][0] + '\');"><#VPNS_Export_download#></a>';
-				acl_pass += '&nbsp;&nbsp;&nbsp;';
-				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_QR#></a>';
+				acl_pass += '&nbsp;&nbsp;';
+				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_QR#><span id="showqr'+ i +'"><i style="scale: 75%; margin-top: 4px" class="icon-chevron-down"/></span></a>';
 			} else
 			if (is_openvpn){
 				if (openssl_util_found() && openvpn_srv_cert_found() && login_safe())
@@ -816,8 +825,8 @@ function createBodyTable(){
 				t_body += '  <td>'+client[0]+'</td>\n';
 				t_body += '  <td>'+client[1]+'</td>\n';
 				if (is_wg) {
-					traffic = client[2].replace("↓", "<br><i class=\"icon-arrow-down\"/>");
-					traffic = traffic.replace("↑", "&nbsp;&nbsp;<i class=\"icon-arrow-up\"/>");
+					traffic = client[2].replace('↓', '<i class="icon-arrow-down"/>');
+					traffic = traffic.replace('↑', '<i class="icon-arrow-up"/>');
 					t_body += '  <td>'+traffic+'</td>\n';
 					t_body += '  <td>'+date.toLocaleString($j("preferred_lang").value, options)+'</td>\n';
 				} else {
@@ -1386,12 +1395,10 @@ function getHash(){
                                         <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" value="<% nvram_get_x("", "vpns_user_x_0"); %>" onkeypress="return is_string(this,event);" />
                                     </td>
                                     <td style="padding-left: 0; padding-right: 0;">
-                                        <input style="width: 128px;" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />&#8203;
-                                        <input id="button_client_genkey" type="button" class="btn btn-small" style="display: none; width: 20px; padding-left:4px; outline:0" onclick="wg_client_genkey();" value="🗘"/>
+                                        <input style="width: 128px;" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />&ZeroWidthSpace;<div id="button_client_genkey" type="button" class="btn" style="display: none; width: 6px; padding-left:2px; outline:0" onclick="wg_client_genkey();"><i class="icon-refresh"></i></div>
                                     </td>
                                     <td style="padding-right: 0;">
-                                        <span id="vpnip3"></span>&#8203;
-                                        <input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
+                                        <span id="vpnip3"></span>&ZeroWidthSpace;<input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
                                     </td>
                                     <td style="padding-right: 0; padding-left: 0;">
                                         <input type="text" size="14" maxlength="15" style="width: 92px;" name="vpns_rnet_x_0" value="<% nvram_get_x("", "vpns_rnet_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />&nbsp;/

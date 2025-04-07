@@ -1765,6 +1765,6 @@ VPNS_Export_QR=QR-code
 JS_field_noletter=Only Latin characters, numbers, dashes, underscores, and periods are allowed
 VPNS_Accnt_Info5=To connect a VPN client to the Wireguard server each client must have an account with username and private key. Every client must have a static IP.
 VPNS_LatestHandshake=Handshake
-WG_Private_key_desc=This field specifies the secret (private) key of the Wireguard server.<br>Add manually or generate a new one if necessary by clicking the \"Update\" button.<br>The public key will be generated automatically based on the secret key.<br><br>Important, be careful: after updating this key, you will need to re-create all Wireguard client accounts.
+WG_Private_key_desc=This field specifies the private key of the Wireguard server.<br>Add manually or generate a new one if necessary by clicking the \"Update\" button.<br>The public key will be generated automatically based on the pivate key.<br><br>Important, be careful: after updating this key, you will need to re-create all Wireguard client accounts.
 WG_External_address_desc=The field may be empty, it is not necessary to use it.<br>Here you manually specify the external IP address of the router or its domain name. The value is used only when generating client configurations. If the field is empty, then the DDNS domain name (if enabled) or the IP address of the external interface is used. The address must be accessible from the outside.
 #Device_type_04_NAS=
