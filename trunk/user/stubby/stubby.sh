@@ -60,6 +60,14 @@ check_config()
     if ! grep -q "^$MARK$" "$STUBBY_CONFIG"; then
         make_default_config
     fi
+
+    # if no ipv6 - remove ipv6 listen address
+    if cat /proc/net/if_inet6 >/dev/null 2>&1; then
+        sed -e '/0::1@/s/^#//' -i $STUBBY_CONFIG
+    else
+        sed -e '/^[^#].*0::1@/s/^/#/' -i $STUBBY_CONFIG
+    fi
+    sync
 }
 
 start_service()
