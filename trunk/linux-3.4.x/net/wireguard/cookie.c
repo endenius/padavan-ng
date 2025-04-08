@@ -107,9 +107,11 @@ static void make_cookie(u8 cookie[COOKIE_LEN], struct sk_buff *skb,
 	if (skb->protocol == htons(ETH_P_IP))
 		blake2s_update(&state, (u8 *)&ip_hdr(skb)->saddr,
 			       sizeof(struct in_addr));
+#if IS_ENABLED(CONFIG_IPV6)
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		blake2s_update(&state, (u8 *)&ipv6_hdr(skb)->saddr,
 			       sizeof(struct in6_addr));
+#endif
 	blake2s_update(&state, (u8 *)&udp_hdr(skb)->source, sizeof(__be16));
 	blake2s_final(&state, cookie);
 

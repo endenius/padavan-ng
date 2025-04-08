@@ -399,10 +399,12 @@ static void wg_packet_consume_data_done(struct wg_peer *peer,
 		if (unlikely(len < sizeof(struct iphdr)))
 			goto dishonest_packet_size;
 		INET_ECN_decapsulate(skb, PACKET_CB(skb)->ds, ip_hdr(skb)->tos);
+#if IS_ENABLED(CONFIG_IPV6)
 	} else if (skb->protocol == htons(ETH_P_IPV6)) {
 		len = ntohs(ipv6_hdr(skb)->payload_len) +
 		      sizeof(struct ipv6hdr);
 		INET_ECN_decapsulate(skb, PACKET_CB(skb)->ds, ipv6_get_dsfield(ipv6_hdr(skb)));
+#endif
 	} else {
 		goto dishonest_packet_type;
 	}

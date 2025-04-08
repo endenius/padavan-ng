@@ -355,8 +355,10 @@ struct wg_peer *wg_allowedips_lookup_dst(struct allowedips *table,
 {
 	if (skb->protocol == htons(ETH_P_IP))
 		return lookup(table->root4, 32, &ip_hdr(skb)->daddr);
+#if IS_ENABLED(CONFIG_IPV6)
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		return lookup(table->root6, 128, &ipv6_hdr(skb)->daddr);
+#endif
 	return NULL;
 }
 
@@ -366,8 +368,10 @@ struct wg_peer *wg_allowedips_lookup_src(struct allowedips *table,
 {
 	if (skb->protocol == htons(ETH_P_IP))
 		return lookup(table->root4, 32, &ip_hdr(skb)->saddr);
+#if IS_ENABLED(CONFIG_IPV6)
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		return lookup(table->root6, 128, &ipv6_hdr(skb)->saddr);
+#endif
 	return NULL;
 }
 
