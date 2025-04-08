@@ -3171,17 +3171,6 @@ apply_cgi(const char *url, webs_t wp)
 		websWrite(wp, "{\"sys_result\": %d}", sys_result);
 		return 0;
 	}
-	else if (!strcmp(value, " ExportConfWGC "))
-	{
-		int sys_result = 1;
-#if defined(APP_WIREGUARD)
-		char *common_name = websGetVar(wp, "common_name", "");
-		if (get_login_safe() && strlen(common_name) > 0)
-			sys_result = doSystem("/usr/bin/wgs.sh export '%s'", common_name);
-#endif
-		websWrite(wp, "{\"sys_result\": %d}", sys_result);
-		return 0;
-	}
 	else if (!strcmp(value, " ExportWGConf "))
 	{
 #if defined(APP_WIREGUARD)
@@ -3699,18 +3688,6 @@ do_export_ovpn_client(const char *url, FILE *stream)
 }
 #endif
 
-#if defined(APP_WIREGUARD)
-static void
-do_export_wg_client(const char *url, FILE *stream)
-{
-	const char *tmp_wg_conf = "/tmp/client-wg.conf";
-
-	if (get_login_safe())
-		do_file(tmp_wg_conf, stream);
-	unlink(tmp_wg_conf);
-}
-#endif
-
 static char syslog_txt[] =
 "Content-Disposition: attachment;\r\n"
 "filename=syslog.txt"
@@ -3765,9 +3742,6 @@ struct mime_handler mime_handlers[] = {
 	{ "syslog.txt", "application/force-download", syslog_txt, NULL, do_syslog_file, 1 },
 #if defined(APP_OPENVPN)
 	{ "client.ovpn", "application/force-download", NULL, NULL, do_export_ovpn_client, 1 },
-#endif
-#if defined(APP_WIREGUARD)
-	{ "client-wg.conf", "application/force-download", NULL, NULL, do_export_wg_client, 1 },
 #endif
 
 	/* no-cached POST objects */

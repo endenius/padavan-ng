@@ -682,13 +682,28 @@ function export_client_ovpn(cn){
 	});
 }
 
+function export_client_wg(num){
+	const blob = new Blob([$('wg_client_config' + num).innerHTML], { type: 'application/octet-stream' });
+	const url = URL.createObjectURL(blob);
+
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = ACLList[num][0] + '_wg.conf';
+
+	document.body.appendChild(a);
+	a.click();
+
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
 function export_client_wg_qr(num){
 	if (!login_safe())
 		return false;
 	if (!ACLList[num][0]) return
 
-	var chevron_down = '<i style="scale: 75%; margin-top: 4px" class="icon-chevron-down"/>';
-	var chevron_up = '<i style="scale: 75%; margin-top: 4px" class="icon-chevron-up"/>';
+	var chevron_down = '<i style="scale: 75%; margin-top: 3px" class="icon-chevron-down"/>';
+	var chevron_up = '<i style="scale: 75%; margin-top: 3px" class="icon-chevron-up"/>';
 
 	for(var i = 0; i < ACLList.length; i++){
 		if (i == num) continue;
@@ -703,7 +718,7 @@ function export_client_wg_qr(num){
 	else
 		$('showqr' + num).innerHTML = chevron_up;
 
-	if ($('qrcode_client' + num).innerHTML) return;
+	if ($('wg_client' + num).innerHTML) return;
 
 	$j.post('/apply.cgi',
 	{
@@ -711,28 +726,11 @@ function export_client_wg_qr(num){
 		'common_name': ACLList[num][0]
 	},
 	function(response){
-		new QRCode(document.getElementById("qrcode_client" + num), response);
-	});
-}
-
-function export_client_wg(cn){
-	if (!login_safe())
-		return false;
-	if (cn == '') return false;
-
-	$j.ajax({
-		type: "post",
-		url: "/apply.cgi",
-		data: {
-			action_mode: " ExportConfWGC ",
-			common_name: cn
-		},
-		dataType: "json",
-		success: function(response) {
-			var sys_result = (response != null && typeof response === 'object' && "sys_result" in response)
-				? response.sys_result : -1;
-			if(sys_result == 0)
-				location.href = 'client-wg.conf';
+		if (response) {
+			new QRCode(document.getElementById("wg_client" + num), {text: response, width: 256, height: 256});
+			$('wg_client_config' + num).innerHTML = response;
+			$('wg_client_file' + num).innerHTML = ACLList[num][0] + '_wg.conf';
+			showhide_div("wg_row_conf" + num, 1);
 		}
 	});
 }
@@ -762,9 +760,7 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 			}
 			
 			if (is_wg){
-				acl_pass = '<a href="javascript:export_client_wg(\'' + ACLList[i][0] + '\');"><#VPNS_Export_download#></a>';
-				acl_pass += '&nbsp;&nbsp;';
-				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_QR#><span id="showqr'+ i +'"><i style="scale: 75%; margin-top: 4px" class="icon-chevron-down"/></span></a>';
+				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_WG#><span id="showqr'+ i +'"><i style="scale: 75%; margin-top: 3px" class="icon-chevron-down"/></span></a>';
 			} else
 			if (is_openvpn){
 				if (openssl_util_found() && openvpn_srv_cert_found() && login_safe())
@@ -785,10 +781,22 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 			code += '<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 			code += '</tr>';
 			if (is_wg){
-
 				code += '<tr id="ACLList_Block_qr' + i + '" style="display: none;">';
-				code += '<td colspan="5" style="padding-top: 8px; padding-bottom: 12px; border: 0 none">';
-				code += '<div align=center id="qrcode_client' + i + '"></div>';
+				code += '<td id="wg_row_conf' + i + '" colspan="4" style="padding-top: 0px; padding-bottom: 0px; border: 0 none; display: none;">';
+
+				code += '<table width="100%" cellspacing="0" cellpadding="3" style="margin-bottom: 8px;">';
+				code += '<tr><td width="256px" style="border: 0 none; vertical-align: top;">';
+				code += '<div id="wg_client' + i + '"></div>';
+				code += '</td>';
+				code += '<td style="border: 0 none; vertical-align: top; padding-right: 0px;">';
+				code += '<input id="wg_client_save' + i + '" type="button" onclick="export_client_wg(' + i + ');" value="Сохранить в файл" class="btn btn-success" style="width: 160px;">';
+				code += '<span style="padding-left: 8px;" id="wg_client_file' + i + '"></span>'
+				code += '<pre style="margin-top: 8px; line-height: 1.2em; font-size: 12px;" id="wg_client_config' + i + '"></pre>';
+				code += '</td></tr>';
+				code += '</table>';
+
+				code += '</td>';
+				code += '<td style="display: none; border: 0 none">';
 				code += '</td>';
 				code += '</tr>';
 			}
