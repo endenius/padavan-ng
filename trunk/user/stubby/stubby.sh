@@ -62,7 +62,7 @@ check_config()
     fi
 
     # if no ipv6 - remove ipv6 listen address
-    if cat /proc/net/if_inet6 >/dev/null 2>&1; then
+    if [ -d /proc/sys/net/ipv6 ]; then
         sed -e '/0::1@/s/^#//' -i $STUBBY_CONFIG
     else
         sed -e '/^[^#].*0::1@/s/^/#/' -i $STUBBY_CONFIG
