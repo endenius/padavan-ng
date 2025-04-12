@@ -559,8 +559,7 @@ function wg_pubkey(key){
 	if (!login_safe())
 		return false;
 
-	var privkey = document.form.vpns_wg_private.value;
-	if (!privkey.lenght == 44) {
+	if (!document.form.vpns_wg_private.value.length == 44) {
 		document.form.vpns_wg_public.value = "";
 		return;
 	}
@@ -568,7 +567,7 @@ function wg_pubkey(key){
 	$j.post('/apply.cgi',
 	{
 		'action_mode': ' wg_pubkey ',
-		'privkey': privkey
+		'privkey': document.form.vpns_wg_private.value
 	},
 	function(response){
 		document.form.vpns_wg_public.value = response;
@@ -1074,12 +1073,6 @@ function getHash(){
                                     </td>
                                 </tr>
 
-                                <tr id="row_vpns_wg_ext_addr" style="display:none">
-                                    <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,1);"><#WG_External_address#>:</a></th>
-                                    <td>
-                                        <input type="text" maxlength="44" size="5" name="vpns_wg_ext_addr" class="input" value="<% nvram_get_x("", "vpns_wg_ext_addr"); %>"/>
-                                    </td>
-                                </tr>
                                 <tr id="row_vpns_wg_port" style="display:none">
                                     <th><#OVPN_Port#></th>
                                     <td>
@@ -1098,9 +1091,15 @@ function getHash(){
                                     <th><#WG_Public_key#>:</th>
                                     <td>
                                         <input readonly type="text" maxlength="44" size="5" name="vpns_wg_public" class="input" value="<% nvram_get_x("", "vpns_wg_public"); %>"/>
+                                        <input type="button" class="btn btn-mini" style="outline:0" onclick="document.form.vpns_wg_public.select(); document.execCommand('copy');" value="<#CTL_copy#>"/>
                                     </td>
                                 </tr>
-
+                                <tr id="row_vpns_wg_ext_addr" style="display:none">
+                                    <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,1);"><#WG_External_address#>:</a></th>
+                                    <td>
+                                        <input type="text" maxlength="44" size="5" name="vpns_wg_ext_addr" class="input" value="<% nvram_get_x("", "vpns_wg_ext_addr"); %>"/>
+                                    </td>
+                                </tr>
 
                                 <tr id="row_vpns_ov_mdig" style="display:none">
                                     <th><#VPNS_Auth#></th>

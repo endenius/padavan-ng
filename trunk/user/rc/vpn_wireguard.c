@@ -26,8 +26,6 @@
 
 #include "rc.h"
 
-
-
 int
 start_wireguard_server(void)
 {
@@ -37,6 +35,7 @@ start_wireguard_server(void)
 int
 start_wireguard_client(void)
 {
+    return doSystem("/usr/bin/wgc.sh %s", "start");
     return 1;
 }
 
@@ -49,18 +48,17 @@ stop_wireguard_server(void)
 void
 stop_wireguard_client(void)
 {
-
+    doSystem("/usr/bin/wgc.sh %s", "stop");
 }
 
 void
 restart_wireguard_client(void)
 {
-
+    doSystem("/usr/bin/wgc.sh %s", "restart");
 }
 
 void
 restart_wireguard_server(void)
 {
-    stop_wireguard_server();
-    start_wireguard_server();
+    doSystem("/usr/bin/wgs.sh %s", "restart");
 }

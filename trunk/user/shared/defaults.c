@@ -784,6 +784,15 @@ struct nvram_pair router_defaults[] = {
 	{ "vpns_wg_private", "" },
 	{ "vpns_wg_public", "" },
 	{ "vpns_wg_ext_addr", "" },
+	{ "vpnc_wg_if_addr", "" },
+	{ "vpnc_wg_if_private", "" },
+	{ "vpnc_wg_if_public", "" },
+	{ "vpnc_wg_if_dns", "" },
+	{ "vpnc_wg_if_mtu", "" },
+	{ "vpnc_wg_peer_public", "" },
+	{ "vpnc_wg_peer_endpoint", "" },
+	{ "vpnc_wg_peer_keepalive", "" },
+	{ "vpnc_wg_peer_allowedips", "" },
 
 	{ 0, 0 }
 };

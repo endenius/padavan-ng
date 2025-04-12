@@ -127,7 +127,9 @@ function validForm(){
 	if (!document.form.vpnc_enable[0].checked)
 		return true;
 
-	if(document.form.vpnc_peer.value.length < 4){
+	var mode = document.form.vpnc_type.value;
+
+	if((mode != "3") && document.form.vpnc_peer.value.length < 4){
 		alert("Remote host is invalid!");
 		document.form.vpnc_peer.focus();
 		return false;
@@ -136,7 +138,6 @@ function validForm(){
 	if(!validate_string(document.form.vpnc_peer))
 		return false;
 
-	var mode = document.form.vpnc_type.value;
 	if (mode == "2") {
 		if(!validate_range(document.form.vpnc_ov_port, 1, 65535))
 			return false;
@@ -190,7 +191,7 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_pppd', !is_ov && !is_wg);
 	showhide_div('row_vpnc_mtu', !is_ov && !is_wg);
 	showhide_div('row_vpnc_mru', !is_ov && !is_wg);
-	showhide_div('tbl_vpnc_route', !is_ov && !is_wg);
+	showhide_div('tbl_vpnc_route', !is_ov);
 
 	showhide_div('row_vpnc_ov_port', is_ov);
 	showhide_div('row_vpnc_ov_prot', is_ov);
@@ -206,6 +207,10 @@ function change_vpnc_type() {
 	showhide_div('certs_hint', (is_ov && !openvpn_cli_cert_found()) ? 1 : 0);
 
 	textarea_ovpn_enabled(is_ov);
+
+	showhide_div('vpnc_get_dns', !is_wg);
+	showhide_div('row_vpnc_wg', is_wg);
+	showhide_div('vpnc_peer_row', !is_wg);
 
 	if (is_ov) {
 		change_vpnc_ov_auth();
@@ -267,6 +272,98 @@ function getHash(){
 			return curHash;
 	}
 	return ('#'+arrHashes[0]);
+}
+
+function wg_pubkey(){
+        if (!login_safe())
+                return false;
+
+        if (document.form.vpnc_wg_if_private.value.length != 44) {
+                document.form.vpnc_wg_if_public.value = "";
+                return;
+        }
+
+        $j.post('/apply.cgi',
+        {
+                'action_mode': ' wg_pubkey ',
+                'privkey': document.form.vpnc_wg_if_private.value
+        },
+        function(response){
+                document.form.vpnc_wg_if_public.value = response;
+        });
+}
+
+function wg_genkey(){
+	if (!login_safe())
+		return false;
+
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' wg_genkey '
+	},
+	function(response){
+		document.form.vpnc_wg_if_private.value = response;
+
+		$j.post('/apply.cgi',
+		{
+			'action_mode': ' wg_pubkey ',
+			'privkey': document.form.vpnc_wg_if_private.value
+		},
+		function(response){
+			document.form.vpnc_wg_if_public.value = response;
+		});
+	});
+}
+
+function wg_conf_import() {
+	const fileInput = document.getElementById('fileInput');
+	const file = fileInput.files[0];
+
+	if (!file) {
+		alert('Select file');
+		return;
+	}
+
+	if( fileInput.files[0].size > 1024) {
+		alert("File is too big");
+		return;
+	}
+
+	const reader = new FileReader();
+
+	reader.onload = function(e) {
+		const content = e.target.result;
+		var settings = {};
+
+		const lines = content.split('\n');
+		lines.forEach(line => {
+			line = line.trim();
+			if (!line || line.startsWith('#')) return;
+
+			const separatorIndex = line.indexOf('=');
+			if (separatorIndex > 0) {
+				const key = line.substring(0, separatorIndex).trim().toLowerCase();
+				const value = line.substring(separatorIndex + 1).trim();
+				settings[key] = value;
+			}
+		});
+
+		document.form.vpnc_wg_if_addr.value = "";
+		document.form.vpnc_wg_if_private.value = "";
+		document.form.vpnc_wg_peer_public.value = "";
+		document.form.vpnc_wg_peer_endpoint.value = "";
+		document.form.vpnc_wg_peer_keepalive.value = "";
+		document.form.vpnc_wg_peer_allowedips.value = "";
+
+		if (settings.address) document.form.vpnc_wg_if_addr.value = settings.address;
+		if (settings.privatekey) document.form.vpnc_wg_if_private.value = settings.privatekey;
+		wg_pubkey();
+		if (settings.publickey) document.form.vpnc_wg_peer_public.value = settings.publickey;
+		if (settings.endpoint) document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
+		if (settings.persistentkeepalive) document.form.vpnc_wg_peer_keepalive.value = settings.persistentkeepalive;
+		if (settings.allowedips) document.form.vpnc_wg_peer_allowedips.value = settings.allowedips;
+	};
+	reader.readAsText(file);
 }
 
 </script>
@@ -375,14 +472,12 @@ function getHash(){
                                             <option value="0" <% nvram_match_x("", "vpnc_type", "0","selected"); %>>PPTP</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                             <option value="2" <% nvram_match_x("", "vpnc_type", "2","selected"); %>>OpenVPN</option>
-<!--
                                             <option value="3" <% nvram_match_x("", "vpnc_type", "3","selected"); %>>Wireguard</option>
--->
                                         </select>
                                         <span id="certs_hint" style="display:none" class="label label-warning"><#OVPN_Hint#></span>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="vpnc_peer_row">
                                     <th><#VPNC_Peer#></th>
                                     <td>
                                         <input type="text" name="vpnc_peer" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_peer"); %>" onKeyPress="return is_string(this,event);"/>
@@ -396,6 +491,77 @@ function getHash(){
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_wg" style="display:none">
+                                    <td colspan="2" style="padding: 0px; padding: 0px; border: 0 none;">
+                                        <table width="100%" style="margin-bottom: 10px;">
+                                            <tr>
+                                                <th width="50%" style="padding-bottom: 12px;"><#VPNC_WG_ImportConf#>:</th>
+                                                <td style="padding-bottom: 12px;">
+                                                    <input type="file" id="fileInput" accept=".txt,.conf" name="vpnc_wg_import" onChange="wg_conf_import();" onclick="this.value=''">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="2" style="background-color: #E3E3E3;"><#t2IF#></th>
+                                            </tr>
+                                            <tr>
+                                                <th width="50%"><#VPNC_WG_Addresses#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_if_addr" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_if_addr"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#WG_Private_key#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_if_private" class="input" oninput="wg_pubkey();" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_if_private"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genkey();" value="<#CTL_refresh#>"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#WG_Public_key#>:</th>
+                                                <td>
+                                                    <input readonly type="text" name="vpnc_wg_if_public" class="input" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_if_public"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input type="button" class="btn btn-mini" style="outline:0" onclick="document.form.vpnc_wg_if_public.select(); document.execCommand('copy');" value="<#CTL_copy#>"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#PPPConnection_x_WANDNSServer_itemname#></th>
+                                                <td>
+                                                    <input readonly type="text" name="vpnc_wg_if_dns" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_if_dns"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table width="100%" style="margin-bottom: -8px;">
+                                            <tr>
+                                                <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_WG_Peer#></th>
+                                            </tr>
+                                            <tr>
+                                                <th width="50%"><#WG_Public_key#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_peer_public" class="input" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_public"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#VPNC_WG_EndPoint#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_peer_endpoint" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_endpoint"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#VPNC_WG_KeepAlive#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_peer_keepalive" class="input" maxlength="3" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_keepalive"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#VPNC_WG_AllowedIPS#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_peer_allowedips" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_allowedips"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
                                 <tr id="row_vpnc_ov_prot" style="display:none">
                                     <th><#OVPN_Prot#></th>
                                     <td>
@@ -582,7 +748,7 @@ function getHash(){
                                         </select>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="vpnc_get_dns">
                                     <th><#VPNC_PDNS#></th>
                                     <td>
                                         <select name="vpnc_pdns" class="input">

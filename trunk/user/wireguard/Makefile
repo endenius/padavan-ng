@@ -5,7 +5,6 @@ SRC_URL = https://git.zx2c4.com/wireguard-tools/snapshot/$(SRC_NAME).tar.xz
 
 CFLAGS +=$(COPT) -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS += -Wl,--gc-sections
-#LDFLAGS += -Wl,--gc-sections,-rpath-link,$(STAGEDIR)/lib -lcrypto -lssl
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/src
@@ -39,4 +38,5 @@ clean:
 romfs:
 	$(ROMFSINST) $(SRC_NAME)/src/wg /usr/sbin/wg
 	$(ROMFSINST) /usr/bin/wgs.sh
+	$(ROMFSINST) /usr/bin/wgc.sh
 	$(ROMFSINST) /usr/bin/wg-json.sh

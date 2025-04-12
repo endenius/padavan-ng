@@ -629,7 +629,16 @@
 			{"vpns_wg_port", "", NULL, EVM_RESTART_VPNSVR},
 			{"vpns_wg_private", "", NULL, EVM_RESTART_VPNSVR},
 			{"vpns_wg_public", "", NULL, EVM_RESTART_VPNSVR},
-			{"vpns_wg_ext_addr", "", NULL, EVM_RESTART_VPNSVR},
+			{"vpns_wg_ext_addr", "", NULL, EVM_BLOCK_UNSAFE},
+			{"vpnc_wg_if_addr", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_if_private", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_if_public", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_if_dns", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_if_mtu", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_peer_public", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_peer_endpoint", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_peer_keepalive", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_peer_allowedips", "", NULL, EVM_RESTART_VPNCLI},
 #endif
 #if defined(APP_OPENVPN)
 			{"vpns_ov_mode", "", NULL, EVM_RESTART_VPNSVR},

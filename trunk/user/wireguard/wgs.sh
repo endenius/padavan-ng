@@ -4,14 +4,14 @@ set -o pipefail
 
 ###
 
-PRIVATE=$(nvram get vpns_wg_private)
-if [ ! "$PRIVATE" ]; then
-    PRIVATE="$(wg genkey)"
-    nvram set vpns_wg_private="$PRIVATE"
-    nvram set vpns_wg_public="$(echo $PRIVATE | wg pubkey)"
-    nvram commit
-fi
-WAN=$(nvram get wan_ifname)
+IF_NAME="wg1"
+IF_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
+PORT="$(nvram get vpns_wg_port)"
+
+# lan addr is used to access the router's dns (ex. DoT/DoH)
+LAN_ADDR=$(nvram get lan_ipaddr)
+
+WAN_NAME=$(nvram get wan_ifname)
 if [ "$(nvram get vpns_wg_ext_addr)" ]; then
     WAN_ADDR="$(nvram get vpns_wg_ext_addr)"
 elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
@@ -19,25 +19,20 @@ elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
 else
     WAN_ADDR=$(nvram get wan0_ipaddr)
 fi
-# lan addr is used to access the router's dns (ex. DoT/DoH)
-LAN_ADDR=$(nvram get lan_ipaddr)
-IFACE="wg1"
-IFACE_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
-PORT="$(nvram get vpns_wg_port)"
+
+IF_PRIVATE=$(nvram get vpns_wg_private)
+if [ ! "$IF_PRIVATE" ]; then
+    IF_PRIVATE="$(wg genkey)"
+    nvram set vpns_wg_private="$IF_PRIVATE"
+    nvram set vpns_wg_public="$(echo $IF_PRIVATE | wg pubkey)"
+    nvram commit
+fi
+
 EXPORT_CONF="/tmp/client-wg.conf"
 LEASES_FILE="/tmp/vpns.leases"
+POST_SCRIPT="/etc/storage/wireguard_server_script.sh"
 
 ###
-
-FW_RULES() ( echo "
-$1 INPUT -i ${WAN} -p udp -m udp --dport ${PORT} -j ACCEPT
-$1 INPUT -i ${IFACE} -j ACCEPT
-$1 FORWARD -i ${IFACE} -j ACCEPT
-")
-
-FW_NAT_RULES()( echo "
-$1 POSTROUTING -s ${IFACE_ADDR}/24 -o ${WAN} -j MASQUERADE
-")
 
 log()
 {
@@ -60,7 +55,7 @@ die()
 
 is_started()
 {
-    ip link show ${IFACE} >/dev/null 2>&1
+    ip link show ${IF_NAME} >/dev/null 2>&1
     return $?
 }
 
@@ -120,17 +115,17 @@ wg_setconf()
 
     [ "$nvram_modified" ] && nvram commit
 
-    cat > "/tmp/${IFACE}.conf.$$" <<EOF
+    cat > "/tmp/${IF_NAME}.conf.$$" <<EOF
 [Interface]
 ListenPort=${PORT}
-PrivateKey=${PRIVATE}
+PrivateKey=${IF_PRIVATE}
 $peers
 EOF
 
-    local res=$(wg setconf ${IFACE} "/tmp/${IFACE}.conf.$$" 2>&1)
-    rm -f "/tmp/${IFACE}.conf.$$"
+    local res=$(wg setconf ${IF_NAME} "/tmp/${IF_NAME}.conf.$$" 2>&1)
+    rm -f "/tmp/${IF_NAME}.conf.$$"
     if ! echo $res | grep -q "error"; then
-        log "${IFACE} configuration applied successfully, clients count: $(wg show ${IFACE} | grep 'peer:' | wc -l)"
+        log "configuration ${IF_NAME} applied successfully, client count: $(wg show ${IF_NAME} peers | wc -l)"
     else
         log "$res"
         return 1
@@ -145,33 +140,10 @@ wg_prepare()
     echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
 }
 
-wg_fw()
-{
-    iptables-restore -n 2>/dev/null <<EOF
-*filter
-$(FW_RULES $1)
-COMMIT
-*nat
-$(FW_NAT_RULES $1)
-COMMIT
-EOF
-}
-
-wg_fw_stop()
-{
-    wg_fw -D
-}
-
-wg_fw_start()
-{
-    wg_fw -A
-}
-
 wg_stop()
 {
-    wg_fw_stop
     if is_started; then
-        ip link del ${IFACE} >/dev/null 2>&1 && log "stopped"
+        ip link del ${IF_NAME} >/dev/null 2>&1 && log "stopped"
     fi
 }
 
@@ -182,20 +154,19 @@ wg_start()
     is_started && die "already started"
     wg_prepare
 
-    ip link add dev ${IFACE} type wireguard || die
-    ip addr add ${IFACE_ADDR}/24 dev ${IFACE}
-    ip link set dev ${IFACE} mtu 1420
+    ip link add dev ${IF_NAME} type wireguard || error "cannot create $IF_NAME"
+    ip addr add ${IF_ADDR}/24 dev ${IF_NAME}
+    ip link set dev ${IF_NAME} mtu 1420
 
-    if ip link set ${IFACE} up; then
-        log "started, interface: ${IFACE}, address: ${IFACE_ADDR}:${PORT}"
+    if ip link set ${IF_NAME} up; then
+        log "server started, interface: ${IF_NAME}, address: ${IF_ADDR}:${PORT}"
     else
-        ip link del ${IFACE} >/dev/null 2>&1
-        die "${IFACE} startup failed"
+        ip link del ${IF_NAME} >/dev/null 2>&1
+        die "${IF_NAME} startup failed"
     fi
 
-    wg_fw_start
-    wg_setconf && wg show ${IFACE} allowed-ips | awk '$3 {print $3}' | while read ip; do
-        ip route add $ip dev $IFACE
+    wg_setconf && wg show ${IF_NAME} allowed-ips | awk '$3 {print $3}' | while read ip; do
+        ip route add $ip dev $IF_NAME
     done
 }
 
@@ -220,7 +191,7 @@ wg_addclient()
         [ "$(nvram get vpns_user_x$i)" == "$name" ] && die "already exist"
     done
 
-    addr="$(echo $IFACE_ADDR | sed 's/\.1$//').$free_num"
+    addr="$(echo $IF_ADDR | sed 's/\.1$//').$free_num"
     key=$(wg genkey)
 
     nvram set vpns_user_x$max=$name
@@ -232,6 +203,8 @@ wg_addclient()
     nvram set vpns_num_x=$((max+1))
     nvram commit
 
+    wg_setconf || return
+
     read -r -d '' config <<EOF
 [Interface]
 PrivateKey = $key
@@ -239,12 +212,11 @@ Address = $addr
 DNS = $LAN_ADDR
 
 [Peer]
-PublicKey = $(echo $PRIVATE | wg pubkey)
+PublicKey = $(echo $IF_PRIVATE | wg pubkey)
 Endpoint = ${WAN_ADDR}:${PORT}
-PersistentKeepalive = 20
+PersistentKeepalive = 11
 AllowedIPs = 0.0.0.0/0
 EOF
-    wg_setconf || return
 
     if [ -x /usr/bin/qrencode ]; then
         echo "$config" | qrencode -t UTF8
@@ -262,7 +234,7 @@ wg_listclients()
     max="$(nvram get vpns_num_x)"
     [ "$max" == "0" ] && return
 
-    peers=$(wg show ${IFACE} dump 2>/dev/null | awk '
+    peers=$(wg show ${IF_NAME} dump 2>/dev/null | awk '
         function bf(bytes){
             if (bytes >= 1024^4) printf "%.1fT", bytes/(1024^3)
             else if (bytes >= 1024^3) printf "%.1fG", bytes/(1024^3)
@@ -342,7 +314,7 @@ DNS = $LAN_ADDR
 [Peer]
 PublicKey = $(nvram get vpns_wg_public)
 Endpoint = ${WAN_ADDR}:${PORT}
-PersistentKeepalive = 20
+PersistentKeepalive = 11
 AllowedIPs = 0.0.0.0/0
 EOF
     done
@@ -389,3 +361,12 @@ case "$1" in
         exit 1
     ;;
 esac
+
+# IF_NAME
+# IF_ADDR
+# PORT
+# LAN_ADDR
+# WAN_NAME
+# WAN_ADDR
+
+[ -s "$POST_SCRIPT" -a -x "$POST_SCRIPT" ] && . "$POST_SCRIPT"
