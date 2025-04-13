@@ -138,7 +138,46 @@ function validForm(){
 	if(!validate_string(document.form.vpnc_peer))
 		return false;
 
-	if (mode == "2") {
+	if (mode == "3") {
+		if(!validate_range(document.form.vpnc_wg_peer_keepalive, 0, 65535))
+		return false;
+
+		if (document.form.vpnc_wg_if_addr.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.vpnc_wg_if_addr.focus();
+			document.form.vpnc_wg_if_addr.select();
+			return false;
+		}
+
+		if (document.form.vpnc_wg_if_private.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.vpnc_wg_if_private.focus();
+			document.form.vpnc_wg_if_private.select();
+			return false;
+		}
+
+		if (document.form.vpnc_wg_peer_public.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.vpnc_wg_peer_public.focus();
+			document.form.vpnc_wg_peer_public.select();
+			return false;
+		}
+
+		if (document.form.vpnc_wg_peer_endpoint.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.vpnc_wg_peer_endpoint.focus();
+			document.form.vpnc_wg_peer_endpoint.select();
+			return false;
+		}
+
+		if (document.form.vpnc_wg_peer_allowedips.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.vpnc_wg_peer_allowedips.focus();
+			document.form.vpnc_wg_peer_allowedips.select();
+			return false;
+		}
+	}
+	else if (mode == "2") {
 		if(!validate_range(document.form.vpnc_ov_port, 1, 65535))
 			return false;
 	}
@@ -191,7 +230,7 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_pppd', !is_ov && !is_wg);
 	showhide_div('row_vpnc_mtu', !is_ov && !is_wg);
 	showhide_div('row_vpnc_mru', !is_ov && !is_wg);
-	showhide_div('tbl_vpnc_route', !is_ov);
+	showhide_div('tbl_vpnc_route', !is_ov && !is_wg);
 
 	showhide_div('row_vpnc_ov_port', is_ov);
 	showhide_div('row_vpnc_ov_prot', is_ov);
@@ -212,6 +251,8 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_wg', is_wg);
 	showhide_div('vpnc_peer_row', !is_wg);
 
+	change_vpnc_dgw();
+
 	if (is_ov) {
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
@@ -225,6 +266,15 @@ function change_vpnc_type() {
 	}
 
 	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
+}
+
+function change_vpnc_dgw() {
+	var mode = document.form.vpnc_type.value;
+	var dgw = document.form.vpnc_dgw.value;
+	if (mode == "3" && dgw == "0") {
+		showhide_div('row_vpnc_remote_network', 1);
+	} else
+		showhide_div('row_vpnc_remote_network', 0);
 }
 
 function change_vpnc_ov_auth() {
@@ -549,13 +599,15 @@ function wg_conf_import() {
                                             <tr>
                                                 <th><#VPNC_WG_KeepAlive#>:</th>
                                                 <td>
-                                                    <input type="text" name="vpnc_wg_peer_keepalive" class="input" maxlength="3" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_keepalive"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input type="text" name="vpnc_wg_peer_keepalive" class="input" maxlength="5" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_keepalive"); %>" onKeyPress="return is_number(this,event);"/>
+                                                    &nbsp;<span style="color:#888;">[ 0..65535 ]</span>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <th><#VPNC_WG_AllowedIPS#>:</th>
                                                 <td>
                                                     <input type="text" name="vpnc_wg_peer_allowedips" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_allowedips"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    &nbsp;<span style="color:#888;">[ 0.0.0.0/0 ]</span>
                                                 </td>
                                             </tr>
                                         </table>
@@ -761,17 +813,25 @@ function wg_conf_import() {
                                 <tr>
                                     <th><#VPNC_DGW#></th>
                                     <td>
-                                        <select name="vpnc_dgw" class="input">
+                                        <select name="vpnc_dgw" class="input" onchange="change_vpnc_dgw();">
                                             <option value="0" <% nvram_match_x("", "vpnc_dgw", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_dgw", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_remote_network" style="display: none">
+                                    <td colspan="2"">
+                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#></span></a>
+                                        <div id="spoiler_vpnc_remote_network" style="display: none">
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="2048" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="padding-bottom: 0px;">
                                         <a href="javascript:spoiler_toggle('spoiler_script')"><span><#RunPostVPNC#></span></a>
                                         <div id="spoiler_script" style="display:none;">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_server_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpnc_server_script.sh",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_server_script.sh" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_server_script.sh",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>

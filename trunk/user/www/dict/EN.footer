@@ -1773,4 +1773,5 @@ VPNC_WG_AllowedIPS=Allowed IPs
 VPNC_WG_Peer=Peer
 VPNC_WG_ImportConf=Import configuration
 CTL_copy=Copy
+VPNC_RNet_List=List of remote subnets behind the VPN server
 #Device_type_04_NAS=

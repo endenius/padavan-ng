@@ -10,6 +10,7 @@ PEER_ENDPOINT=$(nvram get vpnc_wg_peer_endpoint)
 PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
 PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips)
 POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
+NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
 ###
 
@@ -87,7 +88,7 @@ start_wg()
     ip link set dev $IF_NAME mtu 1420
 
     for i in $(echo "$IF_ADDR" | tr ',' '\n'); do
-        ip addr add $i dev $IF_NAME || log "error: cannot set $IF_NAME address $i"
+        ip addr add $i dev $IF_NAME || log "warning: cannot set $IF_NAME address $i"
     done
 
     local if_ip=$(ip addr show dev $IF_NAME | awk '/inet /{print $2}')
@@ -110,13 +111,11 @@ start_wg()
         done
         ip route add 0.0.0.0/128.0.0.0 dev $IF_NAME metric 1
         ip route add 128.0.0.0/128.0.0.0 dev $IF_NAME metric 1
-    fi
-
-    local vpnc_rnet=$(nvram get vpnc_rnet)
-    local vpnc_rmsk=$(nvram get vpnc_rmsk)
-
-    if [ "$vpnc_rnet" -a "$vpnc_rmsk" ]; then
-        ip route add $vpnc_rnet/$vpnc_rmsk dev $IF_NAME metric 1
+        log "default route set"
+    else
+        [ -s $NETWORK_LIST ] && while read i; do
+            ip route add $i dev $IF_NAME metric 1 || log "warning: unable to add route to $i"
+        done < $NETWORK_LIST
     fi
 }
 
@@ -126,7 +125,7 @@ stop_wg()
         for i in $(wg show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
             ip route del $(ip route get $i \
                 | sed '/ via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/{s/^\(.* via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*/\1/}' \
-                | head -n 1)
+                | head -n 1) 2>/dev/null
         done
         ip link set $IF_NAME down
         ip link del dev $IF_NAME

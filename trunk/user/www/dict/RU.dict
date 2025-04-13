@@ -1780,6 +1780,7 @@ VPNC_WG_AllowedIPS=Разрешённые IP
 VPNC_WG_Peer=Пир
 VPNC_WG_ImportConf=Импорт конфигурации
 CTL_copy=Копировать
+VPNC_RNet_List=Список удалённых подсетей за VPN-сервером
 #Device_type_04_NAS=
 #WLANConfig11b_x_rt_airtimefairness=
 #WLANConfig11b_x_turbo_qam=
