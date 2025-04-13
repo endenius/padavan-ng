@@ -32,18 +32,24 @@ start_wireguard_server(void)
     return doSystem("/usr/bin/wgs.sh %s", "start");
 }
 
-int
-start_wireguard_client(void)
-{
-    return doSystem("/usr/bin/wgc.sh %s", "start");
-    return 1;
-}
-
 void
 stop_wireguard_server(void)
 {
     doSystem("/usr/bin/wgs.sh %s", "stop");
 }
+
+void
+restart_wireguard_server(void)
+{
+    doSystem("/usr/bin/wgs.sh %s", "restart");
+}
+
+int
+start_wireguard_client(void)
+{
+    return doSystem("/usr/bin/wgc.sh %s", "start");
+}
+
 
 void
 stop_wireguard_client(void)
@@ -55,10 +61,4 @@ void
 restart_wireguard_client(void)
 {
     doSystem("/usr/bin/wgc.sh %s", "restart");
-}
-
-void
-restart_wireguard_server(void)
-{
-    doSystem("/usr/bin/wgs.sh %s", "restart");
 }
