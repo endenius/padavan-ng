@@ -2,6 +2,7 @@
 
 ###
 
+WG="wg"
 IF_NAME="wg0"
 IF_ADDR=$(nvram get vpnc_wg_if_addr)
 IF_PRIVATE=$(nvram get vpnc_wg_if_private)
@@ -62,11 +63,11 @@ PersistentKeepalive = $PEER_KEEPALIVE
 AllowedIPs = $PEER_ALLOWEDIPS
 EOF
 
-    local res=$(wg setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
+    local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
-        wg show $IF_NAME | grep -A 5 "peer:" | while read i; do
+        $WG show $IF_NAME | grep -A 5 "peer:" | while read i; do
             log "  $i"
         done
     else
@@ -92,7 +93,7 @@ start_wg()
     done
 
     local if_ip=$(ip addr show dev $IF_NAME | awk '/inet /{print $2}')
-    [ ! "$if_ip" ] && error "$IF_NAME interface address not set"
+    [ "$if_ip" ] || error "$IF_NAME interface address not set"
 
     setconf_wg || die
 
@@ -104,7 +105,7 @@ start_wg()
 
     if [ "$(nvram get vpnc_dgw)" == "1" ]; then
         # default wg enable
-        for i in $(wg show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
+        for i in $($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
             ip route add $(ip route get $i \
                 | sed '/ via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/{s/^\(.* via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*/\1/}' \
                 | head -n 1) metric 1
@@ -117,12 +118,17 @@ start_wg()
             ip route add $i dev $IF_NAME metric 1 || log "warning: unable to add route to $i"
         done < $NETWORK_LIST
     fi
+
+    $WG show $IF_NAME allowed-ips | awk '{ for (i=2; i<=NF; i++) print $i }' | while read i; do
+        echo $i | grep -qE ":|0\.0\.0\.0\/0" && continue
+        ip route add $i dev $IF_NAME 2> /dev/null
+    done
 }
 
 stop_wg()
 {
     if is_started; then
-        for i in $(wg show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
+        for i in $($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
             ip route del $(ip route get $i \
                 | sed '/ via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/{s/^\(.* via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*/\1/}' \
                 | head -n 1) 2>/dev/null

@@ -4,6 +4,7 @@ set -o pipefail
 
 ###
 
+WG="wg"
 IF_NAME="wg1"
 IF_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
 PORT="$(nvram get vpns_wg_port)"
@@ -22,9 +23,9 @@ fi
 
 IF_PRIVATE=$(nvram get vpns_wg_private)
 if [ ! "$IF_PRIVATE" ]; then
-    IF_PRIVATE="$(wg genkey)"
+    IF_PRIVATE="$($WG genkey)"
     nvram set vpns_wg_private="$IF_PRIVATE"
-    nvram set vpns_wg_public="$(echo $IF_PRIVATE | wg pubkey)"
+    nvram set vpns_wg_public="$(echo $IF_PRIVATE | $WG pubkey)"
     nvram commit
 fi
 
@@ -90,7 +91,7 @@ wg_setconf()
 
     max="$(nvram get vpns_num_x)"
     for i in $(seq 0 $((max-1))); do
-        pass=$(nvram get vpns_pass_x$i | wg pubkey 2>/dev/null)
+        pass=$(nvram get vpns_pass_x$i | $WG pubkey 2>/dev/null)
         [ "$pass" ] || continue
         if [ ! "$(nvram get vpns_public_x$i)" == "$pass" ]; then
         # save public keys to speed up creation of leases
@@ -122,10 +123,10 @@ PrivateKey=${IF_PRIVATE}
 $peers
 EOF
 
-    local res=$(wg setconf ${IF_NAME} "/tmp/${IF_NAME}.conf.$$" 2>&1)
+    local res=$($WG setconf ${IF_NAME} "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"
     if ! echo $res | grep -q "error"; then
-        log "configuration ${IF_NAME} applied successfully, client count: $(wg show ${IF_NAME} peers | wc -l)"
+        log "configuration ${IF_NAME} applied successfully, client count: $($WG show ${IF_NAME} peers | wc -l)"
     else
         log "$res"
         return 1
@@ -154,19 +155,24 @@ wg_start()
     is_started && die "already started"
     wg_prepare
 
-    ip link add dev ${IF_NAME} type wireguard || error "cannot create $IF_NAME"
-    ip addr add ${IF_ADDR}/24 dev ${IF_NAME}
-    ip link set dev ${IF_NAME} mtu 1420
+    ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
+    ip link set dev $IF_NAME mtu 1420
+    ip addr add ${IF_ADDR}/24 dev $IF_NAME
 
-    if ip link set ${IF_NAME} up; then
+    local if_ip=$(ip addr show dev $IF_NAME | awk '/inet /{print $2}')
+    [ "$if_ip" ] || error "$IF_NAME interface address not set"
+
+    wg_setconf || die
+
+    if ip link set $IF_NAME up; then
         log "server started, interface: ${IF_NAME}, address: ${IF_ADDR}:${PORT}"
     else
-        ip link del ${IF_NAME} >/dev/null 2>&1
-        die "${IF_NAME} startup failed"
+        ip link del $IF_NAME >/dev/null 2>&1
+        die "$IF_NAME startup failed"
     fi
 
-    wg_setconf && wg show ${IF_NAME} allowed-ips | awk '$3 {print $3}' | while read ip; do
-        ip route add $ip dev $IF_NAME
+    $WG show $IF_NAME allowed-ips | awk '$3 {print $3}' | while read i; do
+        ip route add $i dev $IF_NAME metric 1 || log "warning: unable to add route to $i"
     done
 }
 
@@ -192,11 +198,11 @@ wg_addclient()
     done
 
     addr="$(echo $IF_ADDR | sed 's/\.1$//').$free_num"
-    key=$(wg genkey)
+    key=$($WG genkey)
 
     nvram set vpns_user_x$max=$name
     nvram set vpns_pass_x$max=$key
-    nvram set vpns_public_x$max=$(echo $key | wg pubkey)
+    nvram set vpns_public_x$max=$(echo $key | $WG pubkey)
     nvram set vpns_addr_x$max=$free_num
     nvram set vpns_rnet_x$max=""
     nvram set vpns_rmsk_x$max=""
@@ -212,7 +218,7 @@ Address = $addr
 DNS = $LAN_ADDR
 
 [Peer]
-PublicKey = $(echo $IF_PRIVATE | wg pubkey)
+PublicKey = $(echo $IF_PRIVATE | $WG pubkey)
 Endpoint = ${WAN_ADDR}:${PORT}
 PersistentKeepalive = 11
 AllowedIPs = 0.0.0.0/0
@@ -234,7 +240,7 @@ wg_listclients()
     max="$(nvram get vpns_num_x)"
     [ "$max" == "0" ] && return
 
-    peers=$(wg show ${IF_NAME} dump 2>/dev/null | awk '
+    peers=$($WG show ${IF_NAME} dump 2>/dev/null | awk '
         function bf(bytes){
             if (bytes >= 1024^4) printf "%.1fT", bytes/(1024^3)
             else if (bytes >= 1024^3) printf "%.1fG", bytes/(1024^3)
