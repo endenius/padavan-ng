@@ -3091,6 +3091,28 @@ apply_cgi(const char *url, webs_t wp)
 		websWrite(wp, key);
 		return 0;
 	}
+	else if (!strcmp(value, " wg_genpsk "))
+	{
+		char key[64] = {0};
+#if defined(APP_WIREGUARD)
+		if (get_login_safe())
+		{
+			FILE *fp;
+			fp = popen("/usr/sbin/wg genpsk", "r");
+			if (fp == NULL) {
+				return 1;
+			}
+
+			if (fgets(key, sizeof(key), fp) == NULL) {
+				pclose(fp);
+				return 1;
+			}
+			pclose(fp);
+		}
+#endif
+		websWrite(wp, key);
+		return 0;
+	}
 	else if (!strcmp(value, " wg_pubkey "))
 	{
 		char key[64] = {0};

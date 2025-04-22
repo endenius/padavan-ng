@@ -6,6 +6,7 @@ WG="wg"
 IF_NAME="wg0"
 IF_ADDR=$(nvram get vpnc_wg_if_addr)
 IF_PRIVATE=$(nvram get vpnc_wg_if_private)
+IF_PRESHARED=$(nvram get vpnc_wg_if_preshared)
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
 PEER_ENDPOINT=$(nvram get vpnc_wg_peer_endpoint)
 PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
@@ -62,6 +63,7 @@ Endpoint = $PEER_ENDPOINT
 PersistentKeepalive = $PEER_KEEPALIVE
 AllowedIPs = $PEER_ALLOWEDIPS
 EOF
+    [ "$IF_PRESHARED" ] && echo "PresharedKey = $IF_PRESHARED" >> "/tmp/${IF_NAME}.conf.$$"
 
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"

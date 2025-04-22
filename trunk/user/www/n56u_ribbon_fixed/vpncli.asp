@@ -365,6 +365,19 @@ function wg_genkey(){
 	});
 }
 
+function wg_genpsk(){
+	if (!login_safe())
+		return false;
+
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' wg_genpsk '
+	},
+	function(response){
+		document.form.vpnc_wg_if_preshared.value = response;
+	});
+}
+
 function wg_conf_import() {
 	const fileInput = document.getElementById('fileInput');
 	const file = fileInput.files[0];
@@ -400,6 +413,7 @@ function wg_conf_import() {
 
 		document.form.vpnc_wg_if_addr.value = "";
 		document.form.vpnc_wg_if_private.value = "";
+		document.form.vpnc_wg_if_preshared.value = "";
 		document.form.vpnc_wg_peer_public.value = "";
 		document.form.vpnc_wg_peer_endpoint.value = "";
 		document.form.vpnc_wg_peer_keepalive.value = "";
@@ -407,6 +421,7 @@ function wg_conf_import() {
 
 		if (settings.address) document.form.vpnc_wg_if_addr.value = settings.address;
 		if (settings.privatekey) document.form.vpnc_wg_if_private.value = settings.privatekey;
+		if (settings.presharedkey) document.form.vpnc_wg_if_preshared.value = settings.presharedkey;
 		wg_pubkey();
 		if (settings.publickey) document.form.vpnc_wg_peer_public.value = settings.publickey;
 		if (settings.endpoint) document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
@@ -573,6 +588,15 @@ function wg_conf_import() {
                                                     <input type="button" class="btn btn-mini" style="outline:0" onclick="document.form.vpnc_wg_if_public.select(); document.execCommand('copy');" value="<#CTL_copy#>"/>
                                                 </td>
                                             </tr>
+
+                                            <tr>
+                                                <th><#WG_Preshared_key#>:</th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_if_preshared" class="input" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_if_preshared"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genpsk();" value="<#CTL_refresh#>"/>
+                                                </td>
+                                            </tr>
+
                                             <tr>
                                                 <th><#PPPConnection_x_WANDNSServer_itemname#></th>
                                                 <td>

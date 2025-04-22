@@ -632,6 +632,7 @@
 			{"vpns_wg_ext_addr", "", NULL, EVM_BLOCK_UNSAFE},
 			{"vpnc_wg_if_addr", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_if_private", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_if_preshared", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_if_public", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_if_dns", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_if_mtu", "", NULL, EVM_RESTART_VPNCLI},

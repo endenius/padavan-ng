@@ -1759,6 +1759,7 @@ wsc_mode_hint2=, to modify it then enable WPS.
 yoursharesetting=Your Share Folder Setting:
 WG_External_address=External address
 WG_Private_key=Private key
+WG_Preshared_key=Preshared key
 WG_Public_key=Public key
 VPNS_Export_WG=Export
 JS_field_noletter=Only Latin characters, numbers, dashes, underscores, and periods are allowed
