@@ -1879,9 +1879,15 @@ ipt_nat_rules(char *man_if, char *man_ip,
 				} else
 #endif
 				{
-					if (i_vpns_vuse && (i_vpns_actl == 0 || i_vpns_actl == 1 || i_vpns_actl == 4))
+					if (i_vpns_vuse && (i_vpns_actl == 0 || i_vpns_actl == 1 || i_vpns_actl == 4)) {
+#if defined (APP_WIREGUARD)
+						if (vpnc_if && i_vpnc_type == 3) {
+							/* masquerade WG client connection for WG server clients */
+							include_masquerade(fp, vpnc_if, NULL, vpn_net);
+						}
+#endif
 						include_masquerade(fp, wan_if, wan_ip, vpn_net);
-					
+					}
 					/* masquerade VPN server clients to LAN */
 					if (i_vpns_vuse == 2)
 						include_masquerade(fp, lan_if, lan_ip, vpn_net);

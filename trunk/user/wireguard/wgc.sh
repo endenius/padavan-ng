@@ -94,7 +94,7 @@ start_wg()
         ip addr add $i dev $IF_NAME || log "warning: cannot set $IF_NAME address $i"
     done
 
-    local if_ip=$(ip addr show dev $IF_NAME | awk '/inet /{print $2}')
+    local if_ip=$(ip addr show dev $IF_NAME | awk '/inet/{print $2}')
     [ "$if_ip" ] || error "$IF_NAME interface address not set"
 
     setconf_wg || die

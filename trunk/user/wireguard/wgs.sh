@@ -159,7 +159,7 @@ wg_start()
     ip link set dev $IF_NAME mtu 1420
     ip addr add ${IF_ADDR}/24 dev $IF_NAME
 
-    local if_ip=$(ip addr show dev $IF_NAME | awk '/inet /{print $2}')
+    local if_ip=$(ip addr show dev $IF_NAME | awk '/inet/{print $2}')
     [ "$if_ip" ] || error "$IF_NAME interface address not set"
 
     wg_setconf || die
