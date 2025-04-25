@@ -5,6 +5,8 @@
 WG="wg"
 IF_NAME="wg0"
 IF_ADDR=$(nvram get vpnc_wg_if_addr)
+IF_MTU=$(nvram get vpnc_wg_if_mtu)
+[ "$IF_MTU" ] || IF_MTU=1420
 IF_PRIVATE=$(nvram get vpnc_wg_if_private)
 IF_PRESHARED=$(nvram get vpnc_wg_if_preshared)
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
@@ -13,6 +15,9 @@ PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
 PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips)
 POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
+
+FWMARK=51820
+WAN_ADDR=$(nvram get wan0_ipaddr)
 
 ###
 
@@ -88,10 +93,10 @@ start_wg()
     prepare_wg
 
     ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
-    ip link set dev $IF_NAME mtu 1420
+    ip link set dev $IF_NAME mtu $IF_MTU
 
     for i in $(echo "$IF_ADDR" | tr ',' '\n'); do
-        ip addr add $i dev $IF_NAME || log "warning: cannot set $IF_NAME address $i"
+        ip addr add $i dev $IF_NAME 2>/dev/null || log "warning: cannot set $IF_NAME address $i"
     done
 
     local if_ip=$(ip addr show dev $IF_NAME | awk '/inet/{print $2}')
@@ -105,38 +110,43 @@ start_wg()
         error "$IF_NAME startup failed"
     fi
 
+    ip route replace default dev $IF_NAME table $FWMARK || error "unable to add default to table $FWMARK"
+
     if [ "$(nvram get vpnc_dgw)" == "1" ]; then
         # default wg enable
-        for i in $($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
-            ip route add $(ip route get $i \
-                | sed '/ via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/{s/^\(.* via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*/\1/}' \
-                | head -n 1) metric 1
-        done
-        ip route add 0.0.0.0/128.0.0.0 dev $IF_NAME metric 1
-        ip route add 128.0.0.0/128.0.0.0 dev $IF_NAME metric 1
+        wg set $IF_NAME fwmark $FWMARK
+
+        ip rule add not fwmark $FWMARK table $FWMARK
+        ip rule add table main suppress_prefixlength 0 pref 32751
+        ip rule add from $WAN_ADDR lookup main
+
+        sysctl -q net.ipv4.conf.all.src_valid_mark=1
+
         log "default route set"
     else
         [ -s $NETWORK_LIST ] && while read i; do
-            ip route add $i dev $IF_NAME metric 1 || log "warning: unable to add route to $i"
+            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
         done < $NETWORK_LIST
-    fi
 
-    $WG show $IF_NAME allowed-ips | awk '{ for (i=2; i<=NF; i++) print $i }' | while read i; do
-        echo $i | grep -qE ":|0\.0\.0\.0\/0" && continue
-        ip route add $i dev $IF_NAME 2> /dev/null
-    done
+        $WG show $IF_NAME allowed-ips | awk '{ for (i=2; i<=NF; i++) print $i }' | while read i; do
+            echo $i | grep -qE "/0" && continue
+            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
+        done
+    fi
 }
 
 stop_wg()
 {
     if is_started; then
-        for i in $($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}'); do
-            ip route del $(ip route get $i \
-                | sed '/ via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/{s/^\(.* via [0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*/\1/}' \
-                | head -n 1) 2>/dev/null
-        done
+        ip route del default table $FWMARK 2>/dev/null
+        while ip rule del table $FWMARK 2>/dev/null; do true; done
+
+        ip rule del pref 32751 2>/dev/null
+        ip rule del from $WAN_ADDR lookup main 2>/dev/null
+
         ip link set $IF_NAME down
         ip link del dev $IF_NAME
+
         log "client stopped"
     fi
 }

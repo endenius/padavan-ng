@@ -7,6 +7,8 @@ set -o pipefail
 WG="wg"
 IF_NAME="wg1"
 IF_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
+IF_MTU=$(nvram get vpns_wg_mtu)
+[ "$IF_MTU" ] || IF_MTU=1420
 PORT="$(nvram get vpns_wg_port)"
 
 # lan addr is used to access the router's dns (ex. DoT/DoH)
@@ -156,7 +158,7 @@ wg_start()
     wg_prepare
 
     ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
-    ip link set dev $IF_NAME mtu 1420
+    ip link set dev $IF_NAME mtu $IF_MTU
     ip addr add ${IF_ADDR}/24 dev $IF_NAME
 
     local if_ip=$(ip addr show dev $IF_NAME | awk '/inet/{print $2}')
