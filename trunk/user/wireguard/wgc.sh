@@ -87,6 +87,8 @@ EOF
 
 start_wg()
 {
+    local i
+
     [ "$(nvram get vpnc_type)" == "3" -a "$(nvram get vpnc_enable)" == "1" ] || die "disabled"
     is_started && die "already started"
 
@@ -117,7 +119,7 @@ start_wg()
         wg set $IF_NAME fwmark $FWMARK
 
         ip rule add not fwmark $FWMARK table $FWMARK
-        ip rule add table main suppress_prefixlength 0 pref 32751
+        ip rule add table main suppress_prefixlength 0
         ip rule add from $WAN_ADDR lookup main
 
         sysctl -q net.ipv4.conf.all.src_valid_mark=1
@@ -137,11 +139,16 @@ start_wg()
 
 stop_wg()
 {
+    local i
+
     if is_started; then
         ip route del default table $FWMARK 2>/dev/null
         while ip rule del table $FWMARK 2>/dev/null; do true; done
 
-        ip rule del pref 32751 2>/dev/null
+        for i in $(ip rule show | awk -F: '/from all lookup main suppress_prefixlength 0/{print $1}'); do
+            ip rule del pref $i 2>/dev/null;
+        done
+
         ip rule del from $WAN_ADDR lookup main 2>/dev/null
 
         ip link set $IF_NAME down
