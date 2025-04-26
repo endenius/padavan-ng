@@ -1144,9 +1144,14 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			if (i_need_vpnlist) {
 				if (i_vpns_actl == 0 || i_vpns_actl == 1)
 					fprintf(fp, "-A %s -j %s\n", dtype, IPT_CHAIN_NAME_VPN_LIST);
-				else if (i_vpns_actl == 4)
+				else if (i_vpns_actl == 4) {
 					fprintf(fp, "-A %s -o %s -j %s\n", dtype, wan_if, IPT_CHAIN_NAME_VPN_LIST);
-				else
+#if defined (APP_WIREGUARD)
+					if (vpnc_if && i_vpnc_type == 3) {
+						fprintf(fp, "-A %s -o %s -j %s\n", dtype, IFNAME_CLIENT_WG, IPT_CHAIN_NAME_VPN_LIST);
+					}
+#endif
+				} else
 					fprintf(fp, "-A %s -o %s -j %s\n", dtype, lan_if, IPT_CHAIN_NAME_VPN_LIST);
 			}
 		}
