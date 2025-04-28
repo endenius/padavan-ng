@@ -90,6 +90,9 @@
 			{"vpns_addr_x", "3", NULL, FALSE},
 			{"vpns_rnet_x", "20", NULL, FALSE},
 			{"vpns_rmsk_x", "20", NULL, FALSE},
+#if defined(APP_WIREGUARD)
+			{"vpns_public_x", "44", NULL, FALSE},
+#endif
 			{0,0,0,0}
 		};
 
