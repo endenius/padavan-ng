@@ -138,9 +138,6 @@ EOF
 wg_prepare()
 {
     modprobe -q wireguard >/dev/null 2>&1
-    echo 1 > /proc/sys/net/ipv4/ip_forward
-    echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
-    echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
 }
 
 wg_stop()
