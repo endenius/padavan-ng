@@ -131,6 +131,9 @@ start_wg()
             echo $i | grep -qE "/0" && continue
             ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
         done
+
+        local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
+        [ "$endpoint" ] && ip rule add to $endpoint lookup main
     fi
 }
 
@@ -147,6 +150,9 @@ stop_wg()
         done
 
         ip rule del from $WAN_ADDR lookup main 2>/dev/null
+
+        local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
+        [ "$endpoint" ] && ip rule del to $endpoint lookup main
 
         ip link set $IF_NAME down
         ip link del dev $IF_NAME
