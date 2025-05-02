@@ -20,7 +20,7 @@ if [ "$(nvram get vpns_wg_ext_addr)" ]; then
 elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
     WAN_ADDR="$(nvram get ddns_hostname_x)"
 else
-    WAN_ADDR=$(nvram get wan0_ipaddr)
+    WAN_ADDR=$(nvram get wan_ipaddr)
 fi
 
 IF_PRIVATE=$(nvram get vpns_wg_private)

@@ -17,7 +17,7 @@ POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
 FWMARK=51820
-WAN_ADDR=$(nvram get wan0_ipaddr)
+WAN_ADDR=$(nvram get wan_ipaddr)
 
 ###
 
