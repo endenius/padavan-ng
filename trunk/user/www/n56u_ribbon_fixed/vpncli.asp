@@ -418,7 +418,7 @@ function wg_conf_import() {
 		document.form.vpnc_wg_if_addr.value = "";
 		document.form.vpnc_wg_if_private.value = "";
 		document.form.vpnc_wg_if_preshared.value = "";
-		document.form.vpnc_wg_mtu.value = "";
+		document.form.vpnc_wg_mtu.value = "<% nvram_get_x("", "vpnc_wg_mtu"); %>";
 		document.form.vpnc_wg_peer_public.value = "";
 		document.form.vpnc_wg_peer_endpoint.value = "";
 		document.form.vpnc_wg_peer_keepalive.value = "";
