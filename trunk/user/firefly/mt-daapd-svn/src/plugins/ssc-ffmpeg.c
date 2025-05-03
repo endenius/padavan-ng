@@ -29,6 +29,7 @@
 # define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
 #endif
 
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
 #define BUFFER_SIZE (AVCODEC_MAX_AUDIO_FRAME_SIZE * 3)/2
 
 typedef struct tag_ssc_handle {
@@ -226,8 +227,8 @@ int ssc_ffmpeg_open(void *vp, MP3FILE *pmp3) {
         return FALSE;
     }
 
-    if(handle->pCodec->capabilities & CODEC_CAP_TRUNCATED)
-        handle->pCodecCtx->flags |= CODEC_FLAG_TRUNCATED;
+    if(handle->pCodec->capabilities & AV_CODEC_CAP_TRUNCATED)
+        handle->pCodecCtx->flags |= AV_CODEC_FLAG_TRUNCATED;
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 5, 0)
     if(avcodec_open(handle->pCodecCtx, handle->pCodec) < 0) {

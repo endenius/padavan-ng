@@ -1,6 +1,5 @@
-SRC_NAME = ffmpeg-5.0.3
-SRC_URL = https://www.ffmpeg.org/releases/$(SRC_NAME).tar.gz
-THISDIR = $(shell pwd)
+SRC_NAME = ffmpeg-4.4.5
+SRC_URL = https://www.ffmpeg.org/releases/$(SRC_NAME).tar.xz
 
 ifeq ($(CONFIG_RALINK_MT7621),y)
 FFMPEG_CPU = 1004kc
@@ -37,15 +36,14 @@ all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL) || rm -f $(SRC_NAME).tar.gz; \
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL) || rm -f $(SRC_NAME).tar.xz; \
 	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
-		[ ! -d $(THISDIR)/patches ] || \
-		find $(THISDIR)/patches -type f -name '*.patch' -print0 \
+		tar xJf $(SRC_NAME).tar.xz; \
+		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
 		  | sort -z \
 		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
 	fi )
