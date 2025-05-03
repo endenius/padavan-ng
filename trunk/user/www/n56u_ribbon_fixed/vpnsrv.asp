@@ -172,6 +172,8 @@ function validForm(){
 	if (mode == "3") {
 		if(!validate_range(document.form.vpns_wg_port, 1, 65535))
 			return false;
+		if(!validate_range(document.form.vpns_wg_mtu, 1000, 1420))
+			return false;
 		if(!valid_vpn_subnet(document.form.vpns_vnet))
 			return false;
 	} else if (mode == "2") {
@@ -307,6 +309,7 @@ function change_vpns_type(){
 	showhide_div('row_vpns_wg_private', is_wg);
 	showhide_div('row_vpns_wg_public', is_wg);
 	showhide_div('row_vpns_wg_ext_addr', is_wg);
+	showhide_div('row_vpns_wg_mtu', is_wg);
 
 	document.form.vpns_pass_x_0.value = "";
 	document.form.vpns_user_x_0.value = "";
@@ -1092,6 +1095,13 @@ function getHash(){
                                     <td>
                                         <input readonly type="text" maxlength="44" size="5" name="vpns_wg_public" class="input" value="<% nvram_get_x("", "vpns_wg_public"); %>"/>
                                         <input type="button" class="btn btn-mini" style="outline:0" onclick="document.form.vpns_wg_public.select(); document.execCommand('copy');" value="<#CTL_copy#>"/>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_wg_mtu" style="display:none">
+                                    <th><#PPPConnection_x_PPPoEMTU_itemname#></th>
+                                    <td>
+                                        <input type="text" name="vpns_wg_mtu" class="input" maxlength="5" size="32" value="<% nvram_get_x("", "vpns_wg_mtu"); %>" onKeyPress="return is_number(this,event);"/>
+                                        &nbsp;<span style="color:#888;">[1000..1420]</span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_wg_ext_addr" style="display:none">

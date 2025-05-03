@@ -176,6 +176,10 @@ function validForm(){
 			document.form.vpnc_wg_peer_allowedips.select();
 			return false;
 		}
+
+		if(!validate_range(document.form.vpnc_wg_mtu, 1000, 1420)) {
+			return false;
+		}
 	}
 	else if (mode == "2") {
 		if(!validate_range(document.form.vpnc_ov_port, 1, 65535))
@@ -414,6 +418,7 @@ function wg_conf_import() {
 		document.form.vpnc_wg_if_addr.value = "";
 		document.form.vpnc_wg_if_private.value = "";
 		document.form.vpnc_wg_if_preshared.value = "";
+		document.form.vpnc_wg_mtu.value = "";
 		document.form.vpnc_wg_peer_public.value = "";
 		document.form.vpnc_wg_peer_endpoint.value = "";
 		document.form.vpnc_wg_peer_keepalive.value = "";
@@ -423,6 +428,7 @@ function wg_conf_import() {
 		if (settings.privatekey) document.form.vpnc_wg_if_private.value = settings.privatekey;
 		if (settings.presharedkey) document.form.vpnc_wg_if_preshared.value = settings.presharedkey;
 		wg_pubkey();
+		if (settings.mtu) document.form.vpnc_wg_mtu.value = settings.mtu;
 		if (settings.publickey) document.form.vpnc_wg_peer_public.value = settings.publickey;
 		if (settings.endpoint) document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
 		if (settings.persistentkeepalive) document.form.vpnc_wg_peer_keepalive.value = settings.persistentkeepalive;
@@ -588,7 +594,6 @@ function wg_conf_import() {
                                                     <input type="button" class="btn btn-mini" style="outline:0" onclick="document.form.vpnc_wg_if_public.select(); document.execCommand('copy');" value="<#CTL_copy#>"/>
                                                 </td>
                                             </tr>
-
                                             <tr>
                                                 <th><#WG_Preshared_key#>:</th>
                                                 <td>
@@ -596,7 +601,13 @@ function wg_conf_import() {
                                                     <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genpsk();" value="<#CTL_refresh#>"/>
                                                 </td>
                                             </tr>
-
+                                            <tr>
+                                                <th><#PPPConnection_x_PPPoEMTU_itemname#></th>
+                                                <td>
+                                                    <input type="text" name="vpnc_wg_mtu" class="input" maxlength="5" size="32" value="<% nvram_get_x("", "vpnc_wg_mtu"); %>" onKeyPress="return is_number(this,event);"/>
+                                                    &nbsp;<span style="color:#888;">[1000..1420]</span>
+                                                </td>
+                                            </tr>
                                             <tr>
                                                 <th><#PPPConnection_x_WANDNSServer_itemname#></th>
                                                 <td>
@@ -847,7 +858,7 @@ function wg_conf_import() {
                                     <td colspan="2"">
                                         <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#></span></a>
                                         <div id="spoiler_vpnc_remote_network" style="display: none">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="2048" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>

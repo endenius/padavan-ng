@@ -33,7 +33,7 @@ fi
 
 EXPORT_CONF="/tmp/client-wg.conf"
 LEASES_FILE="/tmp/vpns.leases"
-POST_SCRIPT="/etc/storage/wireguard_server_script.sh"
+POST_SCRIPT="/etc/storage/vpns_post_script.sh"
 
 ###
 
