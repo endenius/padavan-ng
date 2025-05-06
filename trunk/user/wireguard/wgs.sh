@@ -9,15 +9,13 @@ IF_MTU=$(nvram get vpns_wg_mtu)
 [ "$IF_MTU" ] || IF_MTU=1420
 PORT="$(nvram get vpns_wg_port)"
 
-WAN_NAME=$(awk '$2 == 0 && $8 == 0 {print $1}' /proc/net/route)
-
 if [ "$(nvram get vpns_wg_ext_addr)" ]; then
     WAN_ADDR="$(nvram get vpns_wg_ext_addr)"
 elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
     WAN_ADDR="$(nvram get ddns_hostname_x)"
 else
-    [ "$WAN_NAME" ] && WAN_ADDR=$(ip addr show $WAN_NAME | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
-    [ "$WAN_ADDR" ] || WAN_ADDR="{wan_address}"
+    WAN_ADDR=$(nvram get wan0_ipaddr)
+    [ "$WAN_ADDR" == "0.0.0.0" ] && WAN_ADDR="{wan_address}"
 fi
 
 IF_PRIVATE=$(nvram get vpns_wg_private)
@@ -367,7 +365,6 @@ esac
 # IF_NAME
 # IF_ADDR
 # PORT
-# WAN_NAME
 # WAN_ADDR
 
 [ -s "$POST_SCRIPT" -a -x "$POST_SCRIPT" ] && . "$POST_SCRIPT"
