@@ -95,15 +95,18 @@ start_service()
 
     res=$($STUBBY_BIN -i 2>&1 | grep -o "Error parsing config file")
     if [ "$res" ]; then
+        make_default_config
         error "failed to start: $res"
     else
         $STUBBY_BIN -g
         if pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null; then
             log "started, version $($STUBBY_BIN -V | awk '{print $2}')"
         else
+            make_default_config
             error "failed to start"
         fi
     fi
+    mtd_storage.sh save
 }
 
 stop_service()
