@@ -17,7 +17,7 @@ POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
 FWMARK=51820
-WAN_ADDR=$(nvram get wan_ipaddr)
+WAN_ADDR=$(ip addr show $(nvram get wan_ifname) | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
 
 ###
 
@@ -117,7 +117,7 @@ start_wg()
 
         ip rule add not fwmark $FWMARK table $FWMARK
         ip rule add table main suppress_prefixlength 0
-        [ ! "$WAN_ADDR" == "0.0.0.0" ] && ip rule add from $WAN_ADDR lookup main
+        [ "$WAN_ADDR" ] && ip rule add from $WAN_ADDR lookup main
 
         sysctl -q net.ipv4.conf.all.src_valid_mark=1
 
@@ -149,7 +149,7 @@ stop_wg()
             ip rule del pref $i 2>/dev/null;
         done
 
-        [ ! "$WAN_ADDR" == "0.0.0.0" ] && ip rule del from $WAN_ADDR lookup main 2>/dev/null
+        [ "$WAN_ADDR" ] && ip rule del from $WAN_ADDR lookup main 2>/dev/null
 
         local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
         [ "$endpoint" ] && ip rule del to $endpoint lookup main

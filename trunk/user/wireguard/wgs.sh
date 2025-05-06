@@ -15,12 +15,14 @@ PORT="$(nvram get vpns_wg_port)"
 LAN_ADDR=$(nvram get lan_ipaddr)
 
 WAN_NAME=$(nvram get wan_ifname)
+
 if [ "$(nvram get vpns_wg_ext_addr)" ]; then
     WAN_ADDR="$(nvram get vpns_wg_ext_addr)"
 elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
     WAN_ADDR="$(nvram get ddns_hostname_x)"
 else
-    WAN_ADDR=$(nvram get wan_ipaddr)
+    WAN_ADDR=$(ip addr show $WAN_NAME | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
+    [ "$WAN_ADDR" ] || WAN_ADDR="{wan_address}"
 fi
 
 IF_PRIVATE=$(nvram get vpns_wg_private)
