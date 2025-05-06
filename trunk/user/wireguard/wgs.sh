@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o pipefail
-
 ###
 
 WG="wg"
@@ -10,9 +8,6 @@ IF_ADDR="$(nvram get vpns_vnet | sed 's/\.0$/.1/')"
 IF_MTU=$(nvram get vpns_wg_mtu)
 [ "$IF_MTU" ] || IF_MTU=1420
 PORT="$(nvram get vpns_wg_port)"
-
-# lan addr is used to access the router's dns (ex. DoT/DoH)
-LAN_ADDR=$(nvram get lan_ipaddr)
 
 WAN_NAME=$(awk '$2 == 0 && $8 == 0 {print $1}' /proc/net/route)
 
@@ -216,7 +211,7 @@ wg_addclient()
 [Interface]
 PrivateKey = $key
 Address = $addr
-DNS = $LAN_ADDR
+DNS = 1.1.1.1,8.8.8.8,9.9.9.9,77.88.8.8
 
 [Peer]
 PublicKey = $(echo $IF_PRIVATE | $WG pubkey)
@@ -316,7 +311,7 @@ wg_export()
 [Interface]
 PrivateKey = $(nvram get vpns_pass_x$i)
 Address = $(nvram get vpns_vnet | sed 's/\.0$/./')$(nvram get vpns_addr_x$i)/24
-DNS = $LAN_ADDR
+DNS = 1.1.1.1,8.8.8.8,9.9.9.9,77.88.8.8
 
 [Peer]
 PublicKey = $(nvram get vpns_wg_public)
@@ -372,7 +367,6 @@ esac
 # IF_NAME
 # IF_ADDR
 # PORT
-# LAN_ADDR
 # WAN_NAME
 # WAN_ADDR
 
