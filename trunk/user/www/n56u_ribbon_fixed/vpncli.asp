@@ -423,6 +423,7 @@ function wg_conf_import() {
 		document.form.vpnc_wg_peer_endpoint.value = "";
 		document.form.vpnc_wg_peer_keepalive.value = "";
 		document.form.vpnc_wg_peer_allowedips.value = "";
+		document.form.vpnc_wg_if_dns.value = "";
 
 		if (settings.address) document.form.vpnc_wg_if_addr.value = settings.address;
 		if (settings.privatekey) document.form.vpnc_wg_if_private.value = settings.privatekey;
@@ -433,6 +434,7 @@ function wg_conf_import() {
 		if (settings.endpoint) document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
 		if (settings.persistentkeepalive) document.form.vpnc_wg_peer_keepalive.value = settings.persistentkeepalive;
 		if (settings.allowedips) document.form.vpnc_wg_peer_allowedips.value = settings.allowedips;
+		if (settings.dns) document.form.vpnc_wg_if_dns.value = settings.dns;
 	};
 	reader.readAsText(file);
 }
@@ -611,7 +613,7 @@ function wg_conf_import() {
                                             <tr>
                                                 <th><#PPPConnection_x_WANDNSServer_itemname#></th>
                                                 <td>
-                                                    <input readonly type="text" name="vpnc_wg_if_dns" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_if_dns"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input type="text" name="vpnc_wg_if_dns" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_if_dns"); %>" onKeyPress="return is_string(this,event);"/>
                                                 </td>
                                             </tr>
                                         </table>

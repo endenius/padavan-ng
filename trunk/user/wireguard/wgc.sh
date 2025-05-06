@@ -9,10 +9,12 @@ IF_MTU=$(nvram get vpnc_wg_mtu)
 [ "$IF_MTU" ] || IF_MTU=1420
 IF_PRIVATE=$(nvram get vpnc_wg_if_private)
 IF_PRESHARED=$(nvram get vpnc_wg_if_preshared)
+IF_DNS=$(nvram get vpnc_wg_if_dns | tr -d ' ')
+
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
 PEER_ENDPOINT=$(nvram get vpnc_wg_peer_endpoint)
 PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
-PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips)
+PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips | tr -d ' ')
 POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
@@ -49,6 +51,18 @@ is_started()
 prepare_wg()
 {
     modprobe -q wireguard >/dev/null 2>&1
+}
+
+wg_setdns()
+{
+    [ "$IF_DNS" ] || return
+    nvram set vpnc_dns_t="$IF_DNS"
+    sed -i "/nameserver/d" /etc/resolv.conf
+    echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+    for i in $(echo "$IF_DNS" | tr ',' '\n'); do
+        echo "nameserver $i" >> /etc/resolv.conf
+    done
+    restart_dns
 }
 
 setconf_wg()
@@ -121,7 +135,7 @@ start_wg()
 
         sysctl -q net.ipv4.conf.all.src_valid_mark=1
 
-        log "default route set"
+        log "  set default route"
     else
         [ -s $NETWORK_LIST ] && while read i; do
             ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
@@ -135,6 +149,8 @@ start_wg()
         local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
         [ "$endpoint" ] && ip rule add to $endpoint lookup main
     fi
+
+    wg_setdns
 }
 
 stop_wg()
@@ -152,7 +168,7 @@ stop_wg()
         [ "$WAN_ADDR" ] && ip rule del from $WAN_ADDR lookup main 2>/dev/null
 
         local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
-        [ "$endpoint" ] && ip rule del to $endpoint lookup main
+        [ "$endpoint" ] && ip rule del to $endpoint lookup main 2>/dev/null
 
         ip link set $IF_NAME down
         ip link del dev $IF_NAME

@@ -98,7 +98,7 @@ wg_setconf()
         pass=$(nvram get vpns_pass_x$i | $WG pubkey 2>/dev/null)
         [ "$pass" ] || continue
         if [ ! "$(nvram get vpns_public_x$i)" == "$pass" ]; then
-        # save public keys to speed up creation of leases
+            # save public keys to speed up creation of leases
             nvram set vpns_public_x$i="$pass"
             nvram_modified=1
         fi
@@ -145,7 +145,7 @@ wg_prepare()
 wg_stop()
 {
     if is_started; then
-        ip link del ${IF_NAME} >/dev/null 2>&1 && log "stopped"
+        ip link del ${IF_NAME} >/dev/null 2>&1 && log "server stopped"
     fi
 }
 

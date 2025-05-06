@@ -69,13 +69,9 @@ start_vpn_client(void)
 		return 1;
 
 	i_type = nvram_get_int("vpnc_type");
-#if defined(APP_WIREGUARD)
-	if (i_type == 3)
-		return start_wireguard_client();
-#endif
 
 	vpnc_peer = nvram_safe_get("vpnc_peer");
-	if (strlen(vpnc_peer) < 1) {
+	if (strlen(vpnc_peer) < 1 && i_type != 3) {
 		logmessage(VPNC_LOG_NAME, "Unable to start - remote server host is not defined!");
 		return 1;
 	}
@@ -84,6 +80,10 @@ start_vpn_client(void)
 	nvram_set_temp("vpnc_dom_t", "");
 	nvram_set_int_temp("vpnc_state_t", 0);
 
+#if defined(APP_WIREGUARD)
+	if (i_type == 3)
+		return start_wireguard_client();
+#endif
 #if defined(APP_OPENVPN)
 	if (i_type == 2)
 		return start_openvpn_client();
