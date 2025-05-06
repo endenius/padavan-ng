@@ -19,7 +19,8 @@ POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
 FWMARK=51820
-WAN_ADDR=$(ip addr show $(nvram get wan_ifname) | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
+WAN_NAME=$(awk '$2 == 0 && $8 == 0 {print $1}' /proc/net/route)
+[ "$WAN_NAME" ] && WAN_ADDR=$(ip addr show $WAN_NAME | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
 
 ###
 

@@ -14,14 +14,14 @@ PORT="$(nvram get vpns_wg_port)"
 # lan addr is used to access the router's dns (ex. DoT/DoH)
 LAN_ADDR=$(nvram get lan_ipaddr)
 
-WAN_NAME=$(nvram get wan_ifname)
+WAN_NAME=$(awk '$2 == 0 && $8 == 0 {print $1}' /proc/net/route)
 
 if [ "$(nvram get vpns_wg_ext_addr)" ]; then
     WAN_ADDR="$(nvram get vpns_wg_ext_addr)"
 elif [ "$(nvram get ddns_enable_x)" = "1" ]; then
     WAN_ADDR="$(nvram get ddns_hostname_x)"
 else
-    WAN_ADDR=$(ip addr show $WAN_NAME | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
+    [ "$WAN_NAME" ] && WAN_ADDR=$(ip addr show $WAN_NAME | awk '/inet/{print $2}' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
     [ "$WAN_ADDR" ] || WAN_ADDR="{wan_address}"
 fi
 
