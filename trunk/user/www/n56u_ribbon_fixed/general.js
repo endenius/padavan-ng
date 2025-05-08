@@ -421,17 +421,26 @@ function is_number(o,e) {
 
 function validate_range(o, min, max) {
     var i;
+    var onblurevent=o.onblur;
     for (i = 0; i < o.value.length; i++) {
         if (o.value.charAt(i) < '0' || o.value.charAt(i) > '9') {
             alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max);
-            o.focus();
+            o.onblur = "";
+            setTimeout(function(){
+                o.focus();
+                o.onblur=onblurevent;
+            }, 0);
             o.select();
             return false;
         }
     }
     if (o.value < min || o.value > max) {
         alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max);
-        o.focus();
+        o.onblur = "";
+        setTimeout(function(){
+            o.focus();
+            o.onblur=onblurevent;
+        }, 0);
         o.select();
         return false;
     }

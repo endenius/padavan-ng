@@ -136,7 +136,12 @@ function validate_ip6addr(o){
 
 	if (!regex.test(o.value)){
 		alert(o.value + " - " + "<#IP6_hint_addr#>");
-		o.focus();
+		var onblurevent=o.onblur;
+		o.onblur = "";
+		setTimeout(function(){
+			o.focus();
+			o.onblur=onblurevent;
+		}, 0);
 		return false;
 	}
 
@@ -151,7 +156,12 @@ function validate_ip6_part(o){
 
 	if (!regex.test(o.value)){
 		alert(o.value + " - " + "<#IP6_hint_addr#>");
-		o.focus();
+		var onblurevent=o.onblur;
+		o.onblur = "";
+		setTimeout(function(){
+			o.focus();
+			o.onblur=onblurevent;
+		}, 0);
 		return false;
 	}
 
