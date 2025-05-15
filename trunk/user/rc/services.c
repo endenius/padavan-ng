@@ -306,15 +306,9 @@ int start_doh(void)
 void restart_doh(void)
 {
 	stop_doh();
-	if (start_doh() == 0)
-	{
-		restart_dhcpd();
-	}
-	else
-	{
+	if (start_doh() != 0)
 		nvram_set_int("doh_enable", 0);
-		restart_dhcpd();
-	}
+	restart_dhcpd();
 }
 #endif
 #if defined(APP_STUBBY)
@@ -347,15 +341,9 @@ int start_stubby(void)
 void restart_stubby(void)
 {
 	stop_stubby();
-	if (start_stubby() == 0)
-	{
-		restart_dhcpd();
-	}
-	else
-	{
+	if (start_stubby() != 0)
 		nvram_set_int("stubby_enable", 0);
-		restart_dhcpd();
-	}
+	restart_dhcpd();
 }
 #endif
 #if defined(APP_ZAPRET)

@@ -19,7 +19,9 @@ POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 
 FWMARK=51820
-WAN_ADDR=$(nvram get wan0_ipaddr)
+WAN_ADDR=$(nvram get wan_ipaddr)
+WAN0_ADDR=$(nvram get wan0_ipaddr)
+LAN_ADDR=$(nvram get lan_ipaddr)
 
 ###
 
@@ -131,24 +133,28 @@ start_wg()
 
         ip rule add not fwmark $FWMARK table $FWMARK
         ip rule add table main suppress_prefixlength 0
-        [ ! "$WAN_ADDR" == "0.0.0.0" ] && ip rule add from $WAN_ADDR lookup main
 
         sysctl -q net.ipv4.conf.all.src_valid_mark=1
 
         log "  set default route"
     else
         [ -s $NETWORK_LIST ] && while read i; do
-            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
+            echo $i | grep -qE "/0|0\.0\.0\.0" && log "warning: skip $i from remote network list" && continue
+            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i from remote network list"
         done < $NETWORK_LIST
 
         $WG show $IF_NAME allowed-ips | awk '{ for (i=2; i<=NF; i++) print $i }' | while read i; do
             echo $i | grep -qE "/0" && continue
-            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i"
+            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i from allowed ips"
         done
-
-        local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
-        [ "$endpoint" ] && ip rule add to $endpoint lookup main
     fi
+
+    local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
+    [ "$endpoint" ] && ip rule add to $endpoint lookup main
+
+    for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
+        [ ! "$i" == "0.0.0.0" ] && ip rule add from "$i" lookup main
+    done
 
     wg_setdns
 }
@@ -165,7 +171,9 @@ stop_wg()
             ip rule del pref $i 2>/dev/null;
         done
 
-        [ ! "$WAN_ADDR" == "0.0.0.0" ] && ip rule del from $WAN_ADDR lookup main 2>/dev/null
+        for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
+            [ ! "$i" == "0.0.0.0" ] && while ip rule del from "$i" lookup main 2>/dev/null; do true; done
+        done
 
         local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
         [ "$endpoint" ] && ip rule del to $endpoint lookup main 2>/dev/null

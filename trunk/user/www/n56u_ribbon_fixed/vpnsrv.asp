@@ -317,9 +317,11 @@ function change_vpns_type(){
 	document.form.vpns_rnet_x_0.value = "";
 	document.form.vpns_rmsk_x_0.value = "";
 	showhide_div('button_client_genkey', is_wg)
+	$('td_client_genkey').setAttribute('class', '');
 	$("wnd_vpns_cli_stat").innerHTML = "<#RouterConfig_GWStaticIF_itemname#>";
 
 	if (is_wg){
+		$('td_client_genkey').setAttribute('class', 'input-append');
 		$("col_pass").innerHTML = "<#WG_Private_key#>:";
 		$("div_acl_info").innerHTML = "<#VPNS_Accnt_Info5#>";
 		$("wnd_vpns_cli_stat").innerHTML = "<#VPNS_LatestHandshake#>";
@@ -1086,7 +1088,7 @@ function getHash(){
                                 <tr id="row_vpns_wg_private" style="display:none">
                                     <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,2);"><#WG_Private_key#>:</a></th>
                                     <td>
-                                        <input type="text" maxlength="44" size="5" name="vpns_wg_private" oninput="wg_pubkey();" class="input" value="<% nvram_get_x("", "vpns_wg_private"); %>"/>
+                                        <input style="-webkit-text-security: disc;" onfocus="vpns_wg_private.style='-webkit-text-security: unset;'" onblur="vpns_wg_private.style='-webkit-text-security: disc;'" type="text" maxlength="44" size="5" name="vpns_wg_private" oninput="wg_pubkey();" class="input" value="<% nvram_get_x("", "vpns_wg_private"); %>"/>
                                         <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genkey();" value="<#CTL_refresh#>"/>
                                     </td>
                                 </tr>
@@ -1402,8 +1404,8 @@ function getHash(){
                             <table class="table">
                                 <tr>
                                     <th width="120px" style="border-top: 0 none;"><#VPNS_CName#>:</th>
-                                    <th width="166px" style="border-top: 0 none; padding-left: 0; padding-right: 0;" id="col_pass"><#ISP_Authentication_pass#></th>
-                                    <th width="120px" style="border-top: 0 none; padding-right: 0;"><#VPNS_FixIP#></th>
+                                    <th width="170px" style="border-top: 0 none; padding-left: 0; padding-right: 0;" id="col_pass"><#ISP_Authentication_pass#></th>
+                                    <th width="116px" style="border-top: 0 none; padding-right: 0;"><#VPNS_FixIP#></th>
                                     <th width="240px" style="border-top: 0 none; padding-right: 2; padding-left: 0;"><#VPNS_RNet#></th>
                                     <th width="30px"  style="border-top: 0 none;">&nbsp;</th>
                                 </tr>
@@ -1411,11 +1413,12 @@ function getHash(){
                                     <td>
                                         <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" value="<% nvram_get_x("", "vpns_user_x_0"); %>" onkeypress="return is_string(this,event);" />
                                     </td>
-                                    <td style="padding-left: 0; padding-right: 0;">
-                                        <input style="width: 128px;" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />&ZeroWidthSpace;<div id="button_client_genkey" type="button" class="btn" style="display: none; width: 6px; padding-left:2px; outline:0" onclick="wg_client_genkey();"><i class="icon-refresh"></i></div>
+                                    <td id="td_client_genkey" style="padding-left: 0; padding-right: 0;" class="input-append">
+                                        <input style="width: 134px" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />
+                                        <div id="button_client_genkey" type="button" class="btn" style="margin-left: -5px; display: none; width: 6px; padding-left: 2px" onclick="wg_client_genkey();"><i style="margin-top: 1px" class="icon-refresh"></i></div>
                                     </td>
                                     <td style="padding-right: 0;">
-                                        <span id="vpnip3"></span>&ZeroWidthSpace;<input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
+                                        <span id="vpnip3"></span><input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
                                     </td>
                                     <td style="padding-right: 0; padding-left: 0;">
                                         <input type="text" size="14" maxlength="15" style="width: 92px;" name="vpns_rnet_x_0" value="<% nvram_get_x("", "vpns_rnet_x_0"); %>" onkeypress="return is_ipaddr(this,event);" />&nbsp;/

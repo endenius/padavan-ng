@@ -585,7 +585,7 @@ function wg_conf_import() {
                                             <tr>
                                                 <th><#WG_Private_key#>:</th>
                                                 <td>
-                                                    <input type="text" name="vpnc_wg_if_private" class="input" oninput="wg_pubkey();" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_if_private"); %>" onKeyPress="return is_string(this,event);"/>
+                                                    <input style="-webkit-text-security: disc;" onfocus="vpnc_wg_if_private.style='-webkit-text-security: unset;'" onblur="vpnc_wg_if_private.style='-webkit-text-security: disc;'" type="text" name="vpnc_wg_if_private" class="input" oninput="wg_pubkey();" maxlength="44" size="32" value="<% nvram_get_x("", "vpnc_wg_if_private"); %>" onKeyPress="return is_string(this,event);"/>
                                                     <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genkey();" value="<#CTL_refresh#>"/>
                                                 </td>
                                             </tr>
