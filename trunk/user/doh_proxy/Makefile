@@ -1,9 +1,10 @@
 # https://github.com/aarond10
 
+SRC_VER = git-a34e20d6e24df603427d91bac8f58c2d3a8aa0a6
 SRC_NAME = https_dns_proxy-master
 SRC_URL = https://github.com/aarond10/https_dns_proxy/archive/refs/heads/master.tar.gz
 
-CFLAGS  += -O2 -ffunction-sections -fdata-sections -fvisibility=hidden -fPIC
+CFLAGS  += -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fPIC
 LDFLAGS += -Wl,--gc-sections,-rpath-link,$(STAGEDIR)/lib -lcurl -lssl -lcrypto -lz
 
 all: download_test extract_test config_test
@@ -32,9 +33,9 @@ config_test:
 configure:
 	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
 	cmake   -DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_FULL_RUNSTATEDIR=/var/run \
-		-DCMAKE_INSTALL_FULL_SYSCONFDIR=/etc/storage \
 		-DCMAKE_BUILD_TYPE=Release \
+		-DGIT_EXECUTABLE= \
+		-DSW_VERSION=$(SRC_VER) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOTDIR)/include/cross-mipsel-linux.cmake .. \
 	)
 
