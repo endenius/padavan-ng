@@ -1,7 +1,7 @@
 # https://github.com/aarond10
 
-SRC_VER = git-a34e20d6e24df603427d91bac8f58c2d3a8aa0a6
-SRC_NAME = https_dns_proxy-master
+SRC_VER = a34e20d
+SRC_NAME = https_dns_proxy-$(SRC_VER)
 SRC_URL = https://github.com/aarond10/https_dns_proxy/archive/refs/heads/master.tar.gz
 
 CFLAGS  += -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fPIC
@@ -17,7 +17,7 @@ download_test:
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
+		mkdir -p $(SRC_NAME) && tar -zx --strip-components=1 -f $(SRC_NAME).tar.gz -C $(SRC_NAME); \
 		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
 		  | sort -z \
 		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
@@ -35,7 +35,7 @@ configure:
 	cmake   -DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DGIT_EXECUTABLE= \
-		-DSW_VERSION=$(SRC_VER) \
+		-DSW_VERSION=git-$(SRC_VER) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOTDIR)/include/cross-mipsel-linux.cmake .. \
 	)
 
