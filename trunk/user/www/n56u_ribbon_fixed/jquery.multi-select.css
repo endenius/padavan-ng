@@ -2,7 +2,7 @@
     display: block;
     position: relative;
     padding: 0;
-    max-width: 220px;
+    max-width: 218px;
 }
 
 .multi-select-menu {
@@ -21,21 +21,22 @@
 
 .multi-select-menuitem {
     display: block;
-    padding: 0.6em 1em 0.6em 30px;
+    padding: 5px 18px 5px 30px;
     white-space: nowrap;
+    margin-bottom: 0px;
+}
+
+.multi-select-menuitem:hover {
+    background-color: #d9edf7;
+/*
+    background-color: highlight;
+    color: highlighttext;
+*/
 }
 
 .multi-select-legend {
     font-weight: bold;
     padding-left: 10px;
-}
-
-.multi-select-legend + .multi-select-menuitem {
-    padding-top: 0.25rem;
-}
-
-.multi-select-menuitem + .multi-select-menuitem {
-    padding-top: 0;
 }
 
 .multi-select-presets {
@@ -44,8 +45,8 @@
 
 .multi-select-menuitem input {
     position: absolute;
-    margin-top: 0.25em;
     margin-left: -20px;
+    margin-top: 2px;
 }
 
 .multi-select-button {

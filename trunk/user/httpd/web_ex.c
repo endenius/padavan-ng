@@ -2021,7 +2021,7 @@ net_iface_list_hook(int eid, webs_t wp, int argc, char **argv)
 	FILE *fp;
 	char ifaces[256];
 
-	fp = popen("ls -1 /sys/class/net | grep -E 'ppp|eth|sit|tap|tun|weth|wwan|apcli' | tr '\n' ','", "r");
+	fp = popen("ls -1 /sys/class/net | grep -vE '^(lo|ra[0-9]|rai[0-9]|wds|br[0-9])' | tr '\n' ','", "r");
 	if (fp == NULL) {
 		return 1;
 	}
