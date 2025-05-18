@@ -530,7 +530,9 @@
 #endif
 #if defined(APP_ZAPRET)
 			{"zapret_enable", "", NULL, EVM_RESTART_ZAPRET},
-			{"zapretc.config", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},
+			{"zapret_iface", "", NULL, EVM_RESTART_ZAPRET},
+			{"zapret_log", "", NULL, EVM_RESTART_ZAPRET},
+			{"zapretc.post_script.sh", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},
 			{"zapretc.strategy", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},
 			{"zapretc.auto.list", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"zapretc.user.list", "File", NULL, EVM_BLOCK_UNSAFE},

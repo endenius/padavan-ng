@@ -11,8 +11,10 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
+<link rel="stylesheet" type="text/css" href="/jquery.multi-select.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/jquery.multi-select.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
@@ -44,6 +46,7 @@ $j(document).ready(function() {
 
 <% login_state_hook(); %>
 <% openssl_util_hook(); %>
+<% net_iface_list(); %>
 
 function initial(){
 	show_banner(1);
@@ -123,8 +126,10 @@ function initial(){
 	if(!found_app_zapret()){
 		showhide_div('row_zapret', 0);
 		showhide_div('row_zapret_strategy', 0);
-		showhide_div('row_zapret_config', 0);
+		showhide_div('row_zapret_post_script', 0);
 		showhide_div('row_zapret_list', 0);
+		showhide_div('row_zapret_iface', 0);
+		showhide_div('row_zapret_log', 0);
 	}else{
 		change_zapret_enabled();
 	}
@@ -153,6 +158,38 @@ function initial(){
 		showhide_div('row_dnscrypt_options', 0);
 	}else
 		change_dnscrypt_enabled();
+
+	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>"
+	var iface = net_iface_list();
+
+	const map_zapret_iface = zapret_iface.split(',').map(word => word.trim());
+	const map_iface = iface.split(',').map(word => word.trim());
+	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',');
+
+	$j.each(zapret_iface.split(","), function(i,e){
+		if (e != "")
+			$("zapret_select_iface").add(new Option(e, e, true, true), i)
+	});
+
+	$j.each(iface.split(","), function(i,e) {
+		if (e != "")
+			$("zapret_select_iface").add(new Option(e));
+	});
+
+	$j("#zapret_select_iface").multiSelect({
+		noneText: "<#APChnAuto#>",
+	});
+
+	$j("#zapret_select_iface").on('change', function(){
+		var values = "";
+		for( i=0; i < this.options.length; i++ ) {
+			if (this.options[i].selected && (this.options[i].value != "")) {
+				if ( values != "" ) values += ",";
+				values += this.options[i].value;
+			}
+		}
+		document.form.zapret_iface.value = values;
+	});
 }
 
 function applyRule(){
@@ -183,8 +220,10 @@ function applyRule(){
 	if(!found_app_zapret()){
 		showhide_div('row_zapret', 0);
 		showhide_div('row_zapret_strategy', 0);
-		showhide_div('row_zapret_config', 0);
+		showhide_div('row_zapret_post_script', 0);
 		showhide_div('row_zapret_list', 0);
+		showhide_div('row_zapret_iface', 0);
+		showhide_div('row_zapret_log', 0);
 	}
 
 	if(!found_app_tor()){
@@ -297,7 +336,7 @@ function textarea_zapret_enabled(v){
 	inputCtrl(document.form['zapretc.user.list'], v);
 	inputCtrl(document.form['zapretc.auto.list'], v);
 	inputCtrl(document.form['zapretc.exclude.list'], v);
-	inputCtrl(document.form['zapretc.config'], v);
+	inputCtrl(document.form['zapretc.post_script.sh'], v);
 }
 
 function textarea_tor_enabled(v){
@@ -405,8 +444,10 @@ function change_wins_enabled(){
 function change_zapret_enabled(){
 	var v = document.form.zapret_enable[0].checked;
 	showhide_div('row_zapret_strategy', v);
-	showhide_div('row_zapret_config', v);
+	showhide_div('row_zapret_post_script', v);
 	showhide_div('row_zapret_list', v);
+	showhide_div('row_zapret_iface', v);
+	showhide_div('row_zapret_log', v);
 	if (!login_safe()) v = 0;
 	textarea_zapret_enabled(v);
 }
@@ -856,8 +897,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="doh_server1" value="<% nvram_get_x("", "doh_server1"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="doh_server_ip1" value="<% nvram_get_x("", "doh_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list1" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;">
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="doh_server_ip1" value="<% nvram_get_x("", "doh_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="doh_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;">
                                                     <option value="https://0ms.dev/dns-query">0ms DNS</option>
                                                     <option value="https://dns.adguard-dns.com/dns-query">Adguard: ads and trackers</option>
                                                     <option value="https://family.adguard-dns.com/dns-query">Adguard: family filter</option>
@@ -907,8 +948,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">2:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="doh_server2" value="<% nvram_get_x("", "doh_server2"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="doh_server_ip2" value="<% nvram_get_x("", "doh_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list2" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_doh_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="doh_server_ip2" value="<% nvram_get_x("", "doh_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="doh_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -916,8 +957,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">3:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="doh_server3" value="<% nvram_get_x("", "doh_server3"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="doh_server_ip3" value="<% nvram_get_x("", "doh_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list3" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_doh_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="doh_server_ip3" value="<% nvram_get_x("", "doh_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="doh_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -940,8 +981,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="stubby_server1" value="<% nvram_get_x("", "stubby_server1"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="stubby_server_ip1" value="<% nvram_get_x("", "stubby_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list1" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;">
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="stubby_server_ip1" value="<% nvram_get_x("", "stubby_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="stubby_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;">
                                                     <option value="dns.adguard-dns.com" valueip="94.140.14.14">AdGuard:ads and trackers</option>
                                                     <option value="family.adguard-dns.com" valueip="94.140.14.15">AdGuard: family</option>
                                                     <option value="unfiltered.adguard-dns.com" valueip="94.140.14.140">AdGuard: unfiltered</option>
@@ -972,8 +1013,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">2:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="stubby_server2" value="<% nvram_get_x("", "stubby_server2"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="stubby_server_ip2" value="<% nvram_get_x("", "stubby_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list2" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_stubby_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="stubby_server_ip2" value="<% nvram_get_x("", "stubby_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="stubby_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -981,8 +1022,8 @@ function change_crond_enabled(){
                                             <td colspan="2" align="left" style="text-align:left;">
                                                 <span class="caption-bold">3:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 308px;" name="stubby_server3" value="<% nvram_get_x("", "stubby_server3"); %>" onkeypress="return is_string(this,event);"/>
-                                                <input type="text" maxlength="60" class="input" size="10" style="width: 190px;" name="stubby_server_ip3" value="<% nvram_get_x("", "stubby_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list3" style="padding-left: 0px; border-left: 0; max-width:20px;" onchange="on_stubby_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
+                                                <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 190px;" name="stubby_server_ip3" value="<% nvram_get_x("", "stubby_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
+                                                <select class="input" id="stubby_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -999,6 +1040,23 @@ function change_crond_enabled(){
                                                     <input type="radio" name="zapret_enable" id="zapret_enable_1" class="input" value="1" <% nvram_match_x("", "zapret_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="zapret_enable" id="zapret_enable_0" class="input" value="0" <% nvram_match_x("", "zapret_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr id="row_zapret_iface">
+                                            <th><#PPPConnection_x_WANType_statusname#>:</th>
+                                            <td >
+                                                <select id="zapret_select_iface" multiple />
+                                                <input type="hidden" name="zapret_iface" value="<% nvram_get_x("", "zapret_iface"); %>">
+                                            </td>
+                                        </tr>
+                                        <tr id="row_zapret_log">
+                                            <th><#ZapretLog#>:</th>
+                                            <td>
+                                                <select name="zapret_log" class="input">
+                                                    <option value="0" <% nvram_match_x("", "zapret_log", "0","selected"); %>><#CTL_Disabled#></option>
+                                                    <option value="1" <% nvram_match_x("", "zapret_log", "1","selected"); %>><#CTL_Enabled#></option>
+                                                </select>
                                             </td>
                                         </tr>
 
@@ -1037,15 +1095,15 @@ function change_crond_enabled(){
                                             <td colspan="2">
                                                 <a href="javascript:spoiler_toggle('zapret.strategy')"><span><#ZapretStrategy#></span></a>
                                                 <div id="zapret.strategy" style="display:none;">
-                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_zapret_config" style="display:none">
+                                        <tr id="row_zapret_post_script" style="display:none">
                                             <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('zapret.config')"><span><#CustomConf#></span></a>
-                                                <div id="zapret.config" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.config" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.config",""); %></textarea>
+                                                <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#></span></a>
+                                                <div id="zapret.post_script" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.post_script.sh" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.post_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

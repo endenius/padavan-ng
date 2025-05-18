@@ -2016,6 +2016,27 @@ nf_values_hook(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int
+net_iface_list_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	FILE *fp;
+	char ifaces[256];
+
+	fp = popen("ls -1 /sys/class/net | grep -E 'ppp|eth|sit|tap|tun|weth|wwan|apcli' | tr '\n' ','", "r");
+	if (fp == NULL) {
+		return 1;
+	}
+
+	if (fgets(ifaces, sizeof(ifaces), fp) == NULL) {
+		pclose(fp);
+		return 1;
+	}
+	pclose(fp);
+
+	websWrite(wp, "function net_iface_list() { return '%s';}\n", ifaces);
+	return 0;
+}
+
+static int
 ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 #if defined(UTL_HDPARM)
@@ -4063,6 +4084,7 @@ struct ej_handler ej_handlers[] =
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
+	{ "net_iface_list", net_iface_list_hook},
 	{ NULL, NULL }
 };
 
