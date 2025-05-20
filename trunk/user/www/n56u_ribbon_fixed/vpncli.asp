@@ -256,6 +256,9 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_exclude_network', is_wg);
 	showhide_div('row_vpnc_remote_network', is_wg);
 
+	$("vpnc_use_dns").innerHTML = "<#VPNC_PDNS#>";
+	if (is_wg) $("vpnc_use_dns").innerHTML = "<#VPNC_WG_UseDNS#>";
+
 	if (is_ov) {
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
@@ -828,7 +831,7 @@ function wg_conf_import() {
                                     </td>
                                 </tr>
                                 <tr id="vpnc_get_dns">
-                                    <th><#VPNC_PDNS#></th>
+                                    <th id="vpnc_use_dns"><#VPNC_PDNS#></th>
                                     <td>
                                         <select name="vpnc_pdns" class="input">
                                             <option value="0" <% nvram_match_x("", "vpnc_pdns", "0","selected"); %>><#checkbox_No#></option>

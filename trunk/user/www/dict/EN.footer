@@ -1776,6 +1776,7 @@ VPNC_WG_KeepAlive=Persistent keep alive
 VPNC_WG_AllowedIPS=Allowed IPs
 VPNC_WG_Peer=Peer
 VPNC_WG_ImportConf=Import configuration
+VPNC_WG_UseDNS=Use DNS addresses from client settings:
 CTL_copy=Copy
 VPNC_RNet_List=List of remote addresses/subnets behind the VPN server
 #Device_type_04_NAS=

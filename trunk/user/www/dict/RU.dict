@@ -1783,6 +1783,7 @@ VPNC_WG_KeepAlive=Постоянное соединение
 VPNC_WG_AllowedIPS=Разрешённые IP
 VPNC_WG_Peer=Пир
 VPNC_WG_ImportConf=Импорт конфигурации
+VPNC_WG_UseDNS=Использовать адреса DNS из настроек клиента:
 CTL_copy=Копировать
 VPNC_RNet_List=Список удалённых адресов/подсетей за VPN-сервером
 #Device_type_04_NAS=
