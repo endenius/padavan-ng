@@ -67,6 +67,7 @@ check_config()
     else
         sed -e '/^[^#].*0::1@/s/^/#/' -i $STUBBY_CONFIG
     fi
+
     sync
 }
 
@@ -92,6 +93,7 @@ start_service()
     for i in 1 2 3; do
         make_config_servers "$(nvram get stubby_server$i)" "$(nvram get stubby_server_ip$i)"
     done
+    sync
 
     res=$($STUBBY_BIN -i 2>&1 | grep -o "Error parsing config file")
     if [ "$res" ]; then
@@ -106,7 +108,6 @@ start_service()
             error "failed to start"
         fi
     fi
-    mtd_storage.sh save
 }
 
 stop_service()

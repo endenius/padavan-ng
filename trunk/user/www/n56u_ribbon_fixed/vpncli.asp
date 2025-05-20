@@ -251,11 +251,10 @@ function change_vpnc_type() {
 
 	textarea_ovpn_enabled(is_ov);
 
-	showhide_div('vpnc_get_dns', !is_wg);
 	showhide_div('row_vpnc_wg', is_wg);
 	showhide_div('vpnc_peer_row', !is_wg);
-
-	change_vpnc_dgw();
+	showhide_div('row_vpnc_exclude_network', is_wg);
+	showhide_div('row_vpnc_remote_network', is_wg);
 
 	if (is_ov) {
 		change_vpnc_ov_auth();
@@ -270,15 +269,6 @@ function change_vpnc_type() {
 	}
 
 	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
-}
-
-function change_vpnc_dgw() {
-	var mode = document.form.vpnc_type.value;
-	var dgw = document.form.vpnc_dgw.value;
-	if (mode == "3" && dgw == "0") {
-		showhide_div('row_vpnc_remote_network', 1);
-	} else
-		showhide_div('row_vpnc_remote_network', 0);
 }
 
 function change_vpnc_ov_auth() {
@@ -850,7 +840,7 @@ function wg_conf_import() {
                                 <tr>
                                     <th><#VPNC_DGW#></th>
                                     <td>
-                                        <select name="vpnc_dgw" class="input" onchange="change_vpnc_dgw();">
+                                        <select name="vpnc_dgw" class="input">
                                             <option value="0" <% nvram_match_x("", "vpnc_dgw", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_dgw", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
@@ -861,6 +851,14 @@ function wg_conf_import() {
                                         <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#></span></a>
                                         <div id="spoiler_vpnc_remote_network" style="display: none">
                                             <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_exclude_network" style="display: none">
+                                    <td colspan="2"">
+                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_exclude_network')"><span><#VPNC_ExcludeList#></span></a>
+                                        <div id="spoiler_vpnc_exclude_network" style="display: none">
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_exclude_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_exclude_network.list",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>

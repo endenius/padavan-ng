@@ -16,9 +16,15 @@ PEER_ENDPOINT=$(nvram get vpnc_wg_peer_endpoint)
 PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
 PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips | tr -d ' ')
 POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
-NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
+REMOTE_NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
+EXCLUDE_NETWORK_LIST="/etc/storage/vpnc_exclude_network.list"
 
 FWMARK=51820
+
+PREF_WG=5182
+PREF_MAIN=5181
+PREF_SUPPRESS=5180
+
 WAN_ADDR=$(nvram get wan_ipaddr)
 WAN0_ADDR=$(nvram get wan0_ipaddr)
 LAN_ADDR=$(nvram get lan_ipaddr)
@@ -58,12 +64,21 @@ prepare_wg()
 wg_setdns()
 {
     [ "$IF_DNS" ] || return
+
+    local getdns=$(nvram get vpnc_pdns)
+    [ "$getdns" == "0" ] && return
+
     nvram set vpnc_dns_t="$IF_DNS"
-    sed -i "/nameserver/d" /etc/resolv.conf
-    echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+
+    if [ "$getdns" == "2" ]; then
+        sed -i "/nameserver/d" /etc/resolv.conf
+        echo "nameserver 127.0.0.1" >> /etc/resolv.conf
+    fi
+
     for i in $(echo "$IF_DNS" | tr ',' '\n'); do
         echo "nameserver $i" >> /etc/resolv.conf
     done
+
     restart_dns
 }
 
@@ -100,7 +115,7 @@ EOF
 
 start_wg()
 {
-    local i
+    local i iplist
 
     [ "$(nvram get vpnc_type)" == "3" -a "$(nvram get vpnc_enable)" == "1" ] || die "disabled"
     is_started && die "already started"
@@ -125,36 +140,43 @@ start_wg()
         error "$IF_NAME startup failed"
     fi
 
+    msg_unable() ( log "warning: unable to add rule for $1 from remote network list" )
+
     ip route replace default dev $IF_NAME table $FWMARK || error "unable to add default to table $FWMARK"
 
     if [ "$(nvram get vpnc_dgw)" == "1" ]; then
         # default wg enable
         wg set $IF_NAME fwmark $FWMARK
-
-        ip rule add not fwmark $FWMARK table $FWMARK
-        ip rule add table main suppress_prefixlength 0
+        ip rule add not fwmark $FWMARK table $FWMARK pref $PREF_WG
 
         sysctl -q net.ipv4.conf.all.src_valid_mark=1
-
         log "  set default route"
     else
-        [ -s $NETWORK_LIST ] && while read i; do
-            echo $i | grep -qE "/0|0\.0\.0\.0" && log "warning: skip $i from remote network list" && continue
-            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i from remote network list"
-        done < $NETWORK_LIST
+        iplist=$(cat "$REMOTE_NETWORK_LIST" | grep -v "^#")
+        for i in $iplist; do
+            ip rule add to $i table $FWMARK pref $PREF_WG || msg_unable $i
+        done
 
-        $WG show $IF_NAME allowed-ips | awk '{ for (i=2; i<=NF; i++) print $i }' | while read i; do
+        iplist=$($WG show $IF_NAME allowed-ips | cut -f2-)
+        for i in $iplist; do
             echo $i | grep -qE "/0" && continue
-            ip rule add to $i table $FWMARK pref 5182 || log "warning: unable to add rule to $i from allowed ips"
+            ip rule add to $i table $FWMARK pref $PREF_WG || msg_unable $i
         done
     fi
 
+    iplist=$(cat "$EXCLUDE_NETWORK_LIST" | grep -v "^#")
+    for i in $iplist; do
+        ip rule add from $i lookup main pref $PREF_MAIN || msg_unable $i
+    done
+
     local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
-    [ "$endpoint" ] && ip rule add to $endpoint lookup main
+    [ "$endpoint" ] && ip rule add to $endpoint lookup main pref $PREF_MAIN
 
     for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
-        [ ! "$i" == "0.0.0.0" ] && ip rule add from "$i" lookup main
+        [ ! "$i" == "0.0.0.0" ] && ip rule add from "$i" lookup main pref $PREF_MAIN
     done
+
+    ip rule add table main suppress_prefixlength 0 pref $PREF_SUPPRESS
 
     wg_setdns
 }
@@ -165,18 +187,10 @@ stop_wg()
 
     if is_started; then
         ip route del default table $FWMARK 2>/dev/null
-        while ip rule del table $FWMARK 2>/dev/null; do true; done
 
-        for i in $(ip rule show | awk -F: '/from all lookup main suppress_prefixlength 0/{print $1}'); do
-            ip rule del pref $i 2>/dev/null;
+        for i in $PREF_SUPPRESS $PREF_MAIN $PREF_WG; do
+            while ip rule del pref $i 2>/dev/null; do true; done
         done
-
-        for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
-            [ ! "$i" == "0.0.0.0" ] && while ip rule del from "$i" lookup main 2>/dev/null; do true; done
-        done
-
-        local endpoint=$($WG show $IF_NAME endpoints | awk -F'[\t:]' '/[0-9]\.[0-9]/{print $2}')
-        [ "$endpoint" ] && ip rule del to $endpoint lookup main 2>/dev/null
 
         ip link set $IF_NAME down
         ip link del dev $IF_NAME
