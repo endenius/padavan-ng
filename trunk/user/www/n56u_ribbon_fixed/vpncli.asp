@@ -851,7 +851,7 @@ function wg_conf_import() {
                                 </tr>
                                 <tr id="row_vpnc_remote_network" style="display: none">
                                     <td colspan="2"">
-                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#></span></a>
+                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#>:</span></a>
                                         <div id="spoiler_vpnc_remote_network" style="display: none">
                                             <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
                                         </div>
@@ -859,7 +859,7 @@ function wg_conf_import() {
                                 </tr>
                                 <tr id="row_vpnc_exclude_network" style="display: none">
                                     <td colspan="2"">
-                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_exclude_network')"><span><#VPNC_ExcludeList#></span></a>
+                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_exclude_network')"><span><#VPNC_ExcludeList#>:</span></a>
                                         <div id="spoiler_vpnc_exclude_network" style="display: none">
                                             <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_exclude_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_exclude_network.list",""); %></textarea>
                                         </div>
