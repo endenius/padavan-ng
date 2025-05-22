@@ -102,8 +102,10 @@ AllowedIPs = $PEER_ALLOWEDIPS
 EOF
     [ "$IF_PRESHARED" ] && echo "PresharedKey = $IF_PRESHARED" >> "/tmp/${IF_NAME}.conf.$$"
 
+    echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"
+    rm -f /etc/gai.conf
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
         $WG show $IF_NAME | grep -A 5 "peer:" | while read i; do
