@@ -114,7 +114,7 @@ if [ "$ISP_INTERFACE" ]; then
 else
     ISP_IF4=$(_get_if_default 4);
     ISP_IF6=$(_get_if_default 6);
-    ISP_IF=$(echo -e "${ISP_IF4}\n${ISP_IF6}" | sort -u)
+    ISP_IF=$(printf "%s\n%s" "${ISP_IF4}" "${ISP_IF6}" | sort -u)
 fi
 
 _get_ports()
