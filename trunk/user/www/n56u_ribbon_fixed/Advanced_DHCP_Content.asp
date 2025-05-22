@@ -80,7 +80,7 @@ function initial(){
 
 	if (!support_ipv6()){
 		document.form.dhcp_verbose.remove(2);
-		document.form.dhcp_verbose.remove(2);
+		document.form.dhcp_verbose.remove(3);
 	}
 
 	load_body();

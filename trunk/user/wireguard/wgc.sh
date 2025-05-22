@@ -26,10 +26,10 @@ PREF_MAIN=5181
 PREF_SUPPRESS=5180
 
 WAN_ADDR=$(nvram get wan_ipaddr)
-WAN_ADDR6=$(nvram get ip6_wan_addr)
 WAN0_ADDR=$(nvram get wan0_ipaddr)
-WAN0_ADDR6=$(nvram get wan0_addr6)
 LAN_ADDR=$(nvram get lan_ipaddr)
+
+IPV6=$(ip -6 route show default)
 
 ###
 
@@ -102,10 +102,11 @@ AllowedIPs = $PEER_ALLOWEDIPS
 EOF
     [ "$IF_PRESHARED" ] && echo "PresharedKey = $IF_PRESHARED" >> "/tmp/${IF_NAME}.conf.$$"
 
-    echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
+    [ ! "$IPV6" ] && echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"
-    rm -f /etc/gai.conf
+    [ ! "$IPV6" ] && rm -f /etc/gai.conf
+
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
         $WG show $IF_NAME | grep -A 5 "peer:" | while read i; do
@@ -121,19 +122,22 @@ EOF
 
 start_wg()
 {
-    local i p iplist ipv6
+    local i p iplist
 
     [ "$(nvram get vpnc_type)" == "3" -a "$(nvram get vpnc_enable)" == "1" ] || die "disabled"
     is_started && die "already started"
 
     prepare_wg
-    ipv6=$(ip -6 route show default)
 
     ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
     ip link set dev $IF_NAME mtu $IF_MTU
 
     for i in $(echo "$IF_ADDR" | tr ',' '\n'); do
-        ip addr add $i dev $IF_NAME 2>/dev/null || log "warning: cannot set $IF_NAME address $i"
+        case "$i" in
+            *:*) p="6"; [ ! "$IPV6" ] && continue;;
+            *)   p="4";;
+        esac
+        ip -$p addr add $i dev $IF_NAME 2>/dev/null || log "warning: cannot set $IF_NAME address $i"
     done
 
     local if_ip=$(ip addr show dev $IF_NAME | awk '/inet/{print $2}')
@@ -152,15 +156,14 @@ start_wg()
     wg set $IF_NAME fwmark $FWMARK
 
     for p in "4" "6"; do
-        [ "$p" == "6" -a ! "$ipv6" ] && continue
+        [ "$p" == "6" -a ! "$IPV6" ] && continue
         ip -$p rule add not fwmark $FWMARK table $FWMARK pref $PREF_WG
         ip -$p rule add table main suppress_prefixlength 0 pref $PREF_SUPPRESS
     done
 
     if [ "$(nvram get vpnc_dgw)" == "1" ]; then
-        # default wg enable
         for p in "4" "6"; do
-            [ "$p" == "6" -a ! "$ipv6" ] && continue
+            [ "$p" == "6" -a ! "$IPV6" ] && continue
             if ip -$p route add default dev $IF_NAME table $FWMARK; then
                 log "  add ipv$p default route dev $IF_NAME table $FWMARK"
             else
@@ -171,7 +174,7 @@ start_wg()
         iplist=$(cat "$REMOTE_NETWORK_LIST" | grep -v "^#")
         for i in $iplist; do
             case "$i" in
-                *:*) p="6"; [ ! "$ipv6" ] && continue;;
+                *:*) p="6"; [ ! "$IPV6" ] && continue;;
                 *)   p="4";;
             esac
             ip -$p route add $i dev $IF_NAME table $FWMARK || msg_unable "$i" "remote network"
@@ -181,7 +184,7 @@ start_wg()
         for i in $iplist; do
             case "$i" in
                 */0) continue;;
-                *:*) p="6"; [ ! "$ipv6" ] && continue;;
+                *:*) p="6"; [ ! "$IPV6" ] && continue;;
                 *)   p="4";;
             esac
             ip -$p route add $i dev $IF_NAME table $FWMARK || msg_unable "$i" "allowed ips"
@@ -191,27 +194,17 @@ start_wg()
     iplist=$(cat "$EXCLUDE_NETWORK_LIST" | grep -v "^#")
     for i in $iplist; do
         case "$i" in
-            *:*) p="6"; [ ! "$ipv6" ] && continue;;
+            *:*) p="6"; [ ! "$IPV6" ] && continue;;
             *)   p="4";;
         esac
         ip -$p rule add from $i lookup main pref $PREF_MAIN || msg_unable "$i" "exclude network"
     done
 
-    local endpoint=$($WG show $IF_NAME endpoints | sed -r 's/^.+\t//; s/:[0-9]+$//; s/[][]//g')
-    if [ "$endpoint" ]; then
-        case "$endpoint" in
-            *:*) p="6"; [ ! "$ipv6" ] && continue;;
-            *)   p="4";;
-        esac
-        ip -$p rule add to $endpoint lookup main pref $PREF_MAIN 2>/dev/null
-    fi
+    local endpoint=$($WG show $IF_NAME endpoints | sed -r 's/^.+\t//; s/:[0-9]+$//')
+    [ "$endpoint" ] && ip -4 rule add to $endpoint lookup main pref $PREF_MAIN 2>/dev/null
 
     for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
         [ ! "$i" == "0.0.0.0" ] && ip -4 rule add from "$i" lookup main pref $PREF_MAIN
-    done
-
-    [ "$ipv6" ] && for i in $WAN_ADDR6 $WAN0_ADDR6; do
-        ip -6 rule add from "$i" lookup main pref $PREF_MAIN
     done
 
     wg_setdns
