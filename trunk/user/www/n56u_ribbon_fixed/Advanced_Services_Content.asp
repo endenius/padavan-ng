@@ -159,7 +159,7 @@ function initial(){
 	}else
 		change_dnscrypt_enabled();
 
-	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>"
+	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>";
 	var iface = net_iface_list();
 
 	const map_zapret_iface = zapret_iface.split(',').map(word => word.trim());
@@ -332,7 +332,10 @@ function stubby_clean(i){
 }
 
 function textarea_zapret_enabled(v){
-	inputCtrl(document.form['zapretc.strategy'], v);
+	for (const i of ["", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+		inputCtrl(document.form['zapretc.strategy' + i], v);
+	}
+	zapret_strategy_change(document.form.zapret_strategy, v);
 	inputCtrl(document.form['zapretc.user.list'], v);
 	inputCtrl(document.form['zapretc.auto.list'], v);
 	inputCtrl(document.form['zapretc.exclude.list'], v);
@@ -486,6 +489,13 @@ function change_crond_enabled(){
 	if (!login_safe())
 		v = 0;
 	textarea_crond_enabled(v);
+}
+
+function zapret_strategy_change(o, v) {
+	for (const i of ["", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+		showhide_div('zapretc.strategy' + i, 0);
+	}
+	if (v == 1) showhide_div('zapretc.strategy' + o.value, 1);
 }
 
 </script>
@@ -1060,9 +1070,46 @@ function change_crond_enabled(){
                                             </td>
                                         </tr>
 
+                                        <tr id="row_zapret_strategy" style="display:none">
+                                            <th width="50%" style="border-bottom: 0 none;"><a href="javascript:spoiler_toggle('zapret.strategy')"><#ZapretStrategy#>: <i style="scale: 75%;" class="icon-chevron-down"></i></a></th>
+                                            <td style="border-bottom: 0 none;">
+                                                <select name="zapret_strategy" class="input" onchange="zapret_strategy_change(this, 1);">
+                                                    <option value="" <% nvram_match_x("", "zapret_strategy", "","selected"); %>>Профиль по умолчанию</option>
+                                                    <option value="0" <% nvram_match_x("", "zapret_strategy", "0","selected"); %>>Профиль стратегий #0</option>
+                                                    <option value="1" <% nvram_match_x("", "zapret_strategy", "1","selected"); %>>Профиль стратегий #1</option>
+                                                    <option value="2" <% nvram_match_x("", "zapret_strategy", "2","selected"); %>>Профиль стратегий #2</option>
+                                                    <option value="3" <% nvram_match_x("", "zapret_strategy", "3","selected"); %>>Профиль стратегий #3</option>
+                                                    <option value="4" <% nvram_match_x("", "zapret_strategy", "4","selected"); %>>Профиль стратегий #4</option>
+                                                    <option value="5" <% nvram_match_x("", "zapret_strategy", "5","selected"); %>>Профиль стратегий #5</option>
+                                                    <option value="6" <% nvram_match_x("", "zapret_strategy", "6","selected"); %>>Профиль стратегий #6</option>
+                                                    <option value="7" <% nvram_match_x("", "zapret_strategy", "7","selected"); %>>Профиль стратегий #7</option>
+                                                    <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>>Профиль стратегий #8</option>
+                                                    <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>>Профиль стратегий #9</option>
+                                                </select>
+                                                <a href="https://github.com/bol-van/zapret" class="label label-info"><#CTL_help#></a>
+                                            </td>
+                                            <tr>
+                                                <td id="zapret.strategy" colspan="2" style="padding-top: 0px; border-top: 0 none; display:none;">
+                                                    <div id="zapret_strategy_textarea">
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy0" name="zapretc.strategy0" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy0",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy1" name="zapretc.strategy1" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy1",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy2" name="zapretc.strategy2" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy2",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy3" name="zapretc.strategy3" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy3",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy4" name="zapretc.strategy4" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy4",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy5" name="zapretc.strategy5" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy5",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy6" name="zapretc.strategy6" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy6",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy7" name="zapretc.strategy7" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy7",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy8" name="zapretc.strategy8" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy8",""); %></textarea>
+                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy9" name="zapretc.strategy9" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy9",""); %></textarea>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tr>
+
                                         <tr id="row_zapret_list" style="display:none">
                                             <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('site.list')"><span><#ZapretSitesLists#>:</span></a>
+                                                <a href="javascript:spoiler_toggle('site.list')"><span><#ZapretDomainLists#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
                                                 <div id="site.list" style="display:none;">
                                                     <table height="100%" width="100%" cellpadding="0" cellspacing="0" class="table" style="border: 0px; margin: 0px; margin-bottom: 8px;">
                                                         <tr>
@@ -1091,17 +1138,9 @@ function change_crond_enabled(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_zapret_strategy" style="display:none">
-                                            <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('zapret.strategy')"><span><#ZapretStrategy#>:</span></a>
-                                                <div id="zapret.strategy" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
                                         <tr id="row_zapret_post_script" style="display:none">
                                             <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#>:</span></a>
+                                                <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
                                                 <div id="zapret.post_script" style="display:none;">
                                                     <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.post_script.sh" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.post_script.sh",""); %></textarea>
                                                 </div>

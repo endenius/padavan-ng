@@ -1,6 +1,6 @@
 SRC_NAME=busybox-1.3X.X
 
-CFLAGS += -Os -ffunction-sections -fdata-sections -fvisibility=hidden
+CFLAGS += -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS += -Wl,--gc-sections
 
 all:
