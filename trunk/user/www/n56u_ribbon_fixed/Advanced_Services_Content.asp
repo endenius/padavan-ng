@@ -1074,17 +1074,17 @@ function zapret_strategy_change(o, v) {
                                             <th width="50%" style="border-bottom: 0 none;"><a href="javascript:spoiler_toggle('zapret.strategy')"><#ZapretStrategy#>: <i style="scale: 75%;" class="icon-chevron-down"></i></a></th>
                                             <td style="border-bottom: 0 none;">
                                                 <select name="zapret_strategy" class="input" onchange="zapret_strategy_change(this, 1);">
-                                                    <option value="" <% nvram_match_x("", "zapret_strategy", "","selected"); %>>Профиль по умолчанию</option>
-                                                    <option value="0" <% nvram_match_x("", "zapret_strategy", "0","selected"); %>>Профиль стратегий #0</option>
-                                                    <option value="1" <% nvram_match_x("", "zapret_strategy", "1","selected"); %>>Профиль стратегий #1</option>
-                                                    <option value="2" <% nvram_match_x("", "zapret_strategy", "2","selected"); %>>Профиль стратегий #2</option>
-                                                    <option value="3" <% nvram_match_x("", "zapret_strategy", "3","selected"); %>>Профиль стратегий #3</option>
-                                                    <option value="4" <% nvram_match_x("", "zapret_strategy", "4","selected"); %>>Профиль стратегий #4</option>
-                                                    <option value="5" <% nvram_match_x("", "zapret_strategy", "5","selected"); %>>Профиль стратегий #5</option>
-                                                    <option value="6" <% nvram_match_x("", "zapret_strategy", "6","selected"); %>>Профиль стратегий #6</option>
-                                                    <option value="7" <% nvram_match_x("", "zapret_strategy", "7","selected"); %>>Профиль стратегий #7</option>
-                                                    <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>>Профиль стратегий #8</option>
-                                                    <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>>Профиль стратегий #9</option>
+                                                    <option value="" <% nvram_match_x("", "zapret_strategy", "","selected"); %>><#ZapretDefaultProfile#></option>
+                                                    <option value="0" <% nvram_match_x("", "zapret_strategy", "0","selected"); %>><#ZapretStrategyProfile#> #0</option>
+                                                    <option value="1" <% nvram_match_x("", "zapret_strategy", "1","selected"); %>><#ZapretStrategyProfile#> #1</option>
+                                                    <option value="2" <% nvram_match_x("", "zapret_strategy", "2","selected"); %>><#ZapretStrategyProfile#> #2</option>
+                                                    <option value="3" <% nvram_match_x("", "zapret_strategy", "3","selected"); %>><#ZapretStrategyProfile#> #3</option>
+                                                    <option value="4" <% nvram_match_x("", "zapret_strategy", "4","selected"); %>><#ZapretStrategyProfile#> #4</option>
+                                                    <option value="5" <% nvram_match_x("", "zapret_strategy", "5","selected"); %>><#ZapretStrategyProfile#> #5</option>
+                                                    <option value="6" <% nvram_match_x("", "zapret_strategy", "6","selected"); %>><#ZapretStrategyProfile#> #6</option>
+                                                    <option value="7" <% nvram_match_x("", "zapret_strategy", "7","selected"); %>><#ZapretStrategyProfile#> #7</option>
+                                                    <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>><#ZapretStrategyProfile#> #8</option>
+                                                    <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>><#ZapretStrategyProfile#> #9</option>
                                                 </select>
                                                 <a href="https://github.com/bol-van/zapret" class="label label-info"><#CTL_help#></a>
                                             </td>
