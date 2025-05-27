@@ -1,9 +1,11 @@
+# https://curl.se
+
 SRC_NAME=curl-8.13.0
 SRC_URL=https://github.com/curl/curl/releases/download/curl-8_13_0/$(SRC_NAME).tar.xz
-THISDIR = $(shell pwd)
+
+CPPFLAGS += $(CFLAGS)
 
 all: download_test extract_test config_test
-#all: config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
@@ -14,8 +16,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar --xz -xf $(SRC_NAME).tar.xz; \
-		[ ! -d $(THISDIR)/patches ] || \
-		find $(THISDIR)/patches -type f -name '*.patch' -print0 \
+		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
 		  | sort -z \
 		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
 	fi )
@@ -36,6 +37,9 @@ configure:
 		--enable-openssl-auto-load-config \
 		--enable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
+		--disable-ipfs \
+		--disable-rtsp \
+		--disable-websockets \
 		--disable-gopher \
 		--disable-ldap \
 		--disable-ldaps \
@@ -63,31 +67,23 @@ configure:
 		--disable-ntlm \
 		--disable-docs \
 		--without-brotli \
-		--without-hyper \
 		--without-gnutls \
 		--without-ca-path \
 		--without-ca-fallback \
-		--without-cyassl \
 		--without-default-ssl-backend \
 		--without-libidn2 \
 		--without-libpsl \
 		--without-librtmp \
 		--without-libssh \
 		--without-libssh2 \
-		--without-krb4 \
 		--with-nghttp2 \
 		--without-nghttp3 \
 		--without-ngtcp2 \
-		--without-nss \
 		--without-mbedtls \
-		--without-mesalink \
-		--without-polarssl \
 		--without-schannel \
 		--without-wolfssl \
 		--without-winidn \
-		--without-winssl \
 		--without-zsh-functions-dir \
-		--with-random=/dev/urandom \
 		--with-zlib=$(STAGEDIR) \
 		--with-ssl=$(STAGEDIR) \
 		--with-ca-bundle=/etc/ssl/cert.pem \

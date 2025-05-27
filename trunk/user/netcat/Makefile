@@ -3,6 +3,9 @@
 SRC_NAME = netcat-0.7.1
 SRC_URL = https://unlimited.dl.sourceforge.net/project/netcat/netcat/0.7.1/$(SRC_NAME).tar.gz
 
+CFLAGS += -Os -ffunction-sections -fdata-sections -fvisibility=hidden
+LDFLAGS += -Wl,--gc-sections
+
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 

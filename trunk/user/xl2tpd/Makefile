@@ -114,6 +114,10 @@ SBINDIR?=$(DESTDIR)${PREFIX}/sbin
 BINDIR?=$(DESTDIR)${PREFIX}/bin
 MANDIR?=$(DESTDIR)${PREFIX}/share/man
 
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+CFLAGS += -ffunction-sections -fdata-sections -fvisibility=hidden
+LDFLAGS += -Wl,--gc-sections
+endif
 
 all: $(EXEC)
 
