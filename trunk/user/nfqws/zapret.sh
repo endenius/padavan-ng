@@ -100,6 +100,7 @@ unset OPENWRT
 unset NFT
 nft -v >/dev/null 2>&1 && NFT=1
 
+# padavan
 if [ -x "/usr/sbin/nvram" ]; then
     [ "$(nvram get zapret_iface)" ] && ISP_INTERFACE="$(nvram get zapret_iface)"
     [ "$(nvram get zapret_log)" ] && LOG_LEVEL="$(nvram get zapret_log)"
@@ -341,6 +342,14 @@ system_config()
     )
 }
 
+set_strategy_file()
+{
+    [ "$1" ] || return
+    [ -s "$1" ] && STRATEGY_FILE="$1"
+    [ -s "${CONF_DIR}/$1" ] && STRATEGY_FILE="${CONF_DIR}/$1"
+    log "use strategy from file $STRATEGY_FILE"
+}
+
 start_service()
 {
     [ -s "$NFQWS_BIN" -a -x "$NFQWS_BIN" ] || error "$NFQWS_BIN: not found or invalid"
@@ -348,6 +357,8 @@ start_service()
         echo "service nfqws is already running"
         return
     fi
+
+    set_strategy_file "$@"
 
     kernel_modules
 
@@ -441,7 +452,8 @@ download()
 
 case "$1" in
     start)
-        start_service
+        shift
+        start_service "$@"
     ;;
 
     stop)
@@ -454,7 +466,8 @@ case "$1" in
 
     restart)
         stop_service
-        start_service
+        shift
+        start_service "$@"
     ;;
 
     firewall-start)
@@ -489,7 +502,7 @@ case "$1" in
         download_list
     ;;
 
-    *)  echo "Usage: $0 {start|stop|restart|download|download-nfqws|download-list|status}"
+    *)  echo "Usage: $0 {start [strategy_file]|stop|restart [strategy_file]|download|download-nfqws|download-list|status}"
 esac
 
 [ -s "$POST_SCRIPT" -a -x "$POST_SCRIPT" ] && . "$POST_SCRIPT"
