@@ -135,6 +135,7 @@ dir_y						+= samba3
 endif
 endif
 
+dir_$(CONFIG_FIRMWARE_INCLUDE_REDSOCKS2)	+= redsocks
 dir_$(CONFIG_FIRMWARE_INCLUDE_TOR)		+= tor
 dir_$(CONFIG_FIRMWARE_INCLUDE_PRIVOXY)		+= privoxy
 dir_$(CONFIG_FIRMWARE_INCLUDE_DNSCRYPT)		+= dnscrypt-proxy
