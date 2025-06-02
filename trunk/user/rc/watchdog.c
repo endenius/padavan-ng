@@ -1002,6 +1002,16 @@ ntpc_updated_main(int argc, char *argv[])
 		system("hwclock -w");
 #endif
 		logmessage("NTP Client", "System time changed, offset: %ss", offset);
+		if (atoi(offset) > 31536000) {
+#if defined(APP_DOH)
+			if (nvram_get_int("doh_enable") == 1)
+				system("/usr/bin/doh_proxy.sh restart");
+#endif
+#if defined(APP_STUBBY)
+			if (nvram_get_int("stubby_enable") == 1)
+				system("/usr/bin/stubby.sh restart");
+#endif
+		}
 	}
 
 	return 0;

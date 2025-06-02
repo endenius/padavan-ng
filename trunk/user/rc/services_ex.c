@@ -391,7 +391,7 @@ start_dns_dhcpd(int is_ap_mode)
 
 			if (strlen(srv_addr[0]) > 2)
 			{
-				fprintf(fp, "server=/%s/1.1.1.1\n", srv_addr[0]);
+				fprintf(fp, "server=/%s/77.88.8.8\n", srv_addr[0]);
 			}
 			if (strlen(srv_addr[1]) > 2)
 			{

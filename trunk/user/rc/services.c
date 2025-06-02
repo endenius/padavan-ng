@@ -294,20 +294,16 @@ void stop_doh(void)
 
 int start_doh(void)
 {
-	int doh_mode = nvram_get_int("doh_enable");
-
-	if (doh_mode == 1)
-	{
+	if (nvram_get_int("doh_enable") == 1)
 		return eval("/usr/bin/doh_proxy.sh", "start");
-	}
+
 	return 0;
 }
 
 void restart_doh(void)
 {
 	stop_doh();
-	if (start_doh() != 0)
-		nvram_set_int("doh_enable", 0);
+	start_doh();
 	restart_dhcpd();
 }
 #endif
@@ -329,20 +325,16 @@ void stop_stubby(void)
 
 int start_stubby(void)
 {
-	int stubby_mode = nvram_get_int("stubby_enable");
-
-	if (stubby_mode == 1)
-	{
+	if (nvram_get_int("stubby_enable") == 1)
 		return eval("/usr/bin/stubby.sh", "start");
-	}
+
 	return 0;
 }
 
 void restart_stubby(void)
 {
 	stop_stubby();
-	if (start_stubby() != 0)
-		nvram_set_int("stubby_enable", 0);
+	start_stubby();
 	restart_dhcpd();
 }
 #endif
@@ -361,8 +353,7 @@ void stop_zapret(void){
 }
 
 void start_zapret(void){
-	int zapret_mode = nvram_get_int("zapret_enable");
-	if (zapret_mode == 1)
+	if (nvram_get_int("zapret_enable") == 1)
 		eval("/usr/bin/zapret.sh", "start");
 }
 
@@ -372,8 +363,7 @@ void restart_zapret(void){
 }
 
 void reload_zapret(void){
-	int zapret_mode = nvram_get_int("zapret_enable");
-	if (zapret_mode == 1)
+	if (nvram_get_int("zapret_enable") == 1)
 		eval("/usr/bin/zapret.sh", "reload");
 }
 #endif
