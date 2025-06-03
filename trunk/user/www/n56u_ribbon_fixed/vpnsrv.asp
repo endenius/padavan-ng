@@ -68,7 +68,7 @@ function initial(){
 		}
 	}
 	if (!found_app_wg())
-		document.form.vpns_type.remove(3);
+		$j("#vpns_type option[value='3']").remove();
 
 	if (openssl_util_found() && login_safe()) {
 		if (!support_openssl_ec()) {
@@ -1005,7 +1005,7 @@ function getHash(){
                                 <tr>
                                     <th width="50%"><#VPNS_Type#></th>
                                     <td>
-                                        <select name="vpns_type" class="input" onchange="change_vpns_type();">
+                                        <select name="vpns_type" id="vpns_type" class="input" onchange="change_vpns_type();">
                                             <option value="0" <% nvram_match_x("", "vpns_type", "0","selected"); %>>PPTP</option>
                                             <option value="1" <% nvram_match_x("", "vpns_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                             <option value="2" <% nvram_match_x("", "vpns_type", "2","selected"); %>>OpenVPN</option>

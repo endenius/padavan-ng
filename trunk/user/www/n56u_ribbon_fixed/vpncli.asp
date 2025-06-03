@@ -58,8 +58,9 @@ function initial(){
 			o.remove(2);
 		}
 	}
+
 	if (!found_app_wg())
-		document.form.vpnc_type.remove(3);
+		$j("#vpnc_type option[value='3']").remove();
 
 	if (fw_enable_x == "0"){
 		var o1 = document.form.vpnc_sfw;
@@ -534,7 +535,7 @@ function wg_conf_import() {
                                 <tr>
                                     <th width="50%"><#VPNC_Type#></th>
                                     <td>
-                                        <select name="vpnc_type" class="input" onchange="change_vpnc_type();">
+                                        <select name="vpnc_type" id="vpnc_type" class="input" onchange="change_vpnc_type();">
                                             <option value="0" <% nvram_match_x("", "vpnc_type", "0","selected"); %>>PPTP</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                             <option value="2" <% nvram_match_x("", "vpnc_type", "2","selected"); %>>OpenVPN</option>
