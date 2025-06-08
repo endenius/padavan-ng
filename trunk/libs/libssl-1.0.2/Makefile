@@ -4,13 +4,9 @@ SRC_URL  = https://github.com/openssl/openssl/releases/download/OpenSSL_1_0_2u/o
 # openssl use CROSS_COMPILE prefix
 CC = gcc $(CPUFLAGS)
 
-COPTS  = $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(DESTDIR)/include
+COPTS += $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 COPTS += $(if $(CONFIG_IPV6),-DOPENSSL_USE_IPV6=1,)
 COPTS += -DOPENSSL_SMALL_FOOTPRINT
-
-LOPTS = -Wl,--gc-sections -L$(DESTDIR)/lib
-
-OPENSSL_APPS =
 
 OPENSSL_CIPHERS := no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
                   no-ec2m no-err no-idea no-rc5 no-ripemd no-rmd160 \
@@ -22,9 +18,9 @@ OPENSSL_CIPHERS += no-threads
 endif
 
 ifdef CONFIG_CRYPTO_DEV_LINUX
-COPTS+=-DHAVE_CRYPTODEV
+COPTS += -DHAVE_CRYPTODEV
 else
-OPENSSL_APPS += no-speed
+OPENSSL_CIPHERS += no-speed
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_TOR),y)
 OPENSSL_CIPHERS += no-engine
 endif
@@ -39,7 +35,6 @@ OPENSSL_CIPHERS += no-ec
 endif
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME) depend
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
@@ -64,8 +59,7 @@ config_test:
 	fi )
 
 configure:
-#	# build all symlinks
-	( cd $(SRC_NAME) ; \
+	( cd $(SRC_NAME); \
 	./Configure \
 		linux-mipsel \
 		shared \
@@ -73,39 +67,22 @@ configure:
 		--install_prefix=$(STAGEDIR) \
 		--openssldir=/etc/ssl \
 		$(COPTS) \
-		$(LOPTS) ; \
-	)
-#	# refresh config for target
-	( cd $(SRC_NAME) ; \
-	./Configure \
-		linux-mipsel \
-		shared \
-		--prefix=/ \
-		--install_prefix=$(STAGEDIR) \
-		--openssldir=/etc/ssl \
-		no-symlinks \
-		$(COPTS) \
-		$(LOPTS) \
-		$(OPENSSL_APPS) \
-		$(OPENSSL_CIPHERS) ; \
+		$(OPENSSL_CIPHERS); \
+	cd ./include/openssl && ln -fs ../../crypto/ts/ts.h ts.h; \
 	)
 
 clean:
-	$(MAKE) -C $(SRC_NAME) distclean
+	( if [ -f $(SRC_NAME)/Makefile ]; then \
+		$(MAKE) -C $(SRC_NAME) distclean; \
+	fi )
 	rm -rf $(SRC_NAME)/include/*
 	rm -f config_done
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR="$(STAGEDIR)"
-	# restore Makefile after depend command
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) dclean
 	# remove unneeded
 	rm -f $(DESTDIR)/lib/libssl.a
 	rm -f $(DESTDIR)/lib/libcrypto.a
-	# fix pkgconfig
-	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/libcrypto.pc
-	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/libssl.pc
-	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/openssl.pc
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libssl.so* $(ROMFSDIR)/lib
