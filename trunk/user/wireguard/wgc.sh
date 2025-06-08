@@ -20,6 +20,7 @@ REMOTE_NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 EXCLUDE_NETWORK_LIST="/etc/storage/vpnc_exclude_network.list"
 
 FWMARK=51820
+TABLE=51
 
 PREF_WG=5182
 PREF_MAIN=5181
@@ -27,7 +28,11 @@ PREF_SUPPRESS=5180
 
 WAN_ADDR=$(nvram get wan_ipaddr)
 WAN0_ADDR=$(nvram get wan0_ipaddr)
-LAN_ADDR=$(nvram get lan_ipaddr)
+WAN0_IFNAME=$(nvram get wan0_ifname)
+WAN0_GW=$(nvram get wan0_gateway)
+
+# if iproute2 is not available
+IPBB=$(ip 2>&1 | grep -i busybox)
 
 ###
 
@@ -60,8 +65,8 @@ prepare_wg()
 {
     modprobe -q wireguard >/dev/null 2>&1
     sysctl -q net.ipv4.conf.all.src_valid_mark=1
-    sysctl -q net.ipv6.conf.all.disable_ipv6=0
-    sysctl -q net.ipv6.conf.all.forwarding=1
+    sysctl -q net.ipv6.conf.all.disable_ipv6=0 2>/dev/null
+    sysctl -q net.ipv6.conf.all.forwarding=1 2>/dev/null
 }
 
 wg_setdns()
@@ -154,21 +159,36 @@ start_wg()
 
     wg set $IF_NAME fwmark $FWMARK
 
-    for p in 4 6; do
-        ip -$p rule add not fwmark $FWMARK table $FWMARK pref $PREF_WG
+    [ ! "$IPBB" ] && for p in 4 6; do
+        ip -$p rule add not fwmark $FWMARK table $TABLE pref $PREF_WG
         ip -$p rule add table main suppress_prefixlength 0 pref $PREF_SUPPRESS
     done
 
+    # if iproute2 is not available - use $TABLE for exclude network
+    [ "$IPBB" -a "$WAN0_GW" -a "$WAN0_IFNAME" ] && ip route add default via $WAN0_GW dev $WAN0_IFNAME table $TABLE
+
     if [ "$(nvram get vpnc_dgw)" == "1" ]; then
-        for p in 4 6; do
-            ip -$p route add default dev $IF_NAME table $FWMARK
-            log "  add ipv$p default route dev $IF_NAME table $FWMARK"
-        done
+        if [ "$IPBB" ]; then
+            ip route add 0/1 dev $IF_NAME
+            ip route add 128/1 dev $IF_NAME
+            log "  add default route dev $IF_NAME"
+        else
+            for p in 4 6; do
+                ip -$p route add default dev $IF_NAME table $TABLE \
+                    && log "  add ipv$p default route dev $IF_NAME table $TABLE" \
+                    || log "  unable to add ipv$p default route dev $IF_NAME table $TABLE"
+            done
+        fi
     else
         iplist=$(cat "$REMOTE_NETWORK_LIST" | grep -v "^#")
         for i in $iplist; do
-            p=4; [ "$i" != "${i#*:}" ] && p=6
-            ip -$p route add "$i" dev $IF_NAME table $FWMARK || msg_unable "$i" "remote network"
+            if [ "$IPBB" ]; then
+                [ "$i" != "${i#*:}" ] && continue
+                ip route add "$i" dev $IF_NAME || msg_unable "$i" "remote network"
+            else
+                p=4; [ "$i" != "${i#*:}" ] && p=6
+                ip -$p route add "$i" dev $IF_NAME table $TABLE || msg_unable "$i" "remote network"
+            fi
         done
 
         iplist=$($WG show $IF_NAME allowed-ips | cut -f2-)
@@ -178,24 +198,42 @@ start_wg()
                 *:*) p="6";;
                 *)   p="4";;
             esac
-            ip -$p route add "$i" dev $IF_NAME table $FWMARK || msg_unable "$i" "allowed ips"
+            if [ "$IPBB" ]; then
+                [ "$p" = "4" ] && ip route add "$i" dev $IF_NAME || msg_unable "$i" "allowed ips"
+            else
+                ip -$p route add "$i" dev $IF_NAME table $TABLE || msg_unable "$i" "allowed ips"
+            fi
         done
     fi
 
     iplist=$(cat "$EXCLUDE_NETWORK_LIST" | grep -v "^#")
     for i in $iplist; do
-        p=4; [ "$i" != "${i#*:}" ] && p=6
-        ip -$p rule add from "$i" lookup main pref $PREF_MAIN || msg_unable "$i" "exclude network"
+        if [ "$IPBB" ]; then
+            case "$i" in
+                */0|*:*) continue;;
+            esac
+            ip rule add from "$i" table $TABLE pref $PREF_MAIN
+        else
+            p=4; [ "$i" != "${i#*:}" ] && p=6
+            ip -$p rule add from "$i" lookup main pref $PREF_MAIN || msg_unable "$i" "exclude network"
+        fi
     done
 
     local endpoint=$($WG show $IF_NAME endpoints | sed -r 's/^.+\t//; s/:[0-9]+$//')
-    if [ "$endpoint" ]; then
+    [ "$endpoint" ] && if [ "$IPBB" ]; then
+        ip rule add to "$endpoint" table $TABLE pref $PREF_MAIN
+    else
         p=4; [ "$endpoint" != "${endpoint#*:}" ] && p=6
-        ip -$p rule add to $endpoint lookup main pref $PREF_MAIN 2>/dev/null
+        ip -$p rule add to "$endpoint" lookup main pref $PREF_MAIN 2>/dev/null
     fi
 
-    for i in $WAN_ADDR $WAN0_ADDR $LAN_ADDR; do
-        [ ! "$i" == "0.0.0.0" ] && ip -4 rule add from "$i" lookup main pref $PREF_MAIN
+    for i in $WAN_ADDR $WAN0_ADDR; do
+        [ "$i" = "0.0.0.0" ] && continue
+        if [ "$IPBB" ]; then
+            ip rule add from "$i" table $TABLE pref $PREF_MAIN
+        else
+            ip -4 rule add from "$i" lookup main pref $PREF_MAIN
+        fi
     done
 
     wg_setdns
@@ -206,6 +244,8 @@ stop_wg()
     local i p
 
     is_started || return
+
+    [ "$IPBB" ] && ip route del default table $TABLE 2>/dev/null
 
     for i in $PREF_SUPPRESS $PREF_MAIN $PREF_WG; do
         for p in 4 6; do

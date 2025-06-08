@@ -273,6 +273,7 @@ if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
 	func_enable_busybox_param "CONFIG_FEATURE_IP_ADDRESS"
 	func_enable_busybox_param "CONFIG_FEATURE_IP_LINK"
 	func_enable_busybox_param "CONFIG_FEATURE_IP_ROUTE"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_RULE"
 fi
 ############################# USB #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
