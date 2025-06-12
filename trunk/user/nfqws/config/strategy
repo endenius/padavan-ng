@@ -7,6 +7,7 @@
 
 #--dpi-desync-split-pos=1,midsld
 #--dpi-desync-split-pos=method+2
+#--dpi-desync-split-pos=endsld
 --dpi-desync-split-pos=method+2,midsld,5
 
 #--dpi-desync-ttl=0
