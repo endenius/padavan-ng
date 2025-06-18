@@ -1,9 +1,9 @@
 # https://www.wireguard.com
 
-SRC_NAME = wireguard-tools-1.0.20210914
+SRC_NAME = wireguard-tools-1.0.20250521
 SRC_URL = https://git.zx2c4.com/wireguard-tools/snapshot/$(SRC_NAME).tar.xz
 
-CFLAGS +=$(COPT) -ffunction-sections -fdata-sections -fvisibility=hidden
+CFLAGS += -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS += -Wl,--gc-sections
 
 all: download_test extract_test config_test
