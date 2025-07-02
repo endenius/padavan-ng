@@ -2,7 +2,7 @@
 # https://www.ccadb.org/resources
 # https://wiki.mozilla.org/CA/Included_Certificates
 
-SRC_NAME=openssl-3.0.16
+SRC_NAME=openssl-3.0.17
 SRC_URL=https://github.com/openssl/openssl/releases/download/$(SRC_NAME)/$(SRC_NAME).tar.gz
 
 # openssl use CROSS_COMPILE prefix

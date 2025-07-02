@@ -137,10 +137,10 @@ dir_$(LIBS_INCLUDE_LIBCAP_NG)			+= libcap-ng
 
 ifeq ($(LIBS_INCLUDE_LIBSSL),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_1.0),y)
-dir_y						+= libssl-1.0.2
+dir_y						+= libssl-1.0
 else
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_OLD),y)
-dir_y						+= libssl-1.1.1
+ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_OLD) $(CONFIG_FIRMWARE_INCLUDE_OPENSSL_1.1)))
+dir_y						+= libssl-1.1
 else
 dir_y						+= libssl
 endif
