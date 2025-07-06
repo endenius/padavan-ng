@@ -35,6 +35,7 @@ OPENSSL_CIPHERS += no-ec
 endif
 
 all: download_test extract_test config_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) depend
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
