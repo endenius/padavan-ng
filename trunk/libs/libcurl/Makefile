@@ -1,9 +1,17 @@
 # https://curl.se
 
-SRC_NAME=curl-8.14.1
-SRC_URL=https://github.com/curl/curl/releases/download/curl-8_14_1/$(SRC_NAME).tar.xz
+SRC_NAME = curl-8.14.1
+SRC_URL = https://github.com/curl/curl/releases/download/curl-8_14_1/$(SRC_NAME).tar.xz
 
 CPPFLAGS += $(CFLAGS)
+
+QUIC = --without-nghttp3 --without-ngtcp2 --without-openssl-quic
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_QUIC),y)
+QUIC = --with-nghttp3 --without-ngtcp2 --with-openssl-quic
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_QUIC_NGTCP2),y)
+QUIC = --with-nghttp3 --with-ngtcp2 --without-openssl-quic
+endif
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
@@ -37,6 +45,9 @@ configure:
 		--enable-openssl-auto-load-config \
 		--enable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
+		$(QUIC) \
+		--without-quiche \
+		--without-msh3 \
 		--disable-ipfs \
 		--disable-rtsp \
 		--disable-websockets \
@@ -77,8 +88,6 @@ configure:
 		--without-libssh \
 		--without-libssh2 \
 		--with-nghttp2 \
-		--without-nghttp3 \
-		--without-ngtcp2 \
 		--without-mbedtls \
 		--without-schannel \
 		--without-wolfssl \

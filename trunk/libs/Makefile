@@ -34,6 +34,7 @@ LIBS_INCLUDE_LIBEVENT=n
 LIBS_INCLUDE_MEDIA=n
 LIBS_INCLUDE_LIBCURL=n
 STORAGE_ENABLED=n
+QUIC_ENABLED=n
 
 ifdef CONFIG_MMC_BLOCK
 STORAGE_ENABLED=y
@@ -130,19 +131,27 @@ ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_PRIVOXY) $(CONFIG_FIRMWARE_ENABLE_D
 LIBS_INCLUDE_LIBPCRE=y
 endif
 
+ifneq (,$(filter y, $(CONFIG_FIRMWARE_INCLUDE_QUIC) $(CONFIG_FIRMWARE_INCLUDE_QUIC_NGTCP2)))
+QUIC_ENABLED=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
 dir_$(LIBS_INCLUDE_LIBNL)			+= libnl
 dir_$(LIBS_INCLUDE_LIBCAP_NG)			+= libcap-ng
 
 ifeq ($(LIBS_INCLUDE_LIBSSL),y)
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_1.0),y)
-dir_y						+= libssl-1.0
+ifneq (,$(filter y,$(QUIC_ENABLED) $(CONFIG_FIRMWARE_INCLUDE_OPENSSL_35)))
+dir_y						+= libssl-3.5
 else
-ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_OLD) $(CONFIG_FIRMWARE_INCLUDE_OPENSSL_1.1)))
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_11),y)
 dir_y						+= libssl-1.1
 else
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_10),y)
+dir_y						+= libssl-1.0
+else
 dir_y						+= libssl
+endif
 endif
 endif
 endif
@@ -178,6 +187,8 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_DOH)		+= libev
 dir_$(CONFIG_FIRMWARE_INCLUDE_DOH)		+= libcares
 
 # libcurl for Transmission and DoH proxy
+dir_$(QUIC_ENABLED)				+= libngtcp2
+dir_$(QUIC_ENABLED)				+= libnghttp3
 dir_$(LIBS_INCLUDE_LIBCURL)			+= libnghttp2
 dir_$(LIBS_INCLUDE_LIBCURL)			+= libcurl
 
