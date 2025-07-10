@@ -1,7 +1,3 @@
-# https://openssl-library.org/source
-# https://www.ccadb.org/resources
-# https://wiki.mozilla.org/CA/Included_Certificates
-
 SRC_NAME=openssl-3.0.17
 SRC_URL=https://github.com/openssl/openssl/releases/download/$(SRC_NAME)/$(SRC_NAME).tar.gz
 
@@ -42,7 +38,11 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
 OPENSSL_OPTIONS += no-rc2
 endif
 
-ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) $(CONFIG_FIRMWARE_INCLUDE_TOR)))
+ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) \
+                  $(CONFIG_FIRMWARE_INCLUDE_TOR) \
+                  $(CONFIG_FIRMWARE_INCLUDE_OPENVPN) \
+                  $(CONFIG_FIRMWARE_INCLUDE_DOH) \
+                  $(CONFIG_FIRMWARE_INCLUDE_STUBBY)))
 OPENSSL_OPTIONS += no-ec
 endif
 
