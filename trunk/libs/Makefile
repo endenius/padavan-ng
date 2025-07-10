@@ -139,23 +139,7 @@ dir_y						+= libz
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
 dir_$(LIBS_INCLUDE_LIBNL)			+= libnl
 dir_$(LIBS_INCLUDE_LIBCAP_NG)			+= libcap-ng
-
-ifeq ($(LIBS_INCLUDE_LIBSSL),y)
-ifneq (,$(filter y,$(QUIC_ENABLED) $(CONFIG_FIRMWARE_INCLUDE_OPENSSL_35)))
-dir_y						+= libssl-3.5
-else
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_11),y)
-dir_y						+= libssl-1.1
-else
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_10),y)
-dir_y						+= libssl-1.0
-else
-dir_y						+= libssl
-endif
-endif
-endif
-endif
-
+dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
 dir_$(LIBS_INCLUDE_LIBUSB_0)			+= libusb
 dir_$(LIBS_INCLUDE_LIBUSB_1)			+= libusb-1.0
 dir_y						+= libnfnetlink
