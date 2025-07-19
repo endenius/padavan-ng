@@ -1889,10 +1889,19 @@ ipt_nat_rules(char *man_if, char *man_ip,
 					if (i_vpns_ov_mode == 1) {
 						if (i_vpns_actl == 0 || i_vpns_actl == 1 || i_vpns_actl == 4)
 							include_masquerade(fp, wan_if, wan_ip, vpn_net);
-						
+
 						/* masquerade VPN server clients to LAN */
 						if (i_vpns_vuse == 2)
 							include_masquerade(fp, lan_if, lan_ip, vpn_net);
+
+						/* ability to connect to openvpn server from LAN */
+						const char *ov_prot = "udp";
+						int i_ov_prot = nvram_get_int("vpns_ov_prot");
+						int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
+						if (i_ov_prot == 1 || i_ov_prot == 3 || i_ov_prot == 5)
+							ov_prot = "tcp";
+
+						fprintf(fp, "-A %s -i %s -p %s --dport %d -j DNAT --to-destination %s\n", dtype, lan_if, ov_prot, i_ov_port, lan_ip);
 					}
 				} else
 #endif
