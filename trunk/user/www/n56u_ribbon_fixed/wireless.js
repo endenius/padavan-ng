@@ -478,7 +478,7 @@ function insertChannelOption() {
     free_options(document.form.wl_channel);
 
     if (country == "RU")
-        channels = new Array(0, 36, 40, 44, 48, 52, 56, 60, 64, 132, 136, 140, 144, 149, 153, 157, 161, 165); //Region 0
+        channels = new Array(0, 36, 40, 44, 48, 52, 56, 60, 64, 132, 136, 140, 149, 153, 157, 161, 165); //Region 0
 
     else if (country == "AL" ||
         country == "DZ" ||

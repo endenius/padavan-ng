@@ -234,7 +234,7 @@ CH_DESC Country_Region7_ChDesc_5GHZ[] =
 {
 	{36, 8, CHANNEL_DEFAULT_PROP},
 	{100, 11, CHANNEL_DEFAULT_PROP},
-	{149, 7, CHANNEL_DEFAULT_PROP},
+	{149, 5, CHANNEL_DEFAULT_PROP},
 	{}
 };
 
@@ -361,7 +361,7 @@ CH_DESC Country_Region22_ChDesc_5GHZ[] =
 /* special for Russia */
 CH_DESC Country_Region36_ChDesc_5GHZ[] = {
 	{36, 8, CHANNEL_DEFAULT_PROP},
-	{132, 4, CHANNEL_DEFAULT_PROP},
+	{132, 3, CHANNEL_DEFAULT_PROP},
 	{149, 5, CHANNEL_DEFAULT_PROP},
 	{}
 };
@@ -1237,11 +1237,11 @@ CH_DESP Country_RO_ChDesp[] =
 /*Russian Federation*/		
 CH_DESP Country_RU_ChDesp[] =
 {
-	{ 1,   13, 20, BOTH, FALSE},	/*2402~2482MHz, Ch 1~13,   Max BW: 40 */
-	{ 36,   4, 20, BOTH, FALSE},	/*5170~5250MHz, Ch 36~48, Max BW: 40 */
-	{ 52,   4, 20, BOTH, FALSE}, 	/*5250~5330MHz, Ch 52~64, Max BW: 40 */
-	{ 132,  4, 20, BOTH, FALSE},	/*5650~5730MHz, Ch 132~144, Max BW: 40 */
-	{ 149,  5, 20, BOTH, FALSE},	/*5735~5835MHz, Ch 149~165, Max BW: 40 */
+	{ 1,   13, 23, BOTH, FALSE},	/*2402~2482MHz, Ch 1~13,   Max BW: 40 */
+	{ 36,   4, 30, BOTH, FALSE},	/*5170~5250MHz, Ch 36~48, Max BW: 40 */
+	{ 52,   4, 30, BOTH, FALSE}, 	/*5250~5330MHz, Ch 52~64, Max BW: 40 */
+	{ 132,  3, 30, BOTH, FALSE},	/*5650~5730MHz, Ch 132~140, Max BW: 40 */
+	{ 149,  5, 30, BOTH, FALSE},	/*5735~5835MHz, Ch 149~165, Max BW: 40 */
 	{ 0},               	    	/* end*/
 };
 /*Saint Barth'elemy*/		
