@@ -181,6 +181,9 @@ function validForm(){
 		if(!validate_range(document.form.vpnc_wg_mtu, 1000, 1420)) {
 			return false;
 		}
+
+		if(!validate_range(document.form.vpnc_wg_peer_port, 1, 65535))
+			return false;
 	}
 	else if (mode == "2") {
 		if(!validate_range(document.form.vpnc_ov_port, 1, 65535))
@@ -385,7 +388,7 @@ function wg_conf_import() {
 		return;
 	}
 
-	if( fileInput.files[0].size > 1024) {
+	if( fileInput.files[0].size > 2048) {
 		alert("File is too big");
 		return;
 	}
@@ -415,6 +418,7 @@ function wg_conf_import() {
 		document.form.vpnc_wg_mtu.value = "<% nvram_get_x("", "vpnc_wg_mtu"); %>";
 		document.form.vpnc_wg_peer_public.value = "";
 		document.form.vpnc_wg_peer_endpoint.value = "";
+		document.form.vpnc_wg_peer_port.value = "";
 		document.form.vpnc_wg_peer_keepalive.value = "";
 		document.form.vpnc_wg_peer_allowedips.value = "";
 		document.form.vpnc_wg_if_dns.value = "";
@@ -425,7 +429,14 @@ function wg_conf_import() {
 		wg_pubkey();
 		if (settings.mtu) document.form.vpnc_wg_mtu.value = settings.mtu;
 		if (settings.publickey) document.form.vpnc_wg_peer_public.value = settings.publickey;
-		if (settings.endpoint) document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
+		if (settings.endpoint) {
+			const separatorIndex = settings.endpoint.lastIndexOf(':');
+			if (separatorIndex > 0) {
+				document.form.vpnc_wg_peer_endpoint.value = settings.endpoint.substring(0, separatorIndex);
+				document.form.vpnc_wg_peer_port.value = settings.endpoint.substring(separatorIndex + 1);
+			} else
+				document.form.vpnc_wg_peer_endpoint.value = settings.endpoint;
+		}
 		if (settings.persistentkeepalive) document.form.vpnc_wg_peer_keepalive.value = settings.persistentkeepalive;
 		if (settings.allowedips) document.form.vpnc_wg_peer_allowedips.value = settings.allowedips;
 		if (settings.dns) document.form.vpnc_wg_if_dns.value = settings.dns;
@@ -601,7 +612,7 @@ function wg_conf_import() {
                                                 <th><#PPPConnection_x_PPPoEMTU_itemname#></th>
                                                 <td>
                                                     <input type="text" name="vpnc_wg_mtu" class="input" maxlength="5" size="32" value="<% nvram_get_x("", "vpnc_wg_mtu"); %>" onKeyPress="return is_number(this,event);"/>
-                                                    &nbsp;<span style="color:#888;">[1000..1420]</span>
+                                                    &nbsp;<span style="color:#888;">[ 1000..1420 ]</span>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -622,9 +633,16 @@ function wg_conf_import() {
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <th><#VPNC_WG_EndPoint#>:</th>
+                                                <th><#VPNC_Peer#></th>
                                                 <td>
                                                     <input type="text" name="vpnc_wg_peer_endpoint" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_wg_peer_endpoint"); %>" onKeyPress="return is_string(this,event);"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><#OVPN_Port#></th>
+                                                <td>
+                                                    <input type="text" maxlength="5" size="5" name="vpnc_wg_peer_port" class="input" value="<% nvram_get_x("", "vpnc_wg_peer_port"); %>" onkeypress="return is_number(this,event);">
+                                                    &nbsp;<span style="color:#888;">[ 51820 ]</span>
                                                 </td>
                                             </tr>
                                             <tr>

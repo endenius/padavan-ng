@@ -12,9 +12,10 @@ IF_PRESHARED=$(nvram get vpnc_wg_if_preshared)
 IF_DNS=$(nvram get vpnc_wg_if_dns | tr -d ' ')
 
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
-PEER_ENDPOINT=$(nvram get vpnc_wg_peer_endpoint)
+PEER_PORT=$(nvram get vpnc_wg_peer_port)
+PEER_ENDPOINT="$(nvram get vpnc_wg_peer_endpoint)${PEER_PORT:+":$PEER_PORT"}"
 PEER_KEEPALIVE=$(nvram get vpnc_wg_peer_keepalive)
-PEER_ALLOWEDIPS=$(nvram get vpnc_wg_peer_allowedips | tr -d ' ')
+PEER_ALLOWEDIPS="$(nvram get vpnc_wg_peer_allowedips | tr -d ' ')"
 POST_SCRIPT="/etc/storage/vpnc_server_script.sh"
 REMOTE_NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 EXCLUDE_NETWORK_LIST="/etc/storage/vpnc_exclude_network.list"

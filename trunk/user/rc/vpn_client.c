@@ -63,15 +63,16 @@ start_vpn_client(void)
 {
 	FILE *fp;
 	int i_type, i_mppe, i_auth;
-	char *vpnc_peer, *vpnc_opt, tmp[256];
+	char *vpnc_peer, *vpnc_wg_peer, *vpnc_opt, tmp[256];
 
 	if (nvram_invmatch("vpnc_enable", "1") || get_ap_mode())
 		return 1;
 
 	i_type = nvram_get_int("vpnc_type");
-
 	vpnc_peer = nvram_safe_get("vpnc_peer");
-	if (strlen(vpnc_peer) < 1 && i_type != 3) {
+	vpnc_wg_peer = nvram_safe_get("vpnc_wg_peer_endpoint");
+
+	if (strlen(i_type == 3 ? vpnc_wg_peer : vpnc_peer) < 1) {
 		logmessage(VPNC_LOG_NAME, "Unable to start - remote server host is not defined!");
 		return 1;
 	}

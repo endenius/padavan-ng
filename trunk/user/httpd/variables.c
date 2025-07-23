@@ -655,6 +655,7 @@
 			{"vpnc_wg_if_dns", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_peer_public", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_peer_endpoint", "", NULL, EVM_RESTART_VPNCLI},
+			{"vpnc_wg_peer_port", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_peer_keepalive", "", NULL, EVM_RESTART_VPNCLI},
 			{"vpnc_wg_peer_allowedips", "", NULL, EVM_RESTART_VPNCLI},
 			{"scripts.vpnc_remote_network.list", "File", NULL, EVM_RESTART_VPNCLI},
