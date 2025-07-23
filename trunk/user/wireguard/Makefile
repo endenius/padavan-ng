@@ -37,6 +37,6 @@ clean:
 
 romfs:
 	$(ROMFSINST) $(SRC_NAME)/src/wg /usr/sbin/wg
-	$(ROMFSINST) /usr/bin/wgs.sh
-	$(ROMFSINST) /usr/bin/wgc.sh
-	$(ROMFSINST) /usr/bin/wg-json.sh
+	$(ROMFSINST) -p +x /usr/bin/wgs.sh
+	$(ROMFSINST) -p +x /usr/bin/wgc.sh
+	$(ROMFSINST) -p +x /usr/bin/wg-json.sh
