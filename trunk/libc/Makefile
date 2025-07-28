@@ -1,3 +1,5 @@
+# https://downloads.uclibc-ng.org/releases
+
 .EXPORT_ALL_VARIABLES:
 .PHONY: all romfs clean
 
@@ -15,7 +17,7 @@ include $(ROOTDIR)/include/configedit.mk
 
 DESTDIR=$(ROOTDIR)/stage
 
-LIBC_DIR = uClibc-ng-1.0.52
+LIBC_DIR = uClibc-ng-1.0.54
 
 all:
 	cp -fL $(ROOTDIR)/configs/boards/uclibc-mipsel.config $(LIBC_DIR)/.config
