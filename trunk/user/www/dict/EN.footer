@@ -1781,4 +1781,6 @@ VPNC_WG_UseDNS=Use DNS addresses from client settings:
 CTL_copy=Copy
 VPNC_RNet_List=List of remote addresses/subnets behind the VPN server
 Connecting=Connecting
+ZapretAllowedClients=List of allowed client IP addresses
+ZapretWORestrictions=Without restrictions
 #Device_type_04_NAS=

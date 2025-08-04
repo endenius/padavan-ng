@@ -533,6 +533,8 @@
 			{"zapret_iface", "", NULL, EVM_RESTART_ZAPRET},
 			{"zapret_log", "", NULL, EVM_RESTART_ZAPRET},
 			{"zapret_strategy", "", NULL, EVM_RESTART_ZAPRET},
+			{"zapret_clients", "", NULL, EVM_RESTART_ZAPRET},
+			{"zapret_clients_allowed", "", NULL, EVM_RESTART_ZAPRET},
 			{"zapretc.post_script.sh", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},
 			{"zapretc.strategy", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},
 			{"zapretc.strategy0", "File", NULL, EVM_RESTART_ZAPRET|EVM_BLOCK_UNSAFE},

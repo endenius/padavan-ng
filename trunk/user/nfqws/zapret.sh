@@ -40,6 +40,9 @@ HOSTLIST="
   --hostlist-auto=${CONF_DIR}/auto.list
   --hostlist=/tmp/filter.list
 "
+DESYNC_MARK="0x40000000"
+# mark allowed clients
+FILTER_MARK="0x10000000"
 
 ### default config
 
@@ -47,6 +50,9 @@ ISP_INTERFACE=
 NFQUEUE_NUM=200
 LOG_LEVEL=0
 USER="nobody"
+
+# comma separated list of client ipv4 addresses, enables client access restrictions
+CLIENTS_ALLOWED=
 
 ###
 
@@ -105,6 +111,7 @@ if [ -x "/usr/sbin/nvram" ]; then
     [ "$(nvram get zapret_iface)" ] && ISP_INTERFACE="$(nvram get zapret_iface)"
     [ "$(nvram get zapret_log)" ] && LOG_LEVEL="$(nvram get zapret_log)"
     [ "$(nvram get zapret_strategy)" ] && STRATEGY_FILE="$STRATEGY_FILE$(nvram get zapret_strategy)"
+    [ "$(nvram get zapret_clients_allowed)" ] && CLIENTS_ALLOWED="$(nvram get zapret_clients_allowed | tr ',' ' ')"
 fi
 
 _get_if_default()
@@ -132,9 +139,29 @@ UDP_PORTS=$(_get_ports udp)
 
 _MANGLE_RULES()
 {
-    [ "$TCP_PORTS" ] && echo "-A PREROUTING  -i $IFACE -p tcp -m multiport --sports $TCP_PORTS -m connbytes --connbytes-dir=reply    --connbytes-mode=packets --connbytes 1:3 -m mark ! --mark 0x40000000/0x40000000 -j NFQUEUE --queue-num $NFQUEUE_NUM --queue-bypass"
-    [ "$TCP_PORTS" ] && echo "-A POSTROUTING -o $IFACE -p tcp -m multiport --dports $TCP_PORTS -m connbytes --connbytes-dir=original --connbytes-mode=packets --connbytes 1:9 -m mark ! --mark 0x40000000/0x40000000 -j NFQUEUE --queue-num $NFQUEUE_NUM --queue-bypass"
-    [ "$UDP_PORTS" ] && echo "-A POSTROUTING -o $IFACE -p udp -m multiport --dports $UDP_PORTS -m connbytes --connbytes-dir=original --connbytes-mode=packets --connbytes 1:9 -m mark ! --mark 0x40000000/0x40000000 -j NFQUEUE --queue-num $NFQUEUE_NUM --queue-bypass"
+    local i IFACE FILTER
+
+    # enable only for ipv4
+    # $1 = "6" - sign that it is ipv6
+    if [ "$CLIENTS_ALLOWED" -a ! "$1" ]; then
+        FILTER="-m mark --mark $FILTER_MARK/$FILTER_MARK"
+
+        echo "-A OUTPUT -j MARK --or-mark $FILTER_MARK"
+        for i in $CLIENTS_ALLOWED; do
+            echo "-A PREROUTING -s $i -j MARK --or-mark $FILTER_MARK"
+        done
+    fi
+
+    local RULE_NFQUEUE="-j NFQUEUE --queue-num $NFQUEUE_NUM --queue-bypass"
+    local RULE_OUTPUT_END="$FILTER -m mark ! --mark $DESYNC_MARK/$DESYNC_MARK -m connbytes --connbytes 1:9 --connbytes-mode packets --connbytes-dir original $RULE_NFQUEUE"
+
+    for IFACE in $ISP_IF; do
+        if [ "$TCP_PORTS" ]; then
+            echo "-A PREROUTING -i $IFACE -p tcp -m multiport --sports $TCP_PORTS -m connbytes --connbytes 1:3 --connbytes-mode packets --connbytes-dir reply $RULE_NFQUEUE"
+            echo "-A POSTROUTING -o $IFACE -p tcp -m multiport --dports $TCP_PORTS $RULE_OUTPUT_END"
+        fi
+        [ "$UDP_PORTS" ] && echo "-A POSTROUTING -o $IFACE -p udp -m multiport --dports $UDP_PORTS $RULE_OUTPUT_END"
+    done
 }
 
 is_running()
@@ -284,8 +311,8 @@ nftables_stop()
 iptables_stop()
 {
     [ -n "$NFT" ] && return
-    eval "$(iptables-save -t mangle 2>/dev/null | grep "queue-num $NFQUEUE_NUM " | sed 's/^-A/iptables -t mangle -D/g')"
-    eval "$(ip6tables-save -t mangle 2>/dev/null | grep "queue-num $NFQUEUE_NUM " | sed 's/^-A/ip6tables -t mangle -D/g')"
+    eval "$(iptables-save -t mangle 2>/dev/null | grep -E "queue-num $NFQUEUE_NUM --queue-bypass|mark $DESYNC_MARK/$DESYNC_MARK|mark $FILTER_MARK/$FILTER_MARK" | sed 's/^-A/iptables -t mangle -D/g')"
+    eval "$(ip6tables-save -t mangle 2>/dev/null | grep -E "queue-num $NFQUEUE_NUM --queue-bypass|mark $DESYNC_MARK/$DESYNC_MARK|mark $FILTER_MARK/$FILTER_MARK" | sed 's/^-A/ip6tables -t mangle -D/g')"
 }
 
 firewall_stop()
@@ -303,30 +330,35 @@ nftables_start()
     TCP_PORTS=$(echo $TCP_PORTS | tr ":" "-")
 
     nft create table inet zapret
+    nft add set inet zapret wanif "{type ifname;}"
     nft add chain inet zapret post "{type filter hook postrouting priority mangle;}"
     nft add chain inet zapret pre "{type filter hook prerouting priority filter;}"
 
     for IFACE in $ISP_IF; do
-        [ "$TCP_PORTS" ] && nft add rule inet zapret post oifname $IFACE meta mark and 0x40000000 == 0 tcp dport "{$TCP_PORTS}" ct original packets 1-9 queue num $NFQUEUE_NUM bypass
-        [ "$UDP_PORTS" ] && nft add rule inet zapret post oifname $IFACE meta mark and 0x40000000 == 0 udp dport "{$UDP_PORTS}" ct original packets 1-9 queue num $NFQUEUE_NUM bypass
-        [ "$TCP_PORTS" ] && nft add rule inet zapret pre iifname $IFACE tcp sport "{$TCP_PORTS}" ct reply packets 1-3 queue num $NFQUEUE_NUM bypass
+        nft add element inet zapret wanif "{ $IFACE }"
     done
+
+    [ "$TCP_PORTS" ] && nft add rule inet zapret post oifname @wanif meta mark and $DESYNC_MARK == 0 tcp dport "{$TCP_PORTS}" ct original packets 1-9 queue num $NFQUEUE_NUM bypass
+    [ "$UDP_PORTS" ] && nft add rule inet zapret post oifname @wanif meta mark and $DESYNC_MARK == 0 udp dport "{$UDP_PORTS}" ct original packets 1-9 queue num $NFQUEUE_NUM bypass
+    [ "$TCP_PORTS" ] && nft add rule inet zapret pre iifname @wanif tcp sport "{$TCP_PORTS}" ct reply packets 1-3 queue num $NFQUEUE_NUM bypass
+
+    if [ "$CLIENTS_ALLOWED" ]; then
+        nft add chain inet zapret out "{type nat hook output priority -102;}"
+        nft add rule inet zapret out mark set mark or $FILTER_MARK
+        nft add chain inet zapret nat "{type nat hook prerouting priority -102;}"
+        for i in $CLIENTS_ALLOWED; do
+            nft add rule inet zapret nat ip saddr $i mark set mark or $FILTER_MARK
+        done
+    fi
 }
 
 iptables_set_rules()
 {
-    local FW_MANGLE
-
     [ "$1" == "6" ] && [ ! -d /proc/sys/net/ipv6 ] && return
 
-    FW_MANGLE=$(
-        for IFACE in $ISP_IF; do
-            echo "$(_MANGLE_RULES)"
-        done)
-
-    [ -n "$FW_MANGLE" ] && ip$1tables-restore -n <<EOF
+    ip$1tables-restore -n <<EOF
 *mangle
-$(echo "$FW_MANGLE")
+$(_MANGLE_RULES $1)
 COMMIT
 EOF
 }
@@ -405,6 +437,7 @@ start_service()
     fi
 
     log "started, $(echo "$res" | grep 'github version')"
+    [ "$CLIENTS_ALLOWED" ] && log "allowed clients: $CLIENTS_ALLOWED"
     log "use strategy from $STRATEGY_FILE"
     echo "$res" \
     | grep -Ei "loaded|profile" \

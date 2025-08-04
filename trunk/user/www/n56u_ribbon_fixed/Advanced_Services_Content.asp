@@ -11,10 +11,10 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
-<link rel="stylesheet" type="text/css" href="/jquery.multi-select.css">
+<link rel="stylesheet" type="text/css" href="/jquery.dropdownlist.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/jquery.multi-select.min.js"></script>
+<script type="text/javascript" src="/jquery.dropdownlist.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
@@ -125,11 +125,7 @@ function initial(){
 
 	if(!found_app_zapret()){
 		showhide_div('row_zapret', 0);
-		showhide_div('row_zapret_strategy', 0);
-		showhide_div('row_zapret_post_script', 0);
-		showhide_div('row_zapret_list', 0);
-		showhide_div('row_zapret_iface', 0);
-		showhide_div('row_zapret_log', 0);
+		showhide_div('row_zapret_service', 0);
 	}else{
 		change_zapret_enabled();
 	}
@@ -160,35 +156,68 @@ function initial(){
 		change_dnscrypt_enabled();
 
 	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>";
+	zapret_iface.replace(/\s+/g, '');
 	var iface = net_iface_list();
 
-	const map_zapret_iface = zapret_iface.split(',').map(word => word.trim());
-	const map_iface = iface.split(',').map(word => word.trim());
-	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',');
+	const map_zapret_iface = zapret_iface.split(',').map(word => word);
+	const map_iface = iface.split(',').map(word => word);
+	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',').replace(/\s+/g, '');
 
-	$j.each(zapret_iface.split(","), function(i,e){
-		if (e != "")
-			$("zapret_select_iface").add(new Option(e, e, true, true), i)
+	let idCounter = 0;
+	const data_iface = [
+		...zapret_iface.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: true})),
+		...iface.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: false}))
+	];
+
+	$j('#zapret_iface_list').dropdownList({
+		data: data_iface,
+		placeholder: "<#APChnAuto#>",
+		displaySelected: true,
+		allowDelete: false,
+		allowAdd: false,
+		removeAllSpaces: true,
+		allowedItems: '^[a-zA-Z0-9-_.:]+$',
+		allowedAlert: '<#JS_field_noletter#>',
+		selectedSeparator: ', '
 	});
 
-	$j.each(iface.split(","), function(i,e) {
-		if (e != "")
-			$("zapret_select_iface").add(new Option(e));
-	});
-
-	$j("#zapret_select_iface").multiSelect({
-		noneText: "<#APChnAuto#>",
-	});
-
-	$j("#zapret_select_iface").on('change', function(){
-		var values = "";
-		for( i=0; i < this.options.length; i++ ) {
-			if (this.options[i].selected && (this.options[i].value != "")) {
-				if ( values != "" ) values += ",";
-				values += this.options[i].value;
-			}
-		}
+	$j('#zapret_iface_list').dropdownList('onchange', function(selected) {
+		var values = selected.map(item => item.text).join(',');
 		document.form.zapret_iface.value = values;
+	});
+
+
+	var zapret_clients_allowed = "<% nvram_get_x("", "zapret_clients_allowed"); %>";
+	zapret_clients_allowed.replace(/\s+/g, '');
+	var zapret_clients = "<% nvram_get_x("", "zapret_clients"); %>";
+
+	const map_zapret_clients_allowed = zapret_clients_allowed.split(',').map(word => word);
+	const map_zapret_clients = zapret_clients.split(',').map(word => word);
+	zapret_clients = map_zapret_clients.filter(word => !zapret_clients_allowed.includes(word)).join(',').replace(/\s+/g, '');
+
+	idCounter = 0;
+	const data_clients = [
+		...zapret_clients_allowed.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: true})),
+		...zapret_clients.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: false}))
+	];
+
+	$j('#zapret_clients_list').dropdownList({
+		data: [...new Set(data_clients)],
+		placeholder: "<#ZapretWORestrictions#>",
+		displaySelected: true,
+		allowDelete: true,
+		allowAdd: true,
+		removeAllSpaces: true,
+		allowedItems: '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\/([0-9]|[1-2][0-9]|3[0-2]))?$',
+		allowedAlert: '<#LANHostConfig_x_DDNS_alarm_9#>',
+		selectedSeparator: ', '
+	});
+
+	$j('#zapret_clients_list').dropdownList('onchange', function(selected) {
+		var allowed = selected.map(item => item.text).join(',');
+		var clients = this.getAllItems().map(item => item.text).join(',');
+		document.form.zapret_clients_allowed.value = allowed;
+		document.form.zapret_clients.value = clients;
 	});
 }
 
@@ -219,11 +248,7 @@ function applyRule(){
 
 	if(!found_app_zapret()){
 		showhide_div('row_zapret', 0);
-		showhide_div('row_zapret_strategy', 0);
-		showhide_div('row_zapret_post_script', 0);
-		showhide_div('row_zapret_list', 0);
-		showhide_div('row_zapret_iface', 0);
-		showhide_div('row_zapret_log', 0);
+		showhide_div('row_zapret_service', 0);
 	}
 
 	if(!found_app_tor()){
@@ -446,11 +471,7 @@ function change_wins_enabled(){
 
 function change_zapret_enabled(){
 	var v = document.form.zapret_enable[0].checked;
-	showhide_div('row_zapret_strategy', v);
-	showhide_div('row_zapret_post_script', v);
-	showhide_div('row_zapret_list', v);
-	showhide_div('row_zapret_iface', v);
-	showhide_div('row_zapret_log', v);
+	showhide_div('row_zapret_service', v);
 	if (!login_safe()) v = 0;
 	textarea_zapret_enabled(v);
 }
@@ -1052,103 +1073,112 @@ function zapret_strategy_change(o, v) {
                                                 </div>
                                             </td>
                                         </tr>
-
-                                        <tr id="row_zapret_iface">
-                                            <th><#PPPConnection_x_WANType_statusname#>:</th>
-                                            <td >
-                                                <select id="zapret_select_iface" multiple />
-                                                <input type="hidden" name="zapret_iface" value="<% nvram_get_x("", "zapret_iface"); %>">
-                                            </td>
-                                        </tr>
-                                        <tr id="row_zapret_log">
-                                            <th><#ZapretLog#>:</th>
-                                            <td>
-                                                <select name="zapret_log" class="input">
-                                                    <option value="0" <% nvram_match_x("", "zapret_log", "0","selected"); %>><#CTL_Disabled#></option>
-                                                    <option value="1" <% nvram_match_x("", "zapret_log", "1","selected"); %>><#CTL_Enabled#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-
-                                        <tr id="row_zapret_strategy" style="display:none">
-                                            <th width="50%" style="border-bottom: 0 none;"><a href="javascript:spoiler_toggle('zapret.strategy')"><#ZapretStrategy#>: <i style="scale: 75%;" class="icon-chevron-down"></i></a></th>
-                                            <td style="border-bottom: 0 none;">
-                                                <select name="zapret_strategy" class="input" onchange="zapret_strategy_change(this, 1);">
-                                                    <option value="" <% nvram_match_x("", "zapret_strategy", "","selected"); %>><#ZapretDefaultProfile#></option>
-                                                    <option value="0" <% nvram_match_x("", "zapret_strategy", "0","selected"); %>><#ZapretStrategyProfile#> #0</option>
-                                                    <option value="1" <% nvram_match_x("", "zapret_strategy", "1","selected"); %>><#ZapretStrategyProfile#> #1</option>
-                                                    <option value="2" <% nvram_match_x("", "zapret_strategy", "2","selected"); %>><#ZapretStrategyProfile#> #2</option>
-                                                    <option value="3" <% nvram_match_x("", "zapret_strategy", "3","selected"); %>><#ZapretStrategyProfile#> #3</option>
-                                                    <option value="4" <% nvram_match_x("", "zapret_strategy", "4","selected"); %>><#ZapretStrategyProfile#> #4</option>
-                                                    <option value="5" <% nvram_match_x("", "zapret_strategy", "5","selected"); %>><#ZapretStrategyProfile#> #5</option>
-                                                    <option value="6" <% nvram_match_x("", "zapret_strategy", "6","selected"); %>><#ZapretStrategyProfile#> #6</option>
-                                                    <option value="7" <% nvram_match_x("", "zapret_strategy", "7","selected"); %>><#ZapretStrategyProfile#> #7</option>
-                                                    <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>><#ZapretStrategyProfile#> #8</option>
-                                                    <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>><#ZapretStrategyProfile#> #9</option>
-                                                </select>
-                                                <a href="https://github.com/bol-van/zapret" class="label label-info"><#CTL_help#></a>
-                                            </td>
-                                            <tr>
-                                                <td id="zapret.strategy" colspan="2" style="padding-top: 0px; border-top: 0 none; display:none;">
-                                                    <div id="zapret_strategy_textarea">
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy0" name="zapretc.strategy0" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy0",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy1" name="zapretc.strategy1" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy1",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy2" name="zapretc.strategy2" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy2",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy3" name="zapretc.strategy3" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy3",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy4" name="zapretc.strategy4" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy4",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy5" name="zapretc.strategy5" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy5",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy6" name="zapretc.strategy6" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy6",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy7" name="zapretc.strategy7" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy7",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy8" name="zapretc.strategy8" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy8",""); %></textarea>
-                                                        <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy9" name="zapretc.strategy9" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy9",""); %></textarea>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tr>
-
-                                        <tr id="row_zapret_list" style="display:none">
-                                            <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('site.list')"><span><#ZapretDomainLists#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
-                                                <div id="site.list" style="display:none;">
-                                                    <table height="100%" width="100%" cellpadding="0" cellspacing="0" class="table" style="border: 0px; margin: 0px; margin-bottom: 8px;">
+                                        <tr id="row_zapret_service" style="display:none">
+                                            <td colspan="2" style="padding: 0; border: 0;">
+                                                <table height="100%" width="100%" cellpadding="0" cellspacing="0" class="table" style="border: 0px; margin: 0px;">
+                                                    <tr>
+                                                        <th><#PPPConnection_x_WANType_statusname#>:</th>
+                                                        <td>
+                                                            <span id="zapret_iface_list"></span>
+                                                            <input type="hidden" name="zapret_iface" value="<% nvram_get_x("", "zapret_iface"); %>">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th><#ZapretAllowedClients#>:</th>
+                                                        <td>
+                                                            <span id="zapret_clients_list"></span>
+                                                            <input type="hidden" name="zapret_clients" value="<% nvram_get_x("", "zapret_clients"); %>">
+                                                            <input type="hidden" name="zapret_clients_allowed" value="<% nvram_get_x("", "zapret_clients_allowed"); %>">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th><#ZapretLog#>:</th>
+                                                        <td>
+                                                            <select name="zapret_log" class="input">
+                                                                <option value="0" <% nvram_match_x("", "zapret_log", "0","selected"); %>><#CTL_Disabled#></option>
+                                                                <option value="1" <% nvram_match_x("", "zapret_log", "1","selected"); %>><#CTL_Enabled#></option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th width="50%" style="border-bottom: 0 none;"><a href="javascript:spoiler_toggle('zapret.strategy')"><#ZapretStrategy#>: <i style="scale: 75%;" class="icon-chevron-down"></i></a></th>
+                                                        <td style="border-bottom: 0 none;">
+                                                            <select name="zapret_strategy" class="input" onchange="zapret_strategy_change(this, 1);">
+                                                                <option value="" <% nvram_match_x("", "zapret_strategy", "","selected"); %>><#ZapretDefaultProfile#></option>
+                                                                <option value="0" <% nvram_match_x("", "zapret_strategy", "0","selected"); %>><#ZapretStrategyProfile#> #0</option>
+                                                                <option value="1" <% nvram_match_x("", "zapret_strategy", "1","selected"); %>><#ZapretStrategyProfile#> #1</option>
+                                                                <option value="2" <% nvram_match_x("", "zapret_strategy", "2","selected"); %>><#ZapretStrategyProfile#> #2</option>
+                                                                <option value="3" <% nvram_match_x("", "zapret_strategy", "3","selected"); %>><#ZapretStrategyProfile#> #3</option>
+                                                                <option value="4" <% nvram_match_x("", "zapret_strategy", "4","selected"); %>><#ZapretStrategyProfile#> #4</option>
+                                                                <option value="5" <% nvram_match_x("", "zapret_strategy", "5","selected"); %>><#ZapretStrategyProfile#> #5</option>
+                                                                <option value="6" <% nvram_match_x("", "zapret_strategy", "6","selected"); %>><#ZapretStrategyProfile#> #6</option>
+                                                                <option value="7" <% nvram_match_x("", "zapret_strategy", "7","selected"); %>><#ZapretStrategyProfile#> #7</option>
+                                                                <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>><#ZapretStrategyProfile#> #8</option>
+                                                                <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>><#ZapretStrategyProfile#> #9</option>
+                                                            </select>
+                                                            <a href="https://github.com/bol-van/zapret" target="_blank" rel="noreferrer noopener" class="label label-info"><#CTL_help#></a>
+                                                        </td>
                                                         <tr>
-                                                            <td style="border:0px; padding-bottom: 4px;">
-                                                                <#ZapretCustomList#>:
-                                                            </td>
-                                                            <td style="border:0px; padding-bottom: 4px; padding-left: 11px;">
-                                                                <#ZapretAutomaticList#>:
-                                                            </td>
-                                                            <td style="border:0px; padding-bottom: 4px; padding-left: 13px;">
-                                                                <#ZapretExclusionList#>:
-                                                            </td>
-                                                        </tr>
-                                                        <tr height="100%">
-                                                            <td style="border:0px; width: 33%; padding: 0px; padding-right: 5px; vertical-align: top;">
-                                                                <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.user.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.user.list",""); %></textarea>
-                                                            </td>
-                                                            <td style="border:0px; width: 33%; padding: 0px; padding-left: 3px; padding-right: 3px; vertical-align: top;">
-                                                                <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.auto.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.auto.list",""); %></textarea>
-                                                            </td>
-                                                            <td style="border:0px; width: 33%; padding: 0px; padding-left: 5px; vertical-align: top;">
-                                                                <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.exclude.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.exclude.list",""); %></textarea>
+                                                            <td id="zapret.strategy" colspan="2" style="padding-top: 0px; border-top: 0 none; display:none;">
+                                                                <div id="zapret_strategy_textarea">
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy" name="zapretc.strategy" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy0" name="zapretc.strategy0" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy0",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy1" name="zapretc.strategy1" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy1",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy2" name="zapretc.strategy2" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy2",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy3" name="zapretc.strategy3" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy3",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy4" name="zapretc.strategy4" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy4",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy5" name="zapretc.strategy5" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy5",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy6" name="zapretc.strategy6" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy6",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy7" name="zapretc.strategy7" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy7",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy8" name="zapretc.strategy8" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy8",""); %></textarea>
+                                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" id="zapretc.strategy9" name="zapretc.strategy9" style="display:none; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.strategy9",""); %></textarea>
+                                                                </div>
                                                             </td>
                                                         </tr>
-                                                    </table>
-                                                </div>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2">
+                                                            <a href="javascript:spoiler_toggle('site.list')"><span><#ZapretDomainLists#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
+                                                            <div id="site.list" style="display:none;">
+                                                                <table height="100%" width="100%" cellpadding="0" cellspacing="0" class="table" style="border: 0px; margin: 0px; margin-bottom: 8px;">
+                                                                    <tr>
+                                                                        <td style="border:0px; padding-bottom: 4px;">
+                                                                            <#ZapretCustomList#>:
+                                                                        </td>
+                                                                        <td style="border:0px; padding-bottom: 4px; padding-left: 11px;">
+                                                                            <#ZapretAutomaticList#>:
+                                                                        </td>
+                                                                        <td style="border:0px; padding-bottom: 4px; padding-left: 13px;">
+                                                                            <#ZapretExclusionList#>:
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr height="100%">
+                                                                        <td style="border:0px; width: 33%; padding: 0px; padding-right: 5px; vertical-align: top;">
+                                                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.user.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.user.list",""); %></textarea>
+                                                                        </td>
+                                                                        <td style="border:0px; width: 33%; padding: 0px; padding-left: 3px; padding-right: 3px; vertical-align: top;">
+                                                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.auto.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.auto.list",""); %></textarea>
+                                                                        </td>
+                                                                        <td style="border:0px; width: 33%; padding: 0px; padding-left: 5px; vertical-align: top;">
+                                                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.exclude.list" style="height: 100%; margin-bottom: 0px; resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.exclude.list",""); %></textarea>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2">
+                                                            <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
+                                                            <div id="zapret.post_script" style="display:none;">
+                                                                <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.post_script.sh" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.post_script.sh",""); %></textarea>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
                                             </td>
                                         </tr>
-                                        <tr id="row_zapret_post_script" style="display:none">
-                                            <td colspan="2">
-                                                <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
-                                                <div id="zapret.post_script" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.post_script.sh" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.post_script.sh",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-
                                     </table>
-
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
