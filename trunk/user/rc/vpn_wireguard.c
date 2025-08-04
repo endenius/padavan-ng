@@ -17,13 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include "rc.h"
 
 int
@@ -49,7 +42,6 @@ start_wireguard_client(void)
 {
     return doSystem("/usr/bin/wgc.sh %s", "start");
 }
-
 
 void
 stop_wireguard_client(void)

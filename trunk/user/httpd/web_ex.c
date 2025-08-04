@@ -2037,6 +2037,52 @@ net_iface_list_hook(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int
+net_update_vpnc_wg_state_hook(int eid, webs_t wp, int argc, char **argv)
+{
+#if defined(APP_WIREGUARD)
+    if (nvram_get_int("vpnc_enable") == 0 || nvram_get_int("vpnc_type") != 3) {
+        return 0;
+    }
+
+    time_t timestamp = time(NULL);
+    char command[256];
+    snprintf(command, sizeof(command), "/usr/sbin/wg show '%s' latest-handshakes", IFNAME_CLIENT_WG);
+
+    FILE *fp = popen(command, "r");
+    if (!fp) {
+        return 1;
+    }
+
+    int vpnc_state_t = nvram_safe_get_int("vpnc_state_t", 0, 0, 2);
+    int wg_state = 0;  // 0 = нет соединения, 1 = активно, 2 = ошибка
+    char result[256];
+
+    if (fgets(result, sizeof(result), fp)) {
+        // Парсим вывод команды (ожидаем формат: <pubkey> <timestamp>)
+        char *token = strtok(result, " \t");
+        token = strtok(NULL, " \t\n");  // Получаем timestamp
+
+        if (token) {
+            int wg_ts = atoi(token);
+
+            if (wg_ts <= 0) {
+                wg_state = 2;  // Некорректное время
+            } else if (timestamp - wg_ts > 300) {  // 300 сек = 5 мин
+                wg_state = 0;  // Соединение устарело
+            } else {
+                wg_state = 1;  // Активное соединение
+            }
+        }
+    }
+    pclose(fp);
+
+    if (vpnc_state_t != wg_state)
+        nvram_set_int_temp("vpnc_state_t", wg_state);
+#endif
+    return 0;
+}
+
+static int
 ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 #if defined(UTL_HDPARM)
@@ -2506,6 +2552,72 @@ openssl_util_hook(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
+#if defined(APP_WIREGUARD)
+#define VPN_SERVER_LEASE_FILE "/tmp/vpns.leases"
+#define MAX_CLIENTS_NUM (50)
+void
+leases_wireguard_server(void)
+{
+    if (nvram_get_int("vpns_enable") == 0 || nvram_get_int("vpns_type") != 3)
+        return;
+
+    FILE *fp, *fp_leases;
+    char command[256], result[256];
+
+    if ((fp_leases = fopen(VPN_SERVER_LEASE_FILE, "w")) == NULL) {
+        return;
+    }
+
+    int clients_count = nvram_get_int("vpns_num_x");
+    if (clients_count > MAX_CLIENTS_NUM) {
+        clients_count = MAX_CLIENTS_NUM;
+    }
+
+    snprintf(command, sizeof(command), "/usr/sbin/wg show '%s' dump", IFNAME_SERVER_WG);
+    if ((fp = popen(command, "r")) == NULL) {
+        return;
+    }
+
+    while (fgets(result, sizeof(result), fp)) {
+        for (int i = 0; i < clients_count; i++) {
+            char acl_user_var[32], acl_public_var[44];
+            snprintf(acl_user_var, sizeof(acl_user_var), "vpns_user_x%d", i);
+            snprintf(acl_public_var, sizeof(acl_public_var), "vpns_public_x%d", i);
+
+            char *acl_user = nvram_safe_get(acl_user_var);
+            char *acl_public = nvram_safe_get(acl_public_var);
+
+            if (!acl_user || !acl_public || !strstr(result, acl_public)) {
+                continue;
+            }
+
+            char *tokens[8], *saveptr;
+            int token_count = 0;
+            char *token = strtok_r(result, "\t", &saveptr);
+
+            // <public-key> <preshared-key> <endpoint> <allowed-ips> <latest-handshake> <transfer-rx> <transfer-tx> <persistent-keepalive>
+            while (token && token_count < 8) {
+                tokens[token_count++] = token;
+                token = strtok_r(NULL, "\t", &saveptr);
+            }
+
+            // Если <latest-handshake> равен 0 - пропускаем
+            if (!atoi(tokens[4])) {
+                continue;
+            }
+
+            if (token_count >= 7) {
+                fprintf(fp_leases, "%s %s %s %s %s %s\n",
+                    tokens[4], tokens[3], tokens[2], acl_user, tokens[5], tokens[6]);
+            }
+        }
+    }
+
+    fclose(fp_leases);
+    pclose(fp);
+}
+#endif
+
 static int
 openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2759,13 +2871,7 @@ static int ej_get_vpns_client(int eid, webs_t wp, int argc, char **argv)
 	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
 
 #if defined(APP_WIREGUARD)
-	if (nvram_get_int("vpns_enable") == 1)
-	{
-		if (nvram_get_int("vpns_type") == 3)
-		{
-			doSystem("/usr/bin/wgs.sh leases\n");
-		}
-	}
+	leases_wireguard_server();
 #endif
 
 	fp = fopen("/tmp/vpns.leases", "r");
@@ -3090,77 +3196,49 @@ apply_cgi(const char *url, webs_t wp)
 		websRedirect(wp, current_url);
 		return 0;
 	}
-	else if (!strcmp(value, " wg_genkey "))
-	{
-		char key[64] = {0};
 #if defined(APP_WIREGUARD)
-		if (get_login_safe())
-		{
-			FILE *fp;
-			fp = popen("/usr/sbin/wg genkey", "r");
-			if (fp == NULL) {
-				return 1;
-			}
-
-			if (fgets(key, sizeof(key), fp) == NULL) {
-				pclose(fp);
-				return 1;
-			}
-			pclose(fp);
-		}
-#endif
-		websWrite(wp, key);
-		return 0;
-	}
-	else if (!strcmp(value, " wg_genpsk "))
+	else if (!strcmp(value, " wg_action "))
 	{
-		char key[64] = {0};
-#if defined(APP_WIREGUARD)
-		if (get_login_safe())
-		{
-			FILE *fp;
-			fp = popen("/usr/sbin/wg genpsk", "r");
-			if (fp == NULL) {
-				return 1;
-			}
+		if (!get_login_safe())
+			return 0;
 
-			if (fgets(key, sizeof(key), fp) == NULL) {
-				pclose(fp);
-				return 1;
-			}
-			pclose(fp);
-		}
-#endif
-		websWrite(wp, key);
-		return 0;
-	}
-	else if (!strcmp(value, " wg_pubkey "))
-	{
-		char key[64] = {0};
-#if defined(APP_WIREGUARD)
-		if (get_login_safe())
-		{
-			FILE *fp;
-			char command[256];
-			char *privkey = websGetVar(wp, "privkey", "");
+		FILE *fp;
+		char command[256];
+		char result[256];
+		char *action = websGetVar(wp, "action", "");
+		char *privkey = websGetVar(wp, "privkey", "");
 
+		if (strcmp(action, "genkey") == 0) {
+			snprintf(command, sizeof(command), "/usr/sbin/wg genkey");
+		} else
+		if (strcmp(action, "genpsk") == 0) {
+			snprintf(command, sizeof(command), "/usr/sbin/wg genpsk");
+		} else
+		if (strcmp(action, "pubkey") == 0) {
 			snprintf(command, sizeof(command), "echo '%s' | /usr/sbin/wg pubkey", privkey);
+		} else
+			return 0;
 
-			fp = popen(command, "r");
-			if (fp == NULL) {
-				return 1;
-			}
-
-			if (fgets(key, sizeof(key), fp) == NULL) {
-				pclose(fp);
-				return 1;
-			}
-			pclose(fp);
+		if ((fp = popen(command, "r")) == NULL) {
+			return 1;
 		}
-#endif
-		websWrite(wp, key);
+		fgets(result, sizeof(result), fp);
+		pclose(fp);
+
+		if (*result) websWrite(wp, result);
 		return 0;
 	}
+	else if (!strcmp(value, " ExportWGConf "))
+	{
+		char *common_name = websGetVar(wp, "common_name", "");
+		if (get_login_safe() && strlen(common_name) > 0) {
+			doSystem("/usr/bin/wgs.sh export '%s'", common_name);
+			do_file("/tmp/client-wg.conf", wp);
+			unlink("/tmp/client-wg.conf");
+		}
+		return 0;
+	}
+#endif
 	else if (!strcmp(value, " ClearLog "))
 	{
 		// current only syslog implement this button
@@ -3212,18 +3290,6 @@ apply_cgi(const char *url, webs_t wp)
 			sys_result = doSystem("/sbin/ovpn_export_client '%s' %s %d", common_name, rsa_bits, days_valid);
 #endif
 		websWrite(wp, "{\"sys_result\": %d}", sys_result);
-		return 0;
-	}
-	else if (!strcmp(value, " ExportWGConf "))
-	{
-#if defined(APP_WIREGUARD)
-		char *common_name = websGetVar(wp, "common_name", "");
-		if (get_login_safe() && strlen(common_name) > 0) {
-			doSystem("/usr/bin/wgs.sh export '%s'", common_name);
-			do_file("/tmp/client-wg.conf", wp);
-			unlink("/tmp/client-wg.conf");
-		}
-#endif
 		return 0;
 	}
 	else if (!strcmp(value, " CreateCertOVPNS "))
@@ -4085,6 +4151,7 @@ struct ej_handler ej_handlers[] =
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
 	{ "net_iface_list", net_iface_list_hook},
+	{ "net_update_vpnc_wg_state", net_update_vpnc_wg_state_hook},
 	{ NULL, NULL }
 };
 

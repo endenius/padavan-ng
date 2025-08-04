@@ -27,7 +27,6 @@ if [ ! "$IF_PRIVATE" ]; then
 fi
 
 EXPORT_CONF="/tmp/client-wg.conf"
-LEASES_FILE="/tmp/vpns.leases"
 POST_SCRIPT="/etc/storage/vpns_post_script.sh"
 
 ###
@@ -288,11 +287,6 @@ wg_listclients()
     } { printf "%-12s %s %s ↓%s ↑%s %s %s\n", c[$1], $1, $2, $3, $4, $5, $6, $7}'
 }
 
-wg_leases()
-{
-    is_started && wg_listclients | awk '$3 && $7 {print $3, gensub("\/.+", "", "", $7), $6, $1, $4, $5}' >$LEASES_FILE
-}
-
 wg_export()
 {
     [ "$1" ] || return
@@ -342,10 +336,6 @@ case "$1" in
 
     status)
         is_started
-    ;;
-
-    leases)
-        wg_leases
     ;;
 
     add)

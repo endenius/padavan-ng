@@ -90,11 +90,11 @@ function initial(){
 function applyRule(){
 	if(validForm()){
 		showLoading();
-		
+
 		document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/vpnsrv.asp";
 		document.form.next_page.value = "";
-		
+
 		document.form.submit();
 	}
 }
@@ -179,7 +179,7 @@ function validForm(){
 	} else if (mode == "2") {
 		if(!validate_range(document.form.vpns_ov_port, 1, 65535))
 			return false;
-		
+
 		if (document.form.vpns_ov_mode.value == "1")
 			return valid_vpn_subnet(document.form.vpns_vnet);
 	}
@@ -188,7 +188,7 @@ function validForm(){
 			return false;
 		if(!validate_range(document.form.vpns_mru, 1000, 1460))
 			return false;
-		
+
 		if (document.form.vpns_vuse.value != "0")
 			return valid_vpn_subnet(document.form.vpns_vnet);
 	}
@@ -328,11 +328,11 @@ function change_vpns_type(){
 		inputCtrl(document.form.vpns_pass_x_0, 1);
 	} else if (is_ov){
 		showhide_div('row_vpns_cast', 0);
-		
+
 		$("col_pass").innerHTML = "";
 		$("div_acl_info").innerHTML = "<#VPNS_Accnt_Info2#></br><#VPNS_Accnt_Info3#>";
 		inputCtrl(document.form.vpns_pass_x_0, 0);
-		
+
 		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found()) {
 			if (!support_openssl_ec()) {
 				var o = document.form.vpns_exp_rb;
@@ -340,16 +340,16 @@ function change_vpns_type(){
 			}
 			showhide_div('row_vpns_exp', 1);
 		}
-		
+
 		change_vpns_ov_atls();
 		change_vpns_ov_tcv2();
 	}else{
 		showhide_div('tab_vpns_acl', 1);
-		
+
 		$("col_pass").innerHTML = "<#ISP_Authentication_pass#>";
 		$("div_acl_info").innerHTML = "<#VPNS_Accnt_Info1#></br><#VPNS_Accnt_Info4#>";
 		inputCtrl(document.form.vpns_pass_x_0, 1);
-		
+
 		showhide_div('row_vpns_vuse', 1);
 		showhide_div('row_vpns_actl', (fw_enable_x == "1"));
 	}
@@ -486,7 +486,7 @@ function markGroupACL(o, c, b) {
 			document.form.vpns_user_x_0.select();
 			return false;
 		}
-		
+
 		if ( (document.form.vpns_type.value == "2" || document.form.vpns_type.value == "3") && document.form.vpns_addr_x_0.value == "") {
 			alert("<#JS_fieldblank#>");
 			document.form.vpns_addr_x_0.focus();
@@ -508,12 +508,12 @@ function markGroupACL(o, c, b) {
 			document.form.vpns_addr_x_0.select();
 			return false;
 		}
-		
+
 		if (document.form.vpns_rnet_x_0.value.length > 0 || document.form.vpns_rmsk_x_0.value.length > 0) {
 			if (!valid_rlan_subnet(document.form.vpns_rnet_x_0, document.form.vpns_rmsk_x_0))
 				return false;
 		}
-		
+
 		for(i=0; i< ACLList.length; i++){
 			if(document.form.vpns_user_x_0.value==ACLList[i][0]) {
 				alert('<#JS_duplicate#>' + ' (' + ACLList[i][0] + ')' );
@@ -571,7 +571,8 @@ function wg_pubkey(key){
 
 	$j.post('/apply.cgi',
 	{
-		'action_mode': ' wg_pubkey ',
+		'action_mode': ' wg_action ',
+		'action': 'pubkey',
 		'privkey': document.form.vpns_wg_private.value
 	},
 	function(response){
@@ -584,14 +585,16 @@ function wg_genkey(){
 		return false;
 	$j.post('/apply.cgi',
 	{
-		'action_mode': ' wg_genkey '
+		'action_mode': ' wg_action ',
+		'action': 'genkey'
 	},
 	function(response){
 		document.form.vpns_wg_private.value = response;
 
 		$j.post('/apply.cgi',
 		{
-			'action_mode': ' wg_pubkey ',
+			'action_mode': ' wg_action ',
+			'action': 'pubkey',
 			'privkey': document.form.vpns_wg_private.value
 		},
 		function(response){
@@ -605,7 +608,8 @@ function wg_client_genkey(){
 		return false;
 	$j.post('/apply.cgi',
 	{
-		'action_mode': ' wg_genkey ',
+		'action_mode': ' wg_action ',
+		'action': 'genkey'
 	},
 	function(response){
 		document.form.vpns_pass_x_0.value = response;
@@ -706,8 +710,8 @@ function export_client_wg_qr(num){
 		return false;
 	if (!ACLList[num][0]) return
 
-	var chevron_down = '<i style="scale: 75%; margin-top: 3px" class="icon-chevron-down"/>';
-	var chevron_up = '<i style="scale: 75%; margin-top: 3px" class="icon-chevron-up"/>';
+	var chevron_down = ' <i style="scale: 75%" class="icon-chevron-down"/>';
+	var chevron_up = ' <i style="scale: 75%" class="icon-chevron-up"/>';
 
 	for(var i = 0; i < ACLList.length; i++){
 		if (i == num) continue;
@@ -762,21 +766,21 @@ function showACLList(vnet_show,rnet_show,is_openvpn, is_wg){
 				if (ACLList[i][3] != "" && ACLList[i][4] != "")
 					acl_rnet = ACLList[i][3] + ' / ' + ACLList[i][4];
 			}
-			
+
 			if (is_wg){
-				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_WG#><span id="showqr'+ i +'"><i style="scale: 75%; margin-top: 3px" class="icon-chevron-down"/></span></a>';
+				acl_pass += '<a href="javascript:export_client_wg_qr(\'' + i + '\');"><#VPNS_Export_WG#><span id="showqr'+ i +'"> <i style="scale: 75%" class="icon-chevron-down"/></span></a>';
 			} else
 			if (is_openvpn){
 				if (openssl_util_found() && openvpn_srv_cert_found() && login_safe())
 					acl_pass = '<a href="javascript:export_client_ovpn(\'' + ACLList[i][0] + '\');"><#VPNS_Export#></a>';
 			}else
 				acl_pass = '*****';
-			
+
 			if (ACLList[i][2] == "")
 				acl_addr = '*';
 			else
 				acl_addr = addr_part + ACLList[i][2];
-			
+
 			code += '<tr id="row' + i + '">';
 			code += '<td width="19%">&nbsp;' + ACLList[i][0] + '</td>';
 			code += '<td width="25%">&nbsp;' + acl_pass + '</td>';
@@ -819,9 +823,32 @@ function changeBgColor(obj, num){
 	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
+function bytesToIEC(bytes, precision){
+        var absval = Math.abs(bytes);
+        var kilobyte = 1024;
+        var megabyte = kilobyte * 1024;
+        var gigabyte = megabyte * 1024;
+        var terabyte = gigabyte * 1024;
+        var petabyte = terabyte * 1024;
+
+        if(absval < kilobyte)
+                return bytes;
+        else if(absval < megabyte)
+                return (bytes / kilobyte).toFixed(precision) + 'K';
+        else if(absval < gigabyte)
+                return (bytes / megabyte).toFixed(precision) + 'M';
+        else if(absval < terabyte)
+                return (bytes / gigabyte).toFixed(precision) + 'G';
+        else if(absval < petabyte)
+                return (bytes / terabyte).toFixed(precision) + 'T';
+        else
+                return (bytes / petabyte).toFixed(precision) + 'P';
+}
+
 function createBodyTable(){
 	var t_body = '';
 	var traffic;
+	var username, down, up;
 	var options = {
 		month: 'long',
 		day: 'numeric',
@@ -834,13 +861,13 @@ function createBodyTable(){
 			$j.each(vpn_clients, function(i, client){
 				var date = new Date(client[3] * 1000);
 				t_body += '<tr class="client">\n';
-				t_body += '  <td>'+client[0]+'</td>\n';
-				t_body += '  <td>'+client[1]+'</td>\n';
+				t_body += '  <td>'+ client[0].split("/")[0] +'</td>\n';
+				t_body += '  <td>'+ client[1].split(":")[0] +'</td>\n';
 				if (is_wg) {
-					traffic = client[2].replace('↓', '<i class="icon-arrow-down"/>');
-					traffic = traffic.replace('↑', '<i class="icon-arrow-up"/>');
-					t_body += '  <td>'+traffic+'</td>\n';
+					traffic = client[2].split(/\s+/);
+					t_body += '  <td>'+traffic[0]+'&nbsp;&nbsp;<i class="icon-arrow-down"/>' + bytesToIEC(traffic[1], 1) + '&nbsp;<i class="icon-arrow-up"/>' + bytesToIEC(traffic[2], 1) +'</td>\n';
 					t_body += '  <td>'+date.toLocaleString($j("preferred_lang").value, options)+'</td>\n';
+
 				} else {
 					t_body += '  <td>'+client[2]+'</td>\n';
 					t_body += '  <td>'+client[3]+'</td>\n';
@@ -858,18 +885,26 @@ function createBodyTable(){
 	$j('#wnd_vpns_cli table:first').append(t_body);
 }
 
-var arrHashes = ["cfg", "ssl", "acl", "cli"];
+var id_update_client_info = 0;
+function update_client_info(){
+	clearTimeout(id_update_client_info);
+	$j.get('/vpn_clients.asp', function(response){
+		vpn_clients = eval(response);
+		createBodyTable();
+		id_update_client_info = setTimeout("update_client_info()", 3000);
+	});
+}
 
+var arrHashes = ["cfg", "ssl", "acl", "cli"];
 function showTab(curHash){
 	var obj = $('tab_vpns_'+curHash.slice(1));
 	if (obj == null || obj.style.display == 'none')
 		curHash = '#cfg';
 	if(curHash == ('#'+arrHashes[3])){
-		$j.get('/vpn_clients.asp', function(response){
-			vpn_clients = eval(response);
-			createBodyTable();
-		});
-	}
+		update_client_info();
+	} else
+		clearTimeout(id_update_client_info);
+
 	for(var i = 0; i < arrHashes.length; i++){
 		if(curHash == ('#'+arrHashes[i])){
 			$j('#tab_vpns_'+arrHashes[i]).parents('li').addClass('active');
@@ -1088,7 +1123,7 @@ function getHash(){
                                 <tr id="row_vpns_wg_private" style="display:none">
                                     <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,2);"><#WG_Private_key#>:</a></th>
                                     <td>
-                                        <input style="-webkit-text-security: disc;" onfocus="vpns_wg_private.style='-webkit-text-security: unset;'" onblur="vpns_wg_private.style='-webkit-text-security: disc;'" type="text" maxlength="44" size="5" name="vpns_wg_private" oninput="wg_pubkey();" class="input" value="<% nvram_get_x("", "vpns_wg_private"); %>"/>
+                                        <input style="-webkit-text-security: disc;" onfocus="vpns_wg_private.style='-webkit-text-security: unset;'" onblur="vpns_wg_private.style='-webkit-text-security: disc;'; wg_pubkey();" type="text" maxlength="44" size="5" name="vpns_wg_private" class="input" value="<% nvram_get_x("", "vpns_wg_private"); %>"/>
                                         <input type="button" class="btn btn-mini" style="outline:0" onclick="wg_genkey();" value="<#CTL_refresh#>"/>
                                     </td>
                                 </tr>
@@ -1103,13 +1138,13 @@ function getHash(){
                                     <th><#PPPConnection_x_PPPoEMTU_itemname#></th>
                                     <td>
                                         <input type="text" name="vpns_wg_mtu" class="input" maxlength="5" size="32" value="<% nvram_get_x("", "vpns_wg_mtu"); %>" onKeyPress="return is_number(this,event);"/>
-                                        &nbsp;<span style="color:#888;">[1000..1420]</span>
+                                        &nbsp;<span style="color:#888;">[ 1000..1420 ]</span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_wg_ext_addr" style="display:none">
                                     <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,26,1);"><#WG_External_address#>:</a></th>
                                     <td>
-                                        <input type="text" maxlength="44" size="5" name="vpns_wg_ext_addr" class="input" value="<% nvram_get_x("", "vpns_wg_ext_addr"); %>"/>
+                                        <input type="text" maxlength="64" size="5" name="vpns_wg_ext_addr" class="input" value="<% nvram_get_x("", "vpns_wg_ext_addr"); %>"/>
                                     </td>
                                 </tr>
 
@@ -1190,7 +1225,7 @@ function getHash(){
                                     <td colspan="2" style="padding-bottom: 15px;">
                                         <a href="javascript:spoiler_toggle('spoiler_vpns_ov_conf')"><span><#OVPN_User#></span></a>
                                         <div id="spoiler_vpns_ov_conf" style="display:none;">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.conf",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.conf" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.conf",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>
@@ -1198,7 +1233,7 @@ function getHash(){
                                     <td colspan="2" style="padding-bottom: 15px;">
                                         <a href="javascript:spoiler_toggle('spoiler_script')"><span><#RunPostVPNS#></span></a>
                                         <div id="spoiler_script" style="display:none;">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpns_client_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpns_client_script.sh",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpns_client_script.sh" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpns_client_script.sh",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>
@@ -1358,37 +1393,37 @@ function getHash(){
                                 <tr>
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Root CA Certificate (ca.crt):</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ca.crt",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ca.crt" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ca.crt",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Diffie-Hellman PEM (dh1024.pem):</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="ovpnsvr.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.dh1024.pem",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="ovpnsvr.dh1024.pem" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.dh1024.pem",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Server Certificate (server.crt):</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.crt",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.crt" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.crt",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Server Private Key (server.key) - secret:</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.key",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.key" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.key",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">TLS Auth/Crypt Key (ta.key/tc.key) - secret:</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr id="row_stc2_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">TLS Crypt v2 Key (stc2.key) - secret:</span>
-                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.stc2.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.stc2.key",""); %></textarea>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.stc2.key" style="resize: vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.stc2.key",""); %></textarea>
                                     </td>
                                 </tr>
                             </table>
@@ -1415,7 +1450,7 @@ function getHash(){
                                     </td>
                                     <td id="td_client_genkey" style="padding-left: 0; padding-right: 0;" class="input-append">
                                         <input style="width: 134px" type="text" size="10" class="input" autocomplete="off" maxlength="44" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />
-                                        <div id="button_client_genkey" type="button" class="btn" style="margin-left: -5px; display: none; width: 6px; padding-left: 2px" onclick="wg_client_genkey();"><i style="margin-top: 1px" class="icon-refresh"></i></div>
+                                        <button id="button_client_genkey" type="button" class="btn" style="margin-left: -5px; display: none; width: 6px; background-image: icon-refresh; outline: 0;" onclick="wg_client_genkey();"><i style="margin-left: -7px; margin-top: 1px" class="icon-refresh"></i></button>
                                     </td>
                                     <td style="padding-right: 0;">
                                         <span id="vpnip3"></span><input type="text" size="2" maxlength="3" style="width: 22px;" name="vpns_addr_x_0" value="<% nvram_get_x("", "vpns_addr_x_0"); %>" onkeypress="return is_number(this,event);" />
