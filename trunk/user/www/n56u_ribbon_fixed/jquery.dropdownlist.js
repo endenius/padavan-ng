@@ -68,7 +68,9 @@ class DropdownList {
 
         this.options = {
             placeholder: 'Add item...',
+            width: '194px',
             allowAdd: true,
+            notifyAdd: 'Add',
             removeAllSpaces: false,
             allowDelete: true,
             multiSelect: true,
@@ -103,9 +105,8 @@ class DropdownList {
         this.indicator = this.container.querySelector('.dropdown-indicator');
         this.dropdownWrapper = this.container.querySelector('.dropdown-wrapper');
 
-        if (!this.options.allowAdd) {
-            this.dropdownInput.readOnly = true;
-        }
+        this.dropdownInput.readOnly = !this.options.allowAdd;
+        this.dropdownContainer.style.width = this.options.width;
 
         this.clickedInsideList = false;
         this.isOpen = false;
@@ -120,9 +121,8 @@ class DropdownList {
         });
 
         this.dropdownInput.addEventListener('focus', () => {
-            this.dropdownInput.placeholder = ''; // Очищаем placeholder при фокусе
-            this.dropdownInput.value = '';
-            this.dropdownInput.classList.remove('display-selected');
+            this.dropdownInput.placeholder = '';
+            if (this.options.allowAdd) this.dropdownInput.value = '';
             this.updateDropdownList('');
             this.openDropdown();
         });
@@ -140,6 +140,7 @@ class DropdownList {
                                e.offsetY > this.dropdownList.clientHeight;
             if (this.dropdownList.contains(e.target) && !isScrollbar) {
                 this.clickedInsideList = true;
+                this.dropdownInput.classList.add('display-selected');
             }
         });
 
@@ -163,7 +164,7 @@ class DropdownList {
     }
 
     updateInputDisplay() {
-        if (!this.options.displaySelected || this.isOpen) {
+        if (!this.options.displaySelected || (this.isOpen && this.options.allowAdd)) {
             return;
         }
 
@@ -171,10 +172,9 @@ class DropdownList {
         if (selectedItems.length > 0) {
             const selectedText = selectedItems.map(item => item.text).join(this.options.selectedSeparator);
             this.dropdownInput.value = selectedText;
-            this.dropdownInput.classList.add('display-selected');
+            this.dropdownInput.setSelectionRange(0, 0);
         } else {
             this.dropdownInput.value = '';
-            this.dropdownInput.classList.remove('display-selected');
         }
     }
 
@@ -183,7 +183,6 @@ class DropdownList {
         this.isOpen = true;
         this.trigger('open');
         this.updateIndicator();
-        this.dropdownInput.classList.remove('display-selected');
     }
 
     closeDropdown() {
@@ -193,6 +192,7 @@ class DropdownList {
         this.trigger('close');
         this.updateIndicator();
         this.updateInputDisplay();
+        this.dropdownInput.classList.remove('display-selected');
     }
 
     updateIndicator() {
@@ -299,7 +299,7 @@ class DropdownList {
             addNewElement.className = 'dropdown-item add-new';
 
             const addText = document.createElement('span');
-            addText.textContent = `<#CTL_add#> "${filter}"`;
+            addText.textContent = `${this.options.notifyAdd} "${filter}"`;
 
             addNewElement.appendChild(addText);
 

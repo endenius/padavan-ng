@@ -1,13 +1,13 @@
 .dropdown-wrapper {
     position: relative;
-    padding: 0px 18px 0px 0px;
+    padding: 0px 24px 0px 0px;
     display: inline-block;
     margin: 0;
 }
 
 .dropdown-container {
     position: relative;
-    width: 200px;
+    width: 194px;
     margin: 0;
 }
 
@@ -16,7 +16,7 @@
     margin: 0;
     outline: 0;
     width: 100%;
-    padding: 4px 14px 4px 4px;
+    padding: 4px 20px 4px 4px;
     font-size: 13px;
     white-space: nowrap;
     overflow: hidden;
@@ -24,7 +24,7 @@
 }
 
 .dropdown-input.display-selected {
-    color: #555;
+    text-overflow: clip;
 }
 
 .dropdown-input::placeholder {
@@ -41,7 +41,7 @@
 
 .dropdown-indicator {
     position: absolute;
-    right: -22px;
+    right: -28px;
     top: 50%;
     width: 24px;
     height: 24px;
