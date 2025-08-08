@@ -1,0 +1,138 @@
+/* Контейнер плагина */
+.msd-dropdown {
+  position: relative;
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* Заголовок (поле ввода + стрелка) */
+.msd-header {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 0;
+  background: #fff;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.msd-header .msd-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  padding: 0;
+  margin: 4px;
+  background: transparent;
+  cursor: text;
+  line-height: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+.msd-header .msd-input::placeholder {
+    color: #555;
+}
+
+.msd-header .msd-input[readonly] {
+  caret-color: transparent;
+  cursor: default;
+}
+
+.msd-chevron {
+  width: 16px;
+  height: 100%;
+  fill: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Контейнер выпадающего списка */
+.msd-content {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  display: none;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.msd-dropdown.msd-show .msd-content {
+  display: block;
+}
+
+/* Пункт списка */
+.msd-item {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  padding: 0;
+}
+
+.msd-item:hover {
+  background: #d9edf7;
+}
+
+/* Чекбокс + текст */
+.msd-label {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 6px;
+  cursor: default;
+  margin: 0;
+  padding: 6px 8px 6px 8px;
+}
+
+.msd-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Кнопка удаления */
+.msd-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msd-delete svg {
+  margin-left: 8px;
+  margin: 8px 0px 8px 8px;
+  width: 10px;
+  height: 10px;
+  stroke: #888;
+  stroke-width: 1.5;
+}
+
+.msd-delete:hover svg {
+  stroke: #c00;
+}
+
+/* Кнопка "Добавить..." */
+.msd-add-suggestion {
+  padding: 6px 8px;
+  background: #f9f9f9;
+  cursor: pointer;
+  font-style: italic;
+  border-top: 1px dashed #ccc;
+}
+
+.msd-add-suggestion:hover {
+  background: #f0f0f0;
+}

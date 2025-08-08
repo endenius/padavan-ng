@@ -11,10 +11,10 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
-<link rel="stylesheet" type="text/css" href="/jquery.dropdownlist.css">
+<link rel="stylesheet" type="text/css" href="/jquery.multiSelectDropdown.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/jquery.dropdownlist.js"></script>
+<script type="text/javascript" src="/jquery.multiSelectDropdown.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
@@ -163,30 +163,25 @@ function initial(){
 	const map_iface = iface.split(',').map(word => word);
 	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',').replace(/\s+/g, '');
 
-	let idCounter = 0;
 	const data_iface = [
-		...zapret_iface.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: true})),
-		...iface.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: false}))
+		...zapret_iface.split(',').filter(Boolean).map(text => ({text, checked: true})),
+		...iface.split(',').filter(Boolean).map(text => ({text, checked: false}))
 	];
 
-	$j('#zapret_iface_list').dropdownList({
-		data: data_iface,
+	$j('#zapret_iface_list').multiSelectDropdown({
+		items: data_iface,
 		placeholder: "<#APChnAuto#>",
-		displaySelected: true,
+		width: '220px',
 		allowDelete: false,
 		allowAdd: false,
-		notifyAdd: '<#CTL_add#>',
-		removeAllSpaces: true,
+		addSuggestionText: '<#CTL_add#>',
+		removeSpaces: true,
 		allowedItems: '^[a-zA-Z0-9-_.:]+$',
 		allowedAlert: '<#JS_field_noletter#>',
-		selectedSeparator: ', '
+		onChange: function(selected){
+			document.form.zapret_iface.value = selected.join(',');
+		}
 	});
-
-	$j('#zapret_iface_list').dropdownList('onchange', function(selected) {
-		var values = selected.map(item => item.text).join(',');
-		document.form.zapret_iface.value = values;
-	});
-
 
 	var zapret_clients_allowed = "<% nvram_get_x("", "zapret_clients_allowed"); %>";
 	zapret_clients_allowed.replace(/\s+/g, '');
@@ -196,30 +191,25 @@ function initial(){
 	const map_zapret_clients = zapret_clients.split(',').map(word => word);
 	zapret_clients = map_zapret_clients.filter(word => !zapret_clients_allowed.includes(word)).join(',').replace(/\s+/g, '');
 
-	idCounter = 0;
 	const data_clients = [
-		...zapret_clients_allowed.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: true})),
-		...zapret_clients.split(',').filter(Boolean).map(text => ({id: idCounter++, text, checked: false}))
+		...zapret_clients_allowed.split(',').filter(Boolean).map(text => ({text, checked: true})),
+		...zapret_clients.split(',').filter(Boolean).map(text => ({text, checked: false}))
 	];
 
-	$j('#zapret_clients_list').dropdownList({
-		data: [...new Set(data_clients)],
+	$j('#zapret_clients_list').multiSelectDropdown({
+		items: data_clients,
 		placeholder: "<#ZapretWORestrictions#>",
-		displaySelected: true,
+		width: '220px',
 		allowDelete: true,
 		allowAdd: true,
-		notifyAdd: '<#CTL_add#>',
-		removeAllSpaces: true,
+		addSuggestionText: '<#CTL_add#>',
+		removeSpaces: true,
 		allowedItems: '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\/([0-9]|[1-2][0-9]|3[0-2]))?$',
 		allowedAlert: '<#LANHostConfig_x_DDNS_alarm_9#>',
-		selectedSeparator: ', '
-	});
-
-	$j('#zapret_clients_list').dropdownList('onchange', function(selected) {
-		var allowed = selected.map(item => item.text).join(',');
-		var clients = this.getAllItems().map(item => item.text).join(',');
-		document.form.zapret_clients_allowed.value = allowed;
-		document.form.zapret_clients.value = clients;
+		onChange: function(selected){
+			document.form.zapret_clients_allowed.value = selected.join(',');
+			document.form.zapret_clients.value = this.multiSelectDropdown('getAllItems').map(item => item.text).join(',');
+		}
 	});
 }
 
