@@ -52,7 +52,7 @@
           const $itemList = $wrapper.find('.msd-item-list');
 
           const $addSuggestion = $('<div class="msd-add-suggestion" style="display:none;"></div>')
-            .appendTo($itemList);
+            .prependTo($itemList);
 
             function updateSelected(forceTrigger = false) {
               const selected = $itemList.find('input[type="checkbox"]:checked')
@@ -111,7 +111,7 @@
             $label.append($checkbox).append($('<span>').text(text));
             $container.append($label);
 
-            $container.insertAfter($addSuggestion);
+            $itemList.append($container);
           }
 
           function showDropdown(force, fromInput){
