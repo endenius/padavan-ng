@@ -37,8 +37,9 @@
                 placeholder="${settings.placeholder}"
                 autocomplete="off" spellcheck="false" />
               <div class="msd-chevron" aria-hidden="true">
-                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg" fill="#555">
-                  <polygon points="2,3 5,7 8,3"></polygon>
+                <svg width="16" height="16" viewBox="0 0 26 26">
+                  <polyline points="6 12 12 18 18 12"
+                    fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
             </div>
@@ -86,7 +87,7 @@
             if (settings.allowDelete) {
               const $delete = $(`
                 <button type="button" class="msd-delete">
-                  <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                  <svg viewBox="0 0 10 10">
                     <line x1="2" y1="2" x2="8" y2="8"/>
                     <line x1="8" y1="2" x2="2" y2="8"/>
                   </svg>
@@ -110,7 +111,7 @@
             $label.append($checkbox).append($('<span>').text(text));
             $container.append($label);
 
-            $container.insertBefore($addSuggestion);
+            $container.insertAfter($addSuggestion);
           }
 
           function showDropdown(force, fromInput){
@@ -119,6 +120,7 @@
               $addSuggestion.hide();
             }
             if(!$itemList.children().length && !force) return;
+            $('.msd-dropdown.msd-show').not($wrapper).removeClass('msd-open msd-show');
             $wrapper.addClass('msd-open msd-show');
           }
 
