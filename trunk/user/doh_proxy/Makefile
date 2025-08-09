@@ -46,3 +46,4 @@ clean:
 romfs:
 	$(ROMFSINST) $(SRC_NAME)/build/https_dns_proxy /usr/sbin/https_dns_proxy
 	$(ROMFSINST) -p +x /usr/bin/doh_proxy.sh
+	$(ROMFSINST) -d /usr/share/dnsproxy/doh.json

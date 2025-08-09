@@ -39,3 +39,4 @@ clean:
 romfs:
 	$(ROMFSINST) $(SRC_NAME)/build/stubby /usr/sbin/stubby
 	$(ROMFSINST) -p +x /usr/bin/stubby.sh
+	$(ROMFSINST) -d /usr/share/dnsproxy/dot.json

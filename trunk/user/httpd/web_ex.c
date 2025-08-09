@@ -721,6 +721,8 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_ZAPRET_DIR, file+8);
 	else if (strncmp(file, "privoxy.", 8)==0)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_PRIVOXY_DIR, file+8);
+	else if (strncmp(file, "dnsproxy.", 9)==0)
+		snprintf(filename, sizeof(filename), "%s/%s", SHARE_DNSPROXY_DIR, file+9);
 	else
 		snprintf(filename, sizeof(filename), "%s/%s", "/tmp", file);
 

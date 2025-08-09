@@ -48,6 +48,10 @@ $j(document).ready(function() {
 <% openssl_util_hook(); %>
 <% net_iface_list(); %>
 
+let dot_data = <% nvram_dump("dnsproxy.dot.json",""); %>;
+let doh_data = <% nvram_dump("dnsproxy.doh.json",""); %>;
+let doh_dataDns = null;
+
 function initial(){
 	show_banner(1);
 	show_menu(5,7,2);
@@ -89,6 +93,23 @@ function initial(){
 		showhide_div('tbl_anon', 1);
 	}
 
+// remove doh dns from array and set doh_dataDns
+	doh_data = doh_data.filter(obj => {
+		if (!obj.name && obj.dns && !doh_dataDns) {
+			doh_dataDns = obj.dns;
+			return false;
+		}
+		return true;
+	});
+
+	doh_data.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+	doh_data.forEach(obj => {
+		const option = document.createElement('option');
+		option.value = obj.url;
+		option.textContent = obj.name;
+		$('doh_server_list1').appendChild(option);
+	});
+
 	$j('#doh_server_list1 option').clone().appendTo('#doh_server_list2');
 	$j('#doh_server_list1 option').clone().appendTo('#doh_server_list3');
 
@@ -105,6 +126,15 @@ function initial(){
 	}else{
 		change_doh_enabled();
 	}
+
+	dot_data.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+	dot_data.forEach(obj => {
+		const option = document.createElement('option');
+		option.value = obj.url;
+		option.textContent = obj.name;
+		option.dataset.dns = obj.dns;
+		$('stubby_server_list1').appendChild(option);
+	});
 
 	$j('#stubby_server_list1 option').clone().appendTo('#stubby_server_list2');
 	$j('#stubby_server_list1 option').clone().appendTo('#stubby_server_list3');
@@ -321,13 +351,13 @@ function change_doh_enabled(){
 
 function on_doh_select_change(selectObject, i){
 	if ( !$j(selectObject).val() ) return false;
-	$j('input[name=' + "doh_server_ip" + i +']').val("1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8");
-	$j('input[name=' + "doh_server" + i +']').val($j(selectObject).val()).focus();
+	$j('input[name=doh_server_ip' + i +']').val(doh_dataDns);
+	$j('input[name=doh_server' + i +']').val($j(selectObject).val()).focus();
 }
 
 function doh_clean(i){
-	$j('input[name=' + "doh_server_ip" + i +']').val("");
-	$j('input[name=' + "doh_server" + i +']').val("").focus();
+	$j('input[name=doh_server_ip' + i +']').val("");
+	$j('input[name=doh_server' + i +']').val("").focus();
 }
 
 function change_stubby_enabled(){
@@ -339,13 +369,13 @@ function change_stubby_enabled(){
 
 function on_stubby_select_change(selectObject, i){
 	if ( !$j(selectObject).val() ) return false;
-	$j('input[name=' + "stubby_server_ip" + i +']').val( $j('option:selected', selectObject).attr("valueip") );
-	$j('input[name=' + "stubby_server" + i +']').val($j(selectObject).val()).focus();
+	$j('input[name=stubby_server_ip' + i +']').val($j('option:selected', selectObject).attr("data-dns"));
+	$j('input[name=stubby_server' + i +']').val($j(selectObject).val()).focus();
 }
 
 function stubby_clean(i){
-	$j('input[name=' + "stubby_server_ip" + i +']').val("");
-	$j('input[name=' + "stubby_server" + i +']').val("").focus();
+	$j('input[name=stubby_server_ip' + i +']').val("");
+	$j('input[name=stubby_server' + i +']').val("").focus();
 }
 
 function textarea_zapret_enabled(v){
@@ -921,49 +951,7 @@ function zapret_strategy_change(o, v) {
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="doh_server1" value="<% nvram_get_x("", "doh_server1"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="doh_server_ip1" value="<% nvram_get_x("", "doh_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;">
-                                                    <option value="https://0ms.dev/dns-query">0ms DNS</option>
-                                                    <option value="https://dns.adguard-dns.com/dns-query">Adguard: ads and trackers</option>
-                                                    <option value="https://family.adguard-dns.com/dns-query">Adguard: family filter</option>
-                                                    <option value="https://unfiltered.adguard-dns.com/dns-query">Adguard: unfiltered</option>
-                                                    <option value="https://blitz.ahadns.com/1:1">AhaDNS: ads, malware, privacy</option>
-                                                    <option value="https://blitz.ahadns.com/1:27">AhaDNS: no-Google</option>
-                                                    <option value="https://blitz.ahadns.com/1:4">AhaDNS: privacy</option>
-                                                    <option value="https://blitz.ahadns.com/1:5">AhaDNS: privacy strict</option>
-                                                    <option value="https://dns.alidns.com/dns-query">Ali DNS</option>
-                                                    <option value="https://dns.bebasid.com/dns-query">BebasDNS</option>
-                                                    <option value="https://antivirus.bebasid.com/dns-query">BebasDNS: antivirus</option>
-                                                    <option value="https://internetsehat.bebasid.com/dns-query">BebasDNS: family</option>
-                                                    <option value="https://dns.bebasid.com/unfiltered">BebasDNS: unfiltered</option>
-                                                    <option value="https://doh.opendns.com/dns-query">Cisco OpenDNS</option>
-                                                    <option value="https://doh.familyshield.opendns.com/dns-query">Cisco OpenDNS: family</option>
-                                                    <option value="https://doh.sandbox.opendns.com/dns-query">Cisco OpenDNS: unfiltered</option>
-                                                    <option value="https://doh.cleanbrowsing.org/doh/adult-filter">CleanBrowsing: adult</option>
-                                                    <option value="https://doh.cleanbrowsing.org/doh/family-filter">CleanBrowsing: family</option>
-                                                    <option value="https://doh.cleanbrowsing.org/doh/security-filter">CleanBrowsing: security</option>
-                                                    <option value="https://dns.cloudflare.com/dns-query">Cloudflare</option>
-                                                    <option value="https://family.cloudflare-dns.com/dns-query">Cloudflare: family</option>
-                                                    <option value="https://security.cloudflare-dns.com/dns-query">Cloudflare: security</option>
-                                                    <option value="https://dns.comss.one/dns-query">Comss.one DNS</option>
-                                                    <option value="https://freedns.controld.com/p2">ControlD: ads and trackers</option>
-                                                    <option value="https://freedns.controld.com/family">ControlD: family filter</option>
-                                                    <option value="https://freedns.controld.com/p1">ControlD: malware</option>
-                                                    <option value="https://freedns.controld.com/p0">ControlD: unfiltered</option>
-                                                    <option value="https://dns.decloudus.com/dns-query">DeCloudUs DNS</option>
-                                                    <option value="https://dns.pub/dns-query">DNSPod Public DNS+</option>
-                                                    <option value="https://doh.dns.sb/dns-query">DNS.SB</option>
-                                                    <option value="https://dns.google/dns-query">Google</option>
-                                                    <option value="https://dns.nextdns.io">NextDNS</option>
-                                                    <option value="https://ada.openbld.net/dns-query">OpenBLD.net DNS</option>
-                                                    <option value="https://dns.quad9.net/dns-query">Quad9</option>
-                                                    <option value="https://family.rabbitdns.org/dns-query">Rabbit DNS: family</option>
-                                                    <option value="https://security.rabbitdns.org/dns-query">Rabbit DNS: security</option>
-                                                    <option value="https://dns.rabbitdns.org/dns-query">Rabbit DNS: unfiltered</option>
-                                                    <option value="https://wikimedia-dns.org/dns-query">Wikimedia DNS</option>
-                                                    <option value="https://common.dot.dns.yandex.net/dns-query">Yandex</option>
-                                                    <option value="https://family.dot.dns.yandex.net/dns-query">Yandex: family</option>
-                                                    <option value="https://safe.dot.dns.yandex.net/dns-query">Yandex: security</option>
-                                                </select>
+                                                <select class="input" id="doh_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1005,30 +993,7 @@ function zapret_strategy_change(o, v) {
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="stubby_server1" value="<% nvram_get_x("", "stubby_server1"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="stubby_server_ip1" value="<% nvram_get_x("", "stubby_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;">
-                                                    <option value="dns.adguard-dns.com" valueip="94.140.14.14">AdGuard:ads and trackers</option>
-                                                    <option value="family.adguard-dns.com" valueip="94.140.14.15">AdGuard: family</option>
-                                                    <option value="unfiltered.adguard-dns.com" valueip="94.140.14.140">AdGuard: unfiltered</option>
-                                                    <option value="dns.google" valueip="8.8.8.8">Google</option>
-                                                    <option value="one.one.one.one" valueip="1.1.1.1">Cloudflare</option>
-                                                    <option value="security.cloudflare-dns.com" valueip="1.1.1.2">Cloudflare: security</option>
-                                                    <option value="family.cloudflare-dns.com" valueip="1.1.1.3">Cloudflare: family</option>
-                                                    <option value="common.dot.dns.yandex.net" valueip="77.88.8.8">Yandex</option>
-                                                    <option value="dns.quad9.net" valueip="9.9.9.9">Quad9</option>
-                                                    <option value="dns.alidns.com" valueip="223.5.5.5">Ali DNS</option>
-                                                    <option value="dns.opendns.com" valueip="208.67.222.222">Cisco OpenDNS</option>
-                                                    <option value="familyshield.opendns.com" valueip="208.67.222.123">Cisco OpenDNS: family</option>
-                                                    <option value="sandbox.opendns.com" valueip="208.67.222.2">Cisco OpenDNS: sandbox</option>
-                                                    <option value="family-filter-dns.cleanbrowsing.org" valueip="185.228.168.168">CleanBrowsing: family</option>
-                                                    <option value="adult-filter-dns.cleanbrowsing.org" valueip="185.228.168.10">CleanBrowsing: adult</option>
-                                                    <option value="security-filter-dns.cleanbrowsing.org" valueip="185.228.168.9">CleanBrowsing: security</option>
-                                                    <option value="p0.freedns.controld.com" valueip="76.76.2.0">ControlD: unfiltered</option>
-                                                    <option value="p1.freedns.controld.com" valueip="76.76.2.1">ControlD: malware</option>
-                                                    <option value="p2.freedns.controld.com" valueip="76.76.2.2">ControlD: + ads and trackers</option>
-                                                    <option value="p3.freedns.controld.com" valueip="76.76.2.3">ControlD: + social networks</option>
-                                                    <option value="family.freedns.controld.com" valueip="76.76.2.4">ControlD: + adult content</option>
-                                                    <option value="dns.de.futuredns.eu.org" valueip="162.55.52.228">FutureDNS</option>
-                                                </select>
+                                                <select class="input" id="stubby_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
