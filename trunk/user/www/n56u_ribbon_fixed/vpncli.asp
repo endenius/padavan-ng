@@ -254,6 +254,7 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_mru', !is_ov && !is_wg);
 	showhide_div('tbl_vpnc_route', !is_ov && !is_wg);
 
+	showhide_div('row_vpnc_ov_import', is_ov);
 	showhide_div('row_vpnc_ov_port', is_ov);
 	showhide_div('row_vpnc_ov_prot', is_ov);
 	showhide_div('row_vpnc_ov_auth', is_ov);
@@ -310,6 +311,181 @@ function change_vpnc_ov_atls() {
 
 function change_vpnc_ov_mode() {
 	showhide_div('row_vpnc_ov_cnat', (document.form.vpnc_ov_mode.value == "1") ? 0 : 1);
+}
+
+function ov_conf_import() {
+	const fileInput = document.getElementById('ov_fileInput');
+	const file = fileInput.files[0];
+
+	if (!file) {
+		alert('Select file');
+		return;
+	}
+	if (file.size > 65536) {
+	alert("File is too big");
+		return;
+	}
+
+	const reader = new FileReader();
+	reader.onload = function(e) {
+		const content = e.target.result;
+		const lines = content.split(/\r?\n/);
+
+		let settings = {};
+		let certBlocks = {};
+		let currentBlock = null;
+		let blockContent = [];
+		let remoteSet = false;
+
+		document.querySelector('[name="vpnc_peer"]').value = '';
+		document.querySelector('[name="vpnc_ov_port"]').value = '1194';
+		document.querySelector('[name="vpnc_ov_prot"]').value = 0;
+		document.querySelector('[name="vpnc_ov_mode"]').value = 1;
+		document.querySelector('[name="vpnc_ov_auth"]').value = 0;
+		document.querySelector('[name="vpnc_user"]').value = '';
+		document.querySelector('[name="vpnc_pass"]').value = '';
+		document.querySelector('[name="vpnc_ov_mdig"]').value = 1;
+		document.querySelector('[name="vpnc_ov_ciph"]').value = 3;
+		document.querySelector('[name="vpnc_ov_ncp_clist"]').value = '';
+		document.querySelector('[name="vpnc_ov_compress"]').value = 0;
+		document.querySelector('[name="vpnc_ov_atls"]').value = 0;
+		document.querySelector('[name="ovpncli.ca.crt"]').value = '';
+		document.querySelector('[name="ovpncli.client.crt"]').value = '';
+		document.querySelector('[name="ovpncli.client.key"]').value = '';
+		document.querySelector('[name="ovpncli.ta.key"]').value = '';
+
+		lines.forEach(line => {
+			let trimmed = line.trim();
+
+			// блок сертификатов
+			if (/^<\w+>/.test(trimmed)) {
+				currentBlock = trimmed.replace(/[<>]/g, '').toLowerCase();
+				blockContent = [];
+				return;
+			}
+			if (/^<\/\w+>/.test(trimmed)) {
+				certBlocks[currentBlock] = blockContent.join("\n");
+				currentBlock = null;
+				return;
+			}
+			if (currentBlock) {
+				blockContent.push(line);
+				return;
+			}
+
+			// комментарии/пустые
+			if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith(';')) return;
+
+			const parts = trimmed.split(/\s+/);
+			const key = parts[0].toLowerCase();
+			const value = parts.slice(1).join(' ');
+
+			if (key === 'remote') {
+				if (!remoteSet) {
+					settings[key] = value;
+					remoteSet = true;
+				}
+				return;
+			}
+
+			settings[key] = value;
+		});
+
+		// ===== Заполнение формы =====
+		if (settings['remote']) {
+			const parts = settings['remote'].split(/\s+/);
+			const host = parts[0] || '';
+			const port = parts[1] || '';
+			let protoHint = parts[2] ? parts[2].toLowerCase() : (settings['proto'] || 'udp').toLowerCase();
+
+			document.querySelector('[name="vpnc_peer"]').value = host;
+			if (port) document.querySelector('[name="vpnc_ov_port"]').value = port;
+
+			// IPv6?
+			let isIPv6 = /\[.*\]/.test(host) || (host.includes(':') && !host.match(/^\d+\.\d+\.\d+\.\d+$/));
+
+			// Определяем значение vpnc_ov_prot
+			let protValue = 0; // UDP IPv4 по умолчанию
+			if (protoHint === 'tcp') protValue = isIPv6 ? 3 : 1;
+			if (protoHint === 'udp') protValue = isIPv6 ? 2 : 0;
+
+			document.querySelector('[name="vpnc_ov_prot"]').value = protValue;
+		}
+
+		// dev
+		if (settings['dev']) {
+			let dev = settings['dev'].toLowerCase();
+			document.querySelector('[name="vpnc_ov_mode"]').value = (dev === 'tap') ? 0 : 1;
+		}
+
+		// auth
+		if (settings['auth']) {
+			const authMap = {
+				'md5': 0, 'sha1': 1, 'sha224': 2,
+				'sha256': 3, 'sha384': 4, 'sha512': 5
+			};
+			let val = settings['auth'].toLowerCase();
+			if (authMap.hasOwnProperty(val))
+				document.querySelector('[name="vpnc_ov_mdig"]').value = authMap[val];
+		}
+
+		// cipher
+		if (settings['cipher']) {
+			const cipherMap = {
+				'none': 0, 'des-cbc': 1, 'des-ede-cbc': 2, 'bf-cbc': 3,
+				'aes-128-cbc': 4, 'aes-192-cbc': 5, 'des-ede3-cbc': 6,
+				'desx-cbc': 7, 'aes-256-cbc': 8, 'camellia-128-cbc': 9,
+				'camellia-192-cbc': 10, 'camellia-256-cbc': 11,
+				'aes-128-gcm': 12, 'aes-192-gcm': 13, 'aes-256-gcm': 14,
+				'chacha20-poly1305': 15
+			};
+			let val = settings['cipher'].toLowerCase();
+			if (cipherMap.hasOwnProperty(val))
+				document.querySelector('[name="vpnc_ov_ciph"]').value = cipherMap[val];
+		}
+
+		// data-ciphers
+		if (settings['data-ciphers']) {
+			document.querySelector('[name="vpnc_ov_ncp_clist"]').value = settings['data-ciphers'];
+		} else if (settings['cipher']) {
+			document.querySelector('[name="vpnc_ov_ncp_clist"]').value = settings['cipher'];
+		}
+
+		// compression
+		if (settings['comp-lzo']) {
+			document.querySelector('[name="vpnc_ov_compress"]').value =
+				settings['comp-lzo'] === 'no' ? 1 : 2;
+			}
+		if (settings['lz4-v2']) {
+			document.querySelector('[name="vpnc_ov_compress"]').value = 4;
+		}
+		if (settings['compress']) {
+			if (settings['compress'].includes('lz4-v2'))
+				document.querySelector('[name="vpnc_ov_compress"]').value = 4;
+			else if (settings['compress'].includes('lz4'))
+				document.querySelector('[name="vpnc_ov_compress"]').value = 3;
+		}
+
+		// auth-user-pass
+		if (settings['auth-user-pass']) {
+			document.querySelector('[name="vpnc_ov_auth"]').value = 1;
+		}
+
+		// TLS-Auth / TLS-Crypt
+		if (certBlocks['ta']) document.querySelector('[name="vpnc_ov_atls"]').value = 1;
+		if (certBlocks['tc']) document.querySelector('[name="vpnc_ov_atls"]').value = 2;
+		if (certBlocks['ctc2']) document.querySelector('[name="vpnc_ov_atls"]').value = 3;
+
+		// ===== Заполнение сертификатов =====
+		if (certBlocks['ca']) document.querySelector('[name="ovpncli.ca.crt"]').value = certBlocks['ca'];
+		if (certBlocks['cert']) document.querySelector('[name="ovpncli.client.crt"]').value = certBlocks['cert'];
+		if (certBlocks['key']) document.querySelector('[name="ovpncli.client.key"]').value = certBlocks['key'];
+		if (certBlocks['ta']) document.querySelector('[name="ovpncli.ta.key"]').value = certBlocks['ta'];
+		// тут непонятно, не протестировано
+		if (certBlocks['tc']) document.querySelector('[name="ovpncli.ta.key"]').value = certBlocks['tc'];
+		if (certBlocks['ctc2']) document.querySelector('[name="ovpncli.ta.key"]').value = certBlocks['ctc2'];
+	};
+	reader.readAsText(file);
 }
 
 var arrHashes = ["cfg", "ssl"];
@@ -398,7 +574,7 @@ function wg_genpsk(){
 }
 
 function wg_conf_import() {
-	const fileInput = document.getElementById('fileInput');
+	const fileInput = document.getElementById('wg_fileInput');
 	const file = fileInput.files[0];
 
 	if (!file) {
@@ -573,6 +749,12 @@ function wg_conf_import() {
                                         <span id="certs_hint" style="display:none" class="label label-warning"><#OVPN_Hint#></span>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_ov_import" style="display:none">
+                                    <th width="50%" style="padding-bottom: 12px;"><#VPNC_WG_ImportConf#>:</th>
+                                    <td>
+                                        <input style="width: 320px" type="file" id="ov_fileInput" accept=".txt,.conf,.ovpn" name="vpnc_ov_import" onChange="ov_conf_import();" onclick="this.value=''">
+                                    </td>
+                                </tr>
                                 <tr id="vpnc_peer_row">
                                     <th><#VPNC_Peer#></th>
                                     <td>
@@ -594,7 +776,7 @@ function wg_conf_import() {
                                             <tr>
                                                 <th width="50%" style="padding-bottom: 12px;"><#VPNC_WG_ImportConf#>:</th>
                                                 <td>
-                                                    <input type="file" id="fileInput" accept=".txt,.conf" name="vpnc_wg_import" onChange="wg_conf_import();" onclick="this.value=''">
+                                                    <input style="width: 320px" type="file" id="wg_fileInput" accept=".txt,.conf" name="vpnc_wg_import" onChange="wg_conf_import();" onclick="this.value=''">
                                                 </td>
                                             </tr>
                                             <tr>
@@ -814,9 +996,9 @@ function wg_conf_import() {
                                     <th><#OVPN_COMPRESS#></th>
                                     <td>
                                         <select name="vpnc_ov_compress" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpnc_ov_compress", "0","selected"); %>><#btn_Disable#></option>
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_compress", "0","selected"); %>><#btn_Disable#> (*)</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_ov_compress", "1","selected"); %>><#OVPN_COMPRESS_Item1#></option>
-                                            <option value="2" <% nvram_match_x("", "vpnc_ov_compress", "2","selected"); %>><#OVPN_COMPRESS_Item2#> (*)</option>
+                                            <option value="2" <% nvram_match_x("", "vpnc_ov_compress", "2","selected"); %>><#OVPN_COMPRESS_Item2#></option>
                                             <option value="3" <% nvram_match_x("", "vpnc_ov_compress", "3","selected"); %>><#OVPN_COMPRESS_Item3#></option>
                                             <option value="4" <% nvram_match_x("", "vpnc_ov_compress", "4","selected"); %>><#OVPN_COMPRESS_Item4#></option>
                                         </select>
