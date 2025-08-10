@@ -404,10 +404,17 @@ function ov_conf_import() {
 			// IPv6?
 			let isIPv6 = /\[.*\]/.test(host) || (host.includes(':') && !host.match(/^\d+\.\d+\.\d+\.\d+$/));
 
-			// Определяем значение vpnc_ov_prot
-			let protValue = 0; // UDP IPv4 по умолчанию
-			if (protoHint === 'tcp') protValue = isIPv6 ? 3 : 1;
-			if (protoHint === 'udp') protValue = isIPv6 ? 2 : 0;
+			// Прямое определение по protoHint
+			let protValue;
+			switch (protoHint) {
+				case 'udp4': protValue = 0; break;
+				case 'tcp4': protValue = 1; break;
+				case 'udp6': protValue = 2; break;
+				case 'tcp6': protValue = 3; break;
+				case 'tcp':  protValue = isIPv6 ? 3 : 1; break;
+				case 'udp':  protValue = isIPv6 ? 2 : 0; break;
+				default:     protValue = isIPv6 ? 2 : 0; break; // udp по умолчанию
+			}
 
 			document.querySelector('[name="vpnc_ov_prot"]').value = protValue;
 		}
