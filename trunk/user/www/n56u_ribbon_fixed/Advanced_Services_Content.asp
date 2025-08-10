@@ -48,8 +48,8 @@ $j(document).ready(function() {
 <% openssl_util_hook(); %>
 <% net_iface_list(); %>
 
-let dot_data = <% nvram_dump("dnsproxy.dot.json",""); %>;
-let doh_data = <% nvram_dump("dnsproxy.doh.json",""); %>;
+let dot_data = [<% nvram_dump("dnsproxy.dot.json",""); %>];
+let doh_data = [<% nvram_dump("dnsproxy.doh.json",""); %>];
 let doh_dataDns = null;
 
 function initial(){

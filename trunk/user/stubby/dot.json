@@ -1,112 +1,110 @@
-[
-  {
-    "name": "AdGuard: ads",
-    "url": "dns.adguard-dns.com",
-    "dns": "94.140.14.14"
-  },
-  {
-    "name": "AdGuard: family",
-    "url": "family.adguard-dns.com",
-    "dns": "94.140.14.15"
-  },
-  {
-    "name": "AdGuard: unfiltered",
-    "url": "unfiltered.adguard-dns.com",
-    "dns": "94.140.14.140"
-  },
-  {
-    "name": "Google",
-    "url": "dns.google",
-    "dns": "8.8.8.8"
-  },
-  {
-    "name": "Cloudflare",
-    "url": "one.one.one.one",
-    "dns": "1.1.1.1"
-  },
-  {
-    "name": "Cloudflare: security",
-    "url": "security.cloudflare-dns.com",
-    "dns": "1.1.1.2"
-  },
-  {
-    "name": "Cloudflare: family",
-    "url": "family.cloudflare-dns.com",
-    "dns": "1.1.1.3"
-  },
-  {
-    "name": "Yandex",
-    "url": "common.dot.dns.yandex.net",
-    "dns": "77.88.8.8"
-  },
-  {
-    "name": "Quad9",
-    "url": "dns.quad9.net",
-    "dns": "9.9.9.9"
-  },
-  {
-    "name": "Ali DNS",
-    "url": "dns.alidns.com",
-    "dns": "223.5.5.5"
-  },
-  {
-    "name": "Cisco OpenDNS",
-    "url": "dns.opendns.com",
-    "dns": "208.67.222.222"
-  },
-  {
-    "name": "Cisco OpenDNS: family",
-    "url": "familyshield.opendns.com",
-    "dns": "208.67.222.123"
-  },
-  {
-    "name": "Cisco OpenDNS: sandbox",
-    "url": "sandbox.opendns.com",
-    "dns": "208.67.222.2"
-  },
-  {
-    "name": "CleanBrowsing: family",
-    "url": "family-filter-dns.cleanbrowsing.org",
-    "dns": "185.228.168.168"
-  },
-  {
-    "name": "CleanBrowsing: adult",
-    "url": "adult-filter-dns.cleanbrowsing.org",
-    "dns": "185.228.168.10"
-  },
-  {
-    "name": "CleanBrowsing: security",
-    "url": "security-filter-dns.cleanbrowsing.org",
-    "dns": "185.228.168.9"
-  },
-  {
-    "name": "ControlD: unfiltered",
-    "url": "p0.freedns.controld.com",
-    "dns": "76.76.2.0"
-  },
-  {
-    "name": "ControlD: malware",
-    "url": "p1.freedns.controld.com",
-    "dns": "76.76.2.1"
-  },
-  {
-    "name": "ControlD: + ads",
-    "url": "p2.freedns.controld.com",
-    "dns": "76.76.2.2"
-  },
-  {
-    "name": "ControlD: + social",
-    "url": "p3.freedns.controld.com",
-    "dns": "76.76.2.3"
-  },
-  {
-    "name": "ControlD: + adult",
-    "url": "family.freedns.controld.com",
-    "dns": "76.76.2.4"
-  },
-  {
-    "name": "FutureDNS",
-    "url": "dns.de.futuredns.eu.org",
-    "dns": "162.55.52.228"
-  }
-]
+{
+  "name": "AdGuard: ads",
+  "url": "dns.adguard-dns.com",
+  "dns": "94.140.14.14"
+},
+{
+  "name": "AdGuard: family",
+  "url": "family.adguard-dns.com",
+  "dns": "94.140.14.15"
+},
+{
+  "name": "AdGuard: unfiltered",
+  "url": "unfiltered.adguard-dns.com",
+  "dns": "94.140.14.140"
+},
+{
+  "name": "Google",
+  "url": "dns.google",
+  "dns": "8.8.8.8"
+},
+{
+  "name": "Cloudflare",
+  "url": "one.one.one.one",
+  "dns": "1.1.1.1"
+},
+{
+  "name": "Cloudflare: security",
+  "url": "security.cloudflare-dns.com",
+  "dns": "1.1.1.2"
+},
+{
+  "name": "Cloudflare: family",
+  "url": "family.cloudflare-dns.com",
+  "dns": "1.1.1.3"
+},
+{
+  "name": "Yandex",
+  "url": "common.dot.dns.yandex.net",
+  "dns": "77.88.8.8"
+},
+{
+  "name": "Quad9",
+  "url": "dns.quad9.net",
+  "dns": "9.9.9.9"
+},
+{
+  "name": "Ali DNS",
+  "url": "dns.alidns.com",
+  "dns": "223.5.5.5"
+},
+{
+  "name": "Cisco OpenDNS",
+  "url": "dns.opendns.com",
+  "dns": "208.67.222.222"
+},
+{
+  "name": "Cisco OpenDNS: family",
+  "url": "familyshield.opendns.com",
+  "dns": "208.67.222.123"
+},
+{
+  "name": "Cisco OpenDNS: sandbox",
+  "url": "sandbox.opendns.com",
+  "dns": "208.67.222.2"
+},
+{
+  "name": "CleanBrowsing: family",
+  "url": "family-filter-dns.cleanbrowsing.org",
+  "dns": "185.228.168.168"
+},
+{
+  "name": "CleanBrowsing: adult",
+  "url": "adult-filter-dns.cleanbrowsing.org",
+  "dns": "185.228.168.10"
+},
+{
+  "name": "CleanBrowsing: security",
+  "url": "security-filter-dns.cleanbrowsing.org",
+  "dns": "185.228.168.9"
+},
+{
+  "name": "ControlD: unfiltered",
+  "url": "p0.freedns.controld.com",
+  "dns": "76.76.2.0"
+},
+{
+  "name": "ControlD: malware",
+  "url": "p1.freedns.controld.com",
+  "dns": "76.76.2.1"
+},
+{
+  "name": "ControlD: + ads",
+  "url": "p2.freedns.controld.com",
+  "dns": "76.76.2.2"
+},
+{
+  "name": "ControlD: + social",
+  "url": "p3.freedns.controld.com",
+  "dns": "76.76.2.3"
+},
+{
+  "name": "ControlD: + adult",
+  "url": "family.freedns.controld.com",
+  "dns": "76.76.2.4"
+},
+{
+  "name": "FutureDNS",
+  "url": "dns.de.futuredns.eu.org",
+  "dns": "162.55.52.228"
+}

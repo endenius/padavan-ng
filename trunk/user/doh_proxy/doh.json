@@ -1,169 +1,167 @@
-[
-  {
-    "dns": "1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8"
-  },
-  {
-    "name": "0ms DNS",
-    "url": "https://0ms.dev/dns-query"
-  },
-  {
-    "name": "Adguard: ads",
-    "url": "https://dns.adguard-dns.com/dns-query"
-  },
-  {
-    "name": "Adguard: family filter",
-    "url": "https://family.adguard-dns.com/dns-query"
-  },
-  {
-    "name": "Adguard: unfiltered",
-    "url": "https://unfiltered.adguard-dns.com/dns-query"
-  },
-  {
-    "name": "AhaDNS: ads",
-    "url": "https://blitz.ahadns.com/1:1"
-  },
-  {
-    "name": "AhaDNS: no-Google",
-    "url": "https://blitz.ahadns.com/1:27"
-  },
-  {
-    "name": "AhaDNS: privacy",
-    "url": "https://blitz.ahadns.com/1:4"
-  },
-  {
-    "name": "AhaDNS: privacy strict",
-    "url": "https://blitz.ahadns.com/1:5"
-  },
-  {
-    "name": "Ali DNS",
-    "url": "https://dns.alidns.com/dns-query"
-  },
-  {
-    "name": "BebasDNS",
-    "url": "https://dns.bebasid.com/dns-query"
-  },
-  {
-    "name": "BebasDNS: antivirus",
-    "url": "https://antivirus.bebasid.com/dns-query"
-  },
-  {
-    "name": "BebasDNS: family",
-    "url": "https://internetsehat.bebasid.com/dns-query"
-  },
-  {
-    "name": "BebasDNS: unfiltered",
-    "url": "https://dns.bebasid.com/unfiltered"
-  },
-  {
-    "name": "Cisco OpenDNS",
-    "url": "https://doh.opendns.com/dns-query"
-  },
-  {
-    "name": "Cisco OpenDNS: family",
-    "url": "https://doh.familyshield.opendns.com/dns-query"
-  },
-  {
-    "name": "Cisco OpenDNS: unfiltered",
-    "url": "https://doh.sandbox.opendns.com/dns-query"
-  },
-  {
-    "name": "CleanBrowsing: adult",
-    "url": "https://doh.cleanbrowsing.org/doh/adult-filter"
-  },
-  {
-    "name": "CleanBrowsing: family",
-    "url": "https://doh.cleanbrowsing.org/doh/family-filter"
-  },
-  {
-    "name": "CleanBrowsing: security",
-    "url": "https://doh.cleanbrowsing.org/doh/security-filter"
-  },
-  {
-    "name": "Cloudflare",
-    "url": "https://dns.cloudflare.com/dns-query"
-  },
-  {
-    "name": "Cloudflare: family",
-    "url": "https://family.cloudflare-dns.com/dns-query"
-  },
-  {
-    "name": "Cloudflare: security",
-    "url": "https://security.cloudflare-dns.com/dns-query"
-  },
-  {
-    "name": "Comss.one DNS",
-    "url": "https://dns.comss.one/dns-query"
-  },
-  {
-    "name": "ControlD: ads",
-    "url": "https://freedns.controld.com/p2"
-  },
-  {
-    "name": "ControlD: family",
-    "url": "https://freedns.controld.com/family"
-  },
-  {
-    "name": "ControlD: malware",
-    "url": "https://freedns.controld.com/p1"
-  },
-  {
-    "name": "ControlD: unfiltered",
-    "url": "https://freedns.controld.com/p0"
-  },
-  {
-    "name": "DeCloudUs DNS",
-    "url": "https://dns.decloudus.com/dns-query"
-  },
-  {
-    "name": "DNSPod Public DNS+",
-    "url": "https://dns.pub/dns-query"
-  },
-  {
-    "name": "DNS.SB",
-    "url": "https://doh.dns.sb/dns-query"
-  },
-  {
-    "name": "Google",
-    "url": "https://dns.google/dns-query"
-  },
-  {
-    "name": "NextDNS",
-    "url": "https://dns.nextdns.io"
-  },
-  {
-    "name": "OpenBLD.net DNS",
-    "url": "https://ada.openbld.net/dns-query"
-  },
-  {
-    "name": "Quad9",
-    "url": "https://dns.quad9.net/dns-query"
-  },
-  {
-    "name": "Rabbit DNS: family",
-    "url": "https://family.rabbitdns.org/dns-query"
-  },
-  {
-    "name": "Rabbit DNS: security",
-    "url": "https://security.rabbitdns.org/dns-query"
-  },
-  {
-    "name": "Rabbit DNS: unfiltered",
-    "url": "https://dns.rabbitdns.org/dns-query"
-  },
-  {
-    "name": "Wikimedia DNS",
-    "url": "https://wikimedia-dns.org/dns-query"
-  },
-  {
-    "name": "Yandex",
-    "url": "https://common.dot.dns.yandex.net/dns-query"
-  },
-  {
-    "name": "Yandex: family",
-    "url": "https://family.dot.dns.yandex.net/dns-query"
-  },
-  {
-    "name": "Yandex: security",
-    "url": "https://safe.dot.dns.yandex.net/dns-query"
-  }
-]
+{
+  "dns": "1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8"
+},
+{
+  "name": "0ms DNS",
+  "url": "https://0ms.dev/dns-query"
+},
+{
+  "name": "Adguard: ads",
+  "url": "https://dns.adguard-dns.com/dns-query"
+},
+{
+  "name": "Adguard: family filter",
+  "url": "https://family.adguard-dns.com/dns-query"
+},
+{
+  "name": "Adguard: unfiltered",
+  "url": "https://unfiltered.adguard-dns.com/dns-query"
+},
+{
+  "name": "AhaDNS: ads",
+  "url": "https://blitz.ahadns.com/1:1"
+},
+{
+  "name": "AhaDNS: no-Google",
+  "url": "https://blitz.ahadns.com/1:27"
+},
+{
+  "name": "AhaDNS: privacy",
+  "url": "https://blitz.ahadns.com/1:4"
+},
+{
+  "name": "AhaDNS: privacy strict",
+  "url": "https://blitz.ahadns.com/1:5"
+},
+{
+  "name": "Ali DNS",
+  "url": "https://dns.alidns.com/dns-query"
+},
+{
+  "name": "BebasDNS",
+  "url": "https://dns.bebasid.com/dns-query"
+},
+{
+  "name": "BebasDNS: antivirus",
+  "url": "https://antivirus.bebasid.com/dns-query"
+},
+{
+  "name": "BebasDNS: family",
+  "url": "https://internetsehat.bebasid.com/dns-query"
+},
+{
+  "name": "BebasDNS: unfiltered",
+  "url": "https://dns.bebasid.com/unfiltered"
+},
+{
+  "name": "Cisco OpenDNS",
+  "url": "https://doh.opendns.com/dns-query"
+},
+{
+  "name": "Cisco OpenDNS: family",
+  "url": "https://doh.familyshield.opendns.com/dns-query"
+},
+{
+  "name": "Cisco OpenDNS: unfiltered",
+  "url": "https://doh.sandbox.opendns.com/dns-query"
+},
+{
+  "name": "CleanBrowsing: adult",
+  "url": "https://doh.cleanbrowsing.org/doh/adult-filter"
+},
+{
+  "name": "CleanBrowsing: family",
+  "url": "https://doh.cleanbrowsing.org/doh/family-filter"
+},
+{
+  "name": "CleanBrowsing: security",
+  "url": "https://doh.cleanbrowsing.org/doh/security-filter"
+},
+{
+  "name": "Cloudflare",
+  "url": "https://dns.cloudflare.com/dns-query"
+},
+{
+  "name": "Cloudflare: family",
+  "url": "https://family.cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Cloudflare: security",
+  "url": "https://security.cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Comss.one DNS",
+  "url": "https://dns.comss.one/dns-query"
+},
+{
+  "name": "ControlD: ads",
+  "url": "https://freedns.controld.com/p2"
+},
+{
+  "name": "ControlD: family",
+  "url": "https://freedns.controld.com/family"
+},
+{
+  "name": "ControlD: malware",
+  "url": "https://freedns.controld.com/p1"
+},
+{
+  "name": "ControlD: unfiltered",
+  "url": "https://freedns.controld.com/p0"
+},
+{
+  "name": "DeCloudUs DNS",
+  "url": "https://dns.decloudus.com/dns-query"
+},
+{
+  "name": "DNSPod Public DNS+",
+  "url": "https://dns.pub/dns-query"
+},
+{
+  "name": "DNS.SB",
+  "url": "https://doh.dns.sb/dns-query"
+},
+{
+  "name": "Google",
+  "url": "https://dns.google/dns-query"
+},
+{
+  "name": "NextDNS",
+  "url": "https://dns.nextdns.io"
+},
+{
+  "name": "OpenBLD.net DNS",
+  "url": "https://ada.openbld.net/dns-query"
+},
+{
+  "name": "Quad9",
+  "url": "https://dns.quad9.net/dns-query"
+},
+{
+  "name": "Rabbit DNS: family",
+  "url": "https://family.rabbitdns.org/dns-query"
+},
+{
+  "name": "Rabbit DNS: security",
+  "url": "https://security.rabbitdns.org/dns-query"
+},
+{
+  "name": "Rabbit DNS: unfiltered",
+  "url": "https://dns.rabbitdns.org/dns-query"
+},
+{
+  "name": "Wikimedia DNS",
+  "url": "https://wikimedia-dns.org/dns-query"
+},
+{
+  "name": "Yandex",
+  "url": "https://common.dot.dns.yandex.net/dns-query"
+},
+{
+  "name": "Yandex: family",
+  "url": "https://family.dot.dns.yandex.net/dns-query"
+},
+{
+  "name": "Yandex: security",
+  "url": "https://safe.dot.dns.yandex.net/dns-query"
+}
