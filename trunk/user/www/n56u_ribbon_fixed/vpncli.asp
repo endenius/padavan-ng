@@ -474,7 +474,7 @@ function ov_conf_import() {
 		}
 
 		// auth-user-pass
-		if (settings['auth-user-pass']) {
+		if (settings['auth-user-pass'] != undefined) {
 			document.querySelector('[name="vpnc_ov_auth"]').value = 1;
 		}
 
@@ -491,6 +491,10 @@ function ov_conf_import() {
 		// тут непонятно, не протестировано
 		if (certBlocks['tc']) document.querySelector('[name="ovpncli.ta.key"]').value = certBlocks['tc'];
 		if (certBlocks['ctc2']) document.querySelector('[name="ovpncli.ta.key"]').value = certBlocks['ctc2'];
+
+		change_vpnc_ov_auth();
+		change_vpnc_ov_atls();
+		change_vpnc_ov_mode();
 	};
 	reader.readAsText(file);
 }
