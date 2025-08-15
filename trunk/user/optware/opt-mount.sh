@@ -27,6 +27,12 @@ if [ $? -ne 0 ] ; then
 	exit 1
 fi
 
+# check read-only
+if grep -w "$1" /proc/mounts | grep -q "ro,"; then
+	logger -t "${self_name}" "Device $1 is mounted read-only!"
+	exit 0
+fi
+
 # check dirs exist
 for i in "bin" "etc/init.d" "home/admin" "lib" "sbin" "var/log" ; do
 	[ ! -d /opt/${i} ] && mkdir -p /opt/${i}

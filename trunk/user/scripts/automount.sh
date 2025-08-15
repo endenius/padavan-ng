@@ -133,6 +133,10 @@ elif [ "$ID_FS_TYPE" == "ext4" -o "$ID_FS_TYPE" == "ext3" -o "$ID_FS_TYPE" == "e
 		fi
 	fi
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
+	if [ ! $? -eq 0 ]; then
+		mount -t $ID_FS_TYPE -o ro,noload "$dev_full" "$dev_mount" \
+		&& logger -t "automount" "Fallback mounting in read-only mode device $dev_full ($ID_FS_TYPE) to $dev_mount SUCCESS!"
+	fi
 elif [ "$ID_FS_TYPE" == "xfs" ] ; then
 	func_load_module xfs
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
