@@ -65,68 +65,21 @@ log()
     logger -t "zapret$pid" "$@"
 }
 
+trim()
+{
+    awk '{gsub(/^ +| +$/,"")}1'
+}
+
 error()
 {
     log "$@"
     exit 1
 }
 
-if id -u >/dev/null 2>&1; then
-    [ $(id -u) != "0" ] && echo "root user is required to start" && exit 1
-fi
-
-# padavan: possibility of running nfqws from usb-flash drive
-[ -d "/etc_ro" ] && for i in $(cat /proc/mounts | awk '/^\/dev.+\/media/{print $2}'); do
-    if [ -s "${i}$NFQWS_BIN_OPT" ]; then
-        chmod +x "${i}$NFQWS_BIN_OPT"
-        if [ -x "${i}$NFQWS_BIN_OPT" ]; then
-            NFQWS_BIN="${i}$NFQWS_BIN_OPT"
-            break
-        fi
-    fi
-done
-
-[ -s "$NFQWS_BIN_GIT" ] && NFQWS_BIN="$NFQWS_BIN_GIT"
-
-[ -f "$CONF_DIR" ] && rm -f "$CONF_DIR"
-[ -d "$CONF_DIR" ] || mkdir -p "$CONF_DIR" || exit 1
-# copy all non-existent config files to storage except fake dir
-[ -d "$CONF_DIR_EXAMPLE" ] && false | cp -i "${CONF_DIR_EXAMPLE}"/* "$CONF_DIR" >/dev/null 2>&1
-
-[ -s "$CONF_FILE" ] && . "$CONF_FILE"
-
-for i in user.list exclude.list auto.list strategy config; do
-  [ -f ${CONF_DIR}/$i ] || touch ${CONF_DIR}/$i || exit 1
-done
-
-###
-
-unset OPENWRT
-[ -f "/etc/openwrt_release" ] && OPENWRT=1
-unset NFT
-nft -v >/dev/null 2>&1 && NFT=1
-
-# padavan
-if [ -x "/usr/sbin/nvram" ]; then
-    [ "$(nvram get zapret_iface)" ] && ISP_INTERFACE="$(nvram get zapret_iface)"
-    [ "$(nvram get zapret_log)" ] && LOG_LEVEL="$(nvram get zapret_log)"
-    [ "$(nvram get zapret_strategy)" ] && STRATEGY_FILE="$STRATEGY_FILE$(nvram get zapret_strategy)"
-    [ "$(nvram get zapret_clients_allowed)" ] && CLIENTS_ALLOWED="$(nvram get zapret_clients_allowed | tr -s ',' ' ')"
-fi
-
 _get_if_default()
 {
     ip -$1 route show default | grep via | sed -r 's/^.*default.*via.* dev ([^ ]+).*$/\1/' | head -n1
 }
-
-unset ISP_IF
-if [ "$ISP_INTERFACE" ]; then
-    ISP_IF=$(echo "$ISP_INTERFACE" | tr -d " " | tr -s "," "\n" | sort -u);
-else
-    ISP_IF4=$(_get_if_default 4);
-    ISP_IF6=$(_get_if_default 6);
-    ISP_IF=$(printf "%s\n%s" "${ISP_IF4}" "${ISP_IF6}" | sort -u)
-fi
 
 isp_is_present()
 {
@@ -135,15 +88,12 @@ isp_is_present()
 
 _get_ports()
 {
-    grep -v "^#" $STRATEGY_FILE | grep -Eo "filter-$1=[0-9,-]+" \
+    grep -v "^#" "$STRATEGY_FILE" | tr -d '"' | grep -o "[-][-]filter-$1=[0-9][0-9,-]*" \
         | cut -d '=' -f2 | tr -s ',' '\n' | sort -u \
         | sed -ne 'H;${x;s/\n/,/g;s/-/:/g;s/^,//;p;}'
 }
 
-TCP_PORTS=$(_get_ports tcp)
-UDP_PORTS=$(_get_ports udp)
-
-_MANGLE_RULES()
+_mangle_rules()
 {
     local i iface filter ports
     local port_limit=7
@@ -152,7 +102,6 @@ _MANGLE_RULES()
     # $1 = "6" - sign that it is ipv6
     if [ "$CLIENTS_ALLOWED" -a ! "$1" ]; then
         filter="-m mark --mark $FILTER_MARK/$FILTER_MARK"
-
         echo "-A OUTPUT -j MARK --or-mark $FILTER_MARK"
         for i in $CLIENTS_ALLOWED; do
             echo "-A PREROUTING -s $i -j MARK --or-mark $FILTER_MARK"
@@ -213,7 +162,7 @@ startup_args()
 
     [ "$LOG_LEVEL" = "1" ] && args="--debug=syslog $args"
 
-    NFQWS_ARGS="$(grep -v '^#' $STRATEGY_FILE)"
+    NFQWS_ARGS="$(grep -v '^#' "$STRATEGY_FILE" | tr -d '"')"
     NFQWS_ARGS=$(replace_str "$HOSTLIST_MARKER" "$HOSTLIST" "$NFQWS_ARGS")
     NFQWS_ARGS=$(replace_str "$HOSTLIST_NOAUTO_MARKER" "$HOSTLIST_NOAUTO" "$NFQWS_ARGS")
     echo "$args $NFQWS_ARGS"
@@ -362,7 +311,7 @@ nftables_start()
         nft add set inet zapret allowedip "{type ipv4_addr; policy memory; size 65536; flags interval; auto-merge}"
         nft add chain inet zapret mark_allowedip "{type filter hook prerouting priority mangle;}"
 
-        nft add element inet zapret allowedip "{ $CLIENTS_ALLOWED }"
+        nft add element inet zapret allowedip "{ $(echo $CLIENTS_ALLOWED | tr -s ' ' ',') }"
         nft add rule inet zapret mark_allowedip ip saddr == @allowedip mark set mark or $FILTER_MARK
     fi
 
@@ -382,7 +331,7 @@ iptables_start()
         [ "$i" == "6" ] && [ ! -d /proc/sys/net/ipv6 ] && continue
         ip${i}tables-restore -n <<EOF
 *mangle
-$(_MANGLE_RULES $1)
+$(_mangle_rules $i)
 COMMIT
 EOF
     done
@@ -397,8 +346,7 @@ firewall_start()
         iptables_start
         offload_start
 
-        IF_LOG=$(echo "$ISP_IF" | tr -s "\n" " ")
-        log "firewall rules updated on interface(s): $IF_LOG"
+        log "firewall rules updated on interface(s): $(echo "$ISP_IF" | tr -s '\n' ' ' | trim)"
     else
         log "interfaces not defined, firewall rules not set"
     fi
@@ -420,6 +368,25 @@ system_config()
     )
 }
 
+create_random_pattern_files()
+{
+    rm -f /tmp/rnd*.bin
+
+    local len=$(for i in $ISP_IF; do cat /sys/class/net/$i/mtu; done | sort | head -n1)
+    [ ! "$len" ] && len=1280
+
+    local pattern=$(grep -v "^#" "$STRATEGY_FILE" | tr -d '"' \
+        | grep -Eo "[-](pattern|syndata|unknown|unknown-udp)=/tmp/rnd[0-9]?[.]bin" \
+        | cut -d '=' -f2 | sort -u)
+
+    if [ "$pattern" ]; then
+        echo "creating random file(s): "$pattern
+        for i in $pattern; do
+            head -c $((len-28)) /dev/urandom > "$i"
+        done
+    fi
+}
+
 set_strategy_file()
 {
     [ "$1" ] || return
@@ -435,9 +402,8 @@ start_service()
         return
     fi
 
-    set_strategy_file "$@"
-
     kernel_modules
+    local pattern=$(create_random_pattern_files)
 
     res=$($NFQWS_BIN --daemon --pidfile=$PID_FILE $(startup_args) 2>&1)
     if [ ! "$?" = "0" ]; then
@@ -452,6 +418,7 @@ start_service()
     log "started, $(echo "$res" | grep 'github version')"
     [ "$CLIENTS_ALLOWED" ] && log "allowed clients: $CLIENTS_ALLOWED"
     log "use strategy from $STRATEGY_FILE"
+    log "$pattern"
     echo "$res" \
     | grep -Ei "loaded|profile" \
     | while read -r i; do
@@ -555,9 +522,67 @@ download_list()
     [ -s "$list" ] && log "downloaded successfully: $HOSTLIST_DOMAINS"
 }
 
+if id -u >/dev/null 2>&1; then
+    [ $(id -u) != "0" ] && echo "root user is required to start" && exit 1
+fi
+
+# padavan: possibility of running nfqws from usb-flash drive
+[ -d "/etc_ro" ] && for i in $(cat /proc/mounts | awk '/^\/dev.+\/media/{print $2}'); do
+    if [ -s "${i}$NFQWS_BIN_OPT" ]; then
+        chmod +x "${i}$NFQWS_BIN_OPT"
+        if [ -x "${i}$NFQWS_BIN_OPT" ]; then
+            NFQWS_BIN="${i}$NFQWS_BIN_OPT"
+            break
+        fi
+    fi
+done
+
+[ -s "$NFQWS_BIN_GIT" ] && NFQWS_BIN="$NFQWS_BIN_GIT"
+
+[ -f "$CONF_DIR" ] && rm -f "$CONF_DIR"
+[ -d "$CONF_DIR" ] || mkdir -p "$CONF_DIR" || exit 1
+# copy all non-existent config files to storage except fake dir
+[ -d "$CONF_DIR_EXAMPLE" ] && false | cp -i "${CONF_DIR_EXAMPLE}"/* "$CONF_DIR" >/dev/null 2>&1
+
+[ -s "$CONF_FILE" ] && . "$CONF_FILE"
+
+for i in user.list exclude.list auto.list strategy config; do
+    [ -f ${CONF_DIR}/$i ] || touch ${CONF_DIR}/$i || exit 1
+done
+
+unset OPENWRT
+[ -f "/etc/openwrt_release" ] && OPENWRT=1
+
+unset NFT
+nft -v >/dev/null 2>&1 && NFT=1
+
+# padavan
+if [ -x "/usr/sbin/nvram" ]; then
+    t="$(nvram get zapret_iface)" && [ -n "$t" ] && ISP_INTERFACE="$t"
+    t="$(nvram get zapret_log)" && [ -n "$t" ] && LOG_LEVEL="$t"
+    t="$(nvram get zapret_strategy)" && [ -n "$t" ] && STRATEGY_FILE="${STRATEGY_FILE}$t"
+    t="$(nvram get zapret_clients_allowed)" && [ -n "$t" ] && CLIENTS_ALLOWED="$t"
+    unset t
+fi
+
+CLIENTS_ALLOWED=$(echo $CLIENTS_ALLOWED | tr -s ',' ' ' | trim)
+
+unset ISP_IF
+if [ "$ISP_INTERFACE" ]; then
+    ISP_IF=$(echo "$ISP_INTERFACE" | tr -s ',' ' ' | trim | tr -s ' ' '\n' | sort -u)
+else
+    ISP_IF4=$(_get_if_default 4)
+    ISP_IF6=$(_get_if_default 6)
+    ISP_IF=$(printf "%s\n%s" "${ISP_IF4}" "${ISP_IF6}" | sort -u)
+fi
+
+set_strategy_file "$2"
+TCP_PORTS=$(_get_ports tcp)
+UDP_PORTS=$(_get_ports udp)
+
 case "$1" in
     start)
-        start_service "$2"
+        start_service
     ;;
 
     stop)
@@ -573,7 +598,7 @@ case "$1" in
 
     restart)
         stop_service
-        start_service "$2"
+        start_service
     ;;
 
     firewall-start)
