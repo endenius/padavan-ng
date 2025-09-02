@@ -182,8 +182,10 @@ function initial(){
 		showhide_div('row_dnscrypt_port', 0);
 		showhide_div('row_dnscrypt_force_dns', 0);
 		showhide_div('row_dnscrypt_options', 0);
-	}else
+	} else {
+		dc_loadCSVToSelect();
 		change_dnscrypt_enabled();
+	}
 
 	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>";
 	zapret_iface.replace(/\s+/g, '');
@@ -541,6 +543,47 @@ function zapret_strategy_change(o, v) {
 	if (v == 1) showhide_div('zapretc.strategy' + o.value, 1);
 }
 
+async function dc_loadCSVToSelect() {
+	try {
+		const response = await fetch('/dnscrypt-resolvers.csv');
+		const csvText = await response.text();
+		const firstColumnValues = dc_getFirstColumnFromCSV(csvText);
+		dc_fillSelect(firstColumnValues);
+	} catch (error) {
+		console.error('Error:', error);
+	}
+}
+
+function dc_getFirstColumnFromCSV(csvText) {
+	const lines = csvText.split('\n');
+	const result = [];
+
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (!line) continue;
+
+		const commaIndex = line.indexOf(',');
+		const firstValue = commaIndex === -1 ? line : line.substring(0, commaIndex).trim();
+
+		if (firstValue) {
+			result.push(firstValue);
+		}
+	}
+
+	return result;
+}
+
+function dc_fillSelect(values) {
+	const select = document.form.dnscrypt_resolver;
+	values.forEach(value => {
+		const option = document.createElement('option');
+		option.value = value;
+		option.textContent = value;
+		option.selected = value === "<% nvram_get_x("", "dnscrypt_resolver"); %>" ? true : false;
+		select.appendChild(option);
+	});
+}
+
 </script>
 <style>
     .caption-bold {
@@ -890,8 +933,8 @@ function zapret_strategy_change(o, v) {
 					<tr id="row_dnscrypt_resolver" style="display:none">
                                             <th><#Adm_Svc_dnscrypt_resolver#></th>
                                             <td>
-                                                <input type="text" maxlength="64" size="15" name="dnscrypt_resolver" class="input" value="<% nvram_get_x("", "dnscrypt_resolver"); %>" onkeypress="return is_string(this,event);"/>
-                                                &nbsp;<a href="dnscrypt-resolvers.csv" target="_blank"><span><#Adm_Svc_dnscrypt_list#></span></a>
+                                                <select name="dnscrypt_resolver" class="input"></select>
+                                                &nbsp;<a href="dnscrypt-resolvers.csv" target="_blank" class="label label-info"><span><#Adm_Svc_dnscrypt_list#></span></a>
                                             </td>
 					</tr>
 					<tr id="row_dnscrypt_ipaddr" style="display:none">
