@@ -511,19 +511,19 @@
 			{"sshd_enable", "", NULL, EVM_RESTART_SSHD},
 			{"sshd_enable_gp", "", NULL, EVM_RESTART_SSHD},
 #if defined(APP_DOH)
-			{"doh_enable", "", NULL, EVM_RESTART_DOH},
-			{"doh_server1", "", NULL, EVM_RESTART_DOH},
-			{"doh_server2", "", NULL, EVM_RESTART_DOH},
-			{"doh_server3", "", NULL, EVM_RESTART_DOH},
+			{"doh_enable", "", NULL, EVM_RESTART_DOH|EVM_RESTART_DHCPD},
+			{"doh_server1", "", NULL, EVM_RESTART_DOH|EVM_RESTART_DHCPD},
+			{"doh_server2", "", NULL, EVM_RESTART_DOH|EVM_RESTART_DHCPD},
+			{"doh_server3", "", NULL, EVM_RESTART_DOH|EVM_RESTART_DHCPD},
 			{"doh_server_ip1", "", NULL, EVM_RESTART_DOH},
 			{"doh_server_ip2", "", NULL, EVM_RESTART_DOH},
 			{"doh_server_ip3", "", NULL, EVM_RESTART_DOH},
 #endif
 #if defined(APP_STUBBY)
-			{"stubby_enable", "", NULL, EVM_RESTART_STUBBY},
-			{"stubby_server1", "", NULL, EVM_RESTART_STUBBY},
-			{"stubby_server2", "", NULL, EVM_RESTART_STUBBY},
-			{"stubby_server3", "", NULL, EVM_RESTART_STUBBY},
+			{"stubby_enable", "", NULL, EVM_RESTART_STUBBY|EVM_RESTART_DHCPD},
+			{"stubby_server1", "", NULL, EVM_RESTART_STUBBY|EVM_RESTART_DHCPD},
+			{"stubby_server2", "", NULL, EVM_RESTART_STUBBY|EVM_RESTART_DHCPD},
+			{"stubby_server3", "", NULL, EVM_RESTART_STUBBY|EVM_RESTART_DHCPD},
 			{"stubby_server_ip1", "", NULL, EVM_RESTART_STUBBY},
 			{"stubby_server_ip2", "", NULL, EVM_RESTART_STUBBY},
 			{"stubby_server_ip3", "", NULL, EVM_RESTART_STUBBY},
@@ -563,10 +563,10 @@
 			{"privoxy.user.trust", "File", NULL, EVM_RESTART_PRIVOXY|EVM_BLOCK_UNSAFE},
 #endif
 #if defined(APP_DNSCRYPT)
-			{"dnscrypt_enable", "", NULL, EVM_RESTART_DNSCRYPT},
-			{"dnscrypt_resolver", "", NULL, EVM_RESTART_DNSCRYPT},
-			{"dnscrypt_ipaddr", "", NULL, EVM_RESTART_DNSCRYPT},
-			{"dnscrypt_port", "", NULL, EVM_RESTART_DNSCRYPT},
+			{"dnscrypt_enable", "", NULL, EVM_RESTART_DNSCRYPT|EVM_RESTART_DHCPD},
+			{"dnscrypt_resolver", "", NULL, EVM_RESTART_DNSCRYPT|EVM_RESTART_DHCPD},
+			{"dnscrypt_ipaddr", "", NULL, EVM_RESTART_DNSCRYPT|EVM_RESTART_DHCPD},
+			{"dnscrypt_port", "", NULL, EVM_RESTART_DNSCRYPT|EVM_RESTART_DHCPD},
 			{"dnscrypt_force_dns", "", NULL, EVM_RESTART_FIREWALL},
 			{"dnscrypt_options", "", NULL, EVM_RESTART_DNSCRYPT},
 #endif
@@ -988,7 +988,7 @@
 		{EVM_RESTART_STUBBY,		EVT_RESTART_STUBBY,		RCN_RESTART_STUBBY,	EVM_RESTART_FIREWALL},
 #endif
 #if defined(APP_ZAPRET)
-		{EVM_RESTART_ZAPRET,		EVT_RESTART_ZAPRET,		RCN_RESTART_ZAPRET,	0},
+		{EVM_RESTART_ZAPRET,		EVT_RESTART_ZAPRET,		RCN_RESTART_ZAPRET,	EVM_RESTART_FIREWALL},
 #endif
 #if defined(APP_TOR)
 		{EVM_RESTART_TOR,		EVT_RESTART_TOR,		RCN_RESTART_TOR,	EVM_RESTART_FIREWALL},

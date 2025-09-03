@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DOH_BIN="/usr/sbin/https_dns_proxy"
-PIDFILE="/var/run/https_dns_proxy.pid"
+PID_FILE="/var/run/https_dns_proxy.pid"
 FIRST_PORT="65055"
 
 log()
@@ -13,13 +13,13 @@ log()
 
 error()
 {
-    log "$@"
+    log "error: $@"
     exit 1
 }
 
 start_service()
 {
-    if [ -f "$PIDFILE" ]; then
+    if [ -f "$PID_FILE" ]; then
         echo "already running"
         return
     fi
@@ -32,9 +32,9 @@ start_service()
 
         $DOH_BIN -p $1 -r $2 $bootstrap_dns -a 127.0.0.1 -u nobody -g nogroup -4 -d
         if pgrep -f "$DOH_BIN -p $1 -r $2 " 2>&1 >/dev/null; then
-            [ ! -f "$PIDFILE" ] && log "started, version $($DOH_BIN -V)"
-            log "start resolving to $2 : $1"
-            touch "$PIDFILE"
+            [ ! -f "$PID_FILE" ] && log "started, version $($DOH_BIN -V)"
+            log "resolver \"$2\", listening on 127.0.0.1:$1"
+            touch "$PID_FILE"
         fi
     }
 
@@ -42,7 +42,7 @@ start_service()
         start_doh $(($FIRST_PORT+$i-1)) "$(nvram get doh_server$i)" "$(nvram get doh_server_ip$i)"
     done
 
-    [ ! -f "$PIDFILE" ] && error "failed to start"
+    [ ! -f "$PID_FILE" ] && error "failed to start"
 }
 
 stop_service()
@@ -55,20 +55,23 @@ stop_service()
         read -t 0.2
     done
 
-    rm -f "$PIDFILE"
+    rm -f "$PID_FILE"
 }
 
 case "$1" in
     start)
         start_service
     ;;
+
     stop)
         stop_service
     ;;
+
     restart)
         stop_service
         start_service
     ;;
+
     *)
         echo "Usage: $0 {start|stop|restart}"
         exit 1

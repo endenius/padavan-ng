@@ -1,8 +1,9 @@
 #!/bin/sh
 
+LISTEN_PORT=65054
 STUBBY_BIN="/usr/sbin/stubby"
 STUBBY_CONFIG="/etc/storage/stubby/stubby.yml"
-PIDFILE="/var/run/stubby.pid"
+PID_FILE="/var/run/stubby.pid"
 MARK="####### LIST OF SERVERS ######"
 
 make_default_config()
@@ -19,8 +20,8 @@ edns_client_subnet_private : 1
 round_robin_upstreams: 1
 idle_timeout: 10000
 listen_addresses:
-  - 127.0.0.1@65054
-  - 0::1@65054
+  - 127.0.0.1@$LISTEN_PORT
+  - 0::1@$LISTEN_PORT
 ####### DNSSEC SETTINGS ######
 #dnssec_return_status: GETDNS_EXTENSION_TRUE
 #dnssec_return_only_secure: GETDNS_EXTENSION_TRUE
@@ -37,61 +38,54 @@ log()
     [ -n "$*" ] || return
     echo "$@"
     local pid
-    [ -f "$PIDFILE" ] && pid="[$(cat "$PIDFILE" 2>/dev/null)]"
+    [ -f "$PID_FILE" ] && pid="[$(cat "$PID_FILE" 2>/dev/null)]"
     logger -t "stubby$pid" "$@"
 }
 
 error()
 {
-    log "$@"
+    log "error: $@"
     exit 1
 }
 
 check_config()
 {
-    if [ ! -f "$STUBBY_CONFIG" ]; then
+    if [ ! -f "$STUBBY_CONFIG" ] || \
+       ! grep -q "^upstream_recursive_servers:$" "$STUBBY_CONFIG" || \
+       ! grep -q "^$MARK$" "$STUBBY_CONFIG"
+    then
         make_default_config || return 1
     fi
 
-    if ! grep -q "^upstream_recursive_servers:$" "$STUBBY_CONFIG"; then
-        make_default_config
-    fi
-
-    if ! grep -q "^$MARK$" "$STUBBY_CONFIG"; then
-        make_default_config
-    fi
-
     # if no ipv6 - remove ipv6 listen address
-    if [ -d /proc/sys/net/ipv6 ]; then
-        sed -e '/0::1@/s/^#//' -i $STUBBY_CONFIG
-    else
-        sed -e '/^[^#].*0::1@/s/^/#/' -i $STUBBY_CONFIG
-    fi
+    [ -d /proc/sys/net/ipv6 ] || sed -e '/::.*@/d' -i $STUBBY_CONFIG
 
     sync
 }
 
 start_service()
 {
-    if [ -f "$PIDFILE" ]; then
+    if [ -f "$PID_FILE" ]; then
         echo "already running"
         return
     fi
 
-    check_config || exit 1
+    check_config || error "unable to make config $STUBBY_CONFIG"
 
     sed -i "1,/$MARK/!d" $STUBBY_CONFIG >/dev/null 2>&1
 
+    local resolvers
     make_config_servers()
     {
         [ "$1" ] || return
         [ "$2" ] || return
         echo "  - address_data: $2" >> $STUBBY_CONFIG
         echo "    tls_auth_name: $1" >> $STUBBY_CONFIG
+        [ "$resolvers" ] && resolvers=$(echo "$resolvers, $1") || resolvers="$1"
     }
 
     for i in 1 2 3; do
-        make_config_servers "$(nvram get stubby_server$i)" "$(nvram get stubby_server_ip$i)"
+        make_config_servers "$(nvram get stubby_server$i | tr -d ' ')" "$(nvram get stubby_server_ip$i | tr -d ' ')"
     done
     sync
 
@@ -102,7 +96,8 @@ start_service()
     else
         $STUBBY_BIN -g
         if pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null; then
-            log "started, version $($STUBBY_BIN -V | awk '{print $2}')"
+            log "started, version $($STUBBY_BIN -V | awk '{print $2}'), listening on 127.0.0.1:$LISTEN_PORT"
+            [ "$resolvers" ] && log "resolvers: $resolvers"
         else
             make_default_config
             error "failed to start"
@@ -117,23 +112,26 @@ stop_service()
     local loop=0
     while pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null && [ $loop -lt 50 ]; do
         loop=$((loop+1))
-        read -t 0.2
+        read -t 0.1
     done
 
-    rm -f "$PIDFILE"
+    rm -f "$PID_FILE"
 }
 
 case "$1" in
     start)
         start_service
     ;;
+
     stop)
         stop_service
     ;;
+
     restart)
         stop_service
         start_service
     ;;
+
     *)
         echo "Usage: $0 {start|stop|restart}"
         exit 1

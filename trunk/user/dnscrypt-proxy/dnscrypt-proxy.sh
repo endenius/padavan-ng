@@ -19,7 +19,7 @@ log()
 
 error()
 {
-    log "$@"
+    log "error: $@"
     exit 1
 }
 

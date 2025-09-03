@@ -304,7 +304,6 @@ void restart_doh(void)
 {
 	stop_doh();
 	start_doh();
-	restart_dhcpd();
 }
 #endif
 #if defined(APP_STUBBY)
@@ -335,7 +334,6 @@ void restart_stubby(void)
 {
 	stop_stubby();
 	start_stubby();
-	restart_dhcpd();
 }
 #endif
 #if defined(APP_ZAPRET)
@@ -475,9 +473,6 @@ restart_dnscrypt(void)
 	/* add-remove iptables rules for DNS forwarding when switching-on-off DNSCrypt-Proxy control in WebUI */
 	if ((is_run_after != is_run_before) && nvram_match("dnscrypt_force_dns", "1"))
 		restart_firewall();
-
-	/* add-remove needed dnsmasq params when dnscrypt-proxy is enabled-disabled */
-	restart_dhcpd();
 }
 #endif
 
@@ -666,6 +661,9 @@ start_services_once(int is_ap_mode)
 #if defined(APP_SSHD)
 	start_sshd();
 #endif
+#if defined(APP_ZAPRET)
+	start_zapret();
+#endif
 #if defined(APP_DOH)
 	start_doh();
 #endif
@@ -704,9 +702,6 @@ start_services_once(int is_ap_mode)
 	start_crond();
 	start_networkmap(1);
 	start_rstats();
-#if defined(APP_ZAPRET)
-	start_zapret();
-#endif
 	return 0;
 }
 
