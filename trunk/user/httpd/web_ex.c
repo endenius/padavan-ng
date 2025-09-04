@@ -721,8 +721,6 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_ZAPRET_DIR, file+8);
 	else if (strncmp(file, "privoxy.", 8)==0)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_PRIVOXY_DIR, file+8);
-	else if (strncmp(file, "dnsproxy.", 9)==0)
-		snprintf(filename, sizeof(filename), "%s/%s", SHARE_DNSPROXY_DIR, file+9);
 	else
 		snprintf(filename, sizeof(filename), "%s/%s", "/tmp", file);
 
@@ -3862,10 +3860,13 @@ struct mime_handler mime_handlers[] = {
 	{ "upgrade.cgi*",    "text/html", no_cache_IE, do_upgrade_fw_post, do_upgrade_fw_cgi, 1 },
 	{ "restore_nv.cgi*", "text/html", no_cache_IE, do_restore_nv_post, do_restore_nv_cgi, 1 },
 	{ "restore_st.cgi*", "text/html", no_cache_IE, do_restore_st_post, do_restore_st_cgi, 1 },
-
 #if defined(APP_DNSCRYPT)
 	/* DNSCrypt proxy resolvers file */
 	{ "**.csv", "text/csv", NULL, NULL, do_file, 0 }, // qwe
+#endif
+#if defined(APP_DOH) || defined(APP_STUBBY)
+	/* DoT/DoH resolvers file */
+	{ "**.json", "application/json", no_cache_IE, NULL, do_file, 0 },
 #endif
 #if defined(SUPPORT_WPAD)
 	/* Support wpad.dat file */

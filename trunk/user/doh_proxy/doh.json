@@ -1,4 +1,6 @@
+[
 {
+  "name": "Bootstrap DNS",
   "dns": "1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8"
 },
 {
@@ -165,3 +167,4 @@
   "name": "Yandex: security",
   "url": "https://safe.dot.dns.yandex.net/dns-query"
 }
+]

@@ -38,6 +38,12 @@ romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DNSCRYPT),y)
 	cd $(ROMFS_DIR)/www && ln -sf /usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv dnscrypt-resolvers.csv
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_DOH),y)
+	cd $(ROMFS_DIR)/www && ln -sf /usr/share/dnsproxy/doh.json doh.json
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_STUBBY),y)
+	cd $(ROMFS_DIR)/www && ln -sf /usr/share/dnsproxy/dot.json dot.json
+endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_WPAD),y)
 	ln -s /etc/storage/wpad.dat $(ROMFS_DIR)/www/wpad.dat
 	ln -s /etc/storage/wpad.dat $(ROMFS_DIR)/www/wpad.da

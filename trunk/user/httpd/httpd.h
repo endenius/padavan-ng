@@ -38,8 +38,6 @@
 #define STORAGE_ZAPRET_DIR	"/etc/storage/zapret"
 #define STORAGE_STUBBY_DIR	"/etc/storage/stubby"
 
-#define SHARE_DNSPROXY_DIR	"/usr/share/dnsproxy"
-
 #define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
 #define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"
 #define STORAGE_FIFO_FILENAME	"/tmp/storage.tar.bz2"

@@ -48,9 +48,7 @@ $j(document).ready(function() {
 <% openssl_util_hook(); %>
 <% net_iface_list(); %>
 
-let dot_data = [<% nvram_dump("dnsproxy.dot.json",""); %>];
-let doh_data = [<% nvram_dump("dnsproxy.doh.json",""); %>];
-let doh_dataDns = null;
+let dohDns = null;
 
 function initial(){
 	show_banner(1);
@@ -93,56 +91,15 @@ function initial(){
 		showhide_div('tbl_anon', 1);
 	}
 
-// remove doh dns from array and set doh_dataDns
-	doh_data = doh_data.filter(obj => {
-		if (!obj.name && obj.dns && !doh_dataDns) {
-			doh_dataDns = obj.dns;
-			return false;
-		}
-		return true;
-	});
-
-	doh_data.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-	doh_data.forEach(obj => {
-		const option = document.createElement('option');
-		option.value = obj.url;
-		option.textContent = obj.name;
-		$('doh_server_list1').appendChild(option);
-	});
-
-	$j('#doh_server_list1 option').clone().appendTo('#doh_server_list2');
-	$j('#doh_server_list1 option').clone().appendTo('#doh_server_list3');
-
-// fix for firefox
-	$j('#doh_server_list1').prop('selectedIndex', -1)
-	$j('#doh_server_list2').prop('selectedIndex', -1)
-	$j('#doh_server_list3').prop('selectedIndex', -1)
-
 	if(!found_app_doh()){
 		showhide_div('row_doh', 0);
 		showhide_div('row_doh_conf1', 0);
 		showhide_div('row_doh_conf2', 0);
 		showhide_div('row_doh_conf3', 0);
 	}else{
+		loadJSONToSelect('/doh.json', 'doh_server_list');
 		change_doh_enabled();
 	}
-
-	dot_data.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-	dot_data.forEach(obj => {
-		const option = document.createElement('option');
-		option.value = obj.url;
-		option.textContent = obj.name;
-		option.dataset.dns = obj.dns;
-		$('stubby_server_list1').appendChild(option);
-	});
-
-	$j('#stubby_server_list1 option').clone().appendTo('#stubby_server_list2');
-	$j('#stubby_server_list1 option').clone().appendTo('#stubby_server_list3');
-
-// fix for firefox
-	$j('#stubby_server_list1').prop('selectedIndex', -1)
-	$j('#stubby_server_list2').prop('selectedIndex', -1)
-	$j('#stubby_server_list3').prop('selectedIndex', -1)
 
 	if(!found_app_stubby()){
 		showhide_div('row_stubby', 0);
@@ -150,6 +107,7 @@ function initial(){
 		showhide_div('row_stubby_conf2', 0);
 		showhide_div('row_stubby_conf3', 0);
 	}else{
+		loadJSONToSelect('/dot.json', 'stubby_server_list');
 		change_stubby_enabled();
 	}
 
@@ -183,66 +141,9 @@ function initial(){
 		showhide_div('row_dnscrypt_force_dns', 0);
 		showhide_div('row_dnscrypt_options', 0);
 	} else {
-		dc_loadCSVToSelect();
+		loadCSVToSelect();
 		change_dnscrypt_enabled();
 	}
-
-	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>";
-	zapret_iface.replace(/\s+/g, '');
-	var iface = net_iface_list();
-
-	const map_zapret_iface = zapret_iface.split(',').map(word => word);
-	const map_iface = iface.split(',').map(word => word);
-	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',').replace(/\s+/g, '');
-
-	const data_iface = [
-		...zapret_iface.split(',').filter(Boolean).map(text => ({text, checked: true})),
-		...iface.split(',').filter(Boolean).map(text => ({text, checked: false}))
-	];
-
-	$j('#zapret_iface_list').multiSelectDropdown({
-		items: data_iface,
-		placeholder: "<#APChnAuto#>",
-		width: '220px',
-		allowDelete: false,
-		allowAdd: false,
-		addSuggestionText: '<#CTL_add#>',
-		removeSpaces: true,
-		allowedItems: '^[a-zA-Z0-9-_.:]+$',
-		allowedAlert: '<#JS_field_noletter#>',
-		onChange: function(selected){
-			document.form.zapret_iface.value = selected.join(',');
-		}
-	});
-
-	var zapret_clients_allowed = "<% nvram_get_x("", "zapret_clients_allowed"); %>";
-	zapret_clients_allowed.replace(/\s+/g, '');
-	var zapret_clients = "<% nvram_get_x("", "zapret_clients"); %>";
-
-	const map_zapret_clients_allowed = zapret_clients_allowed.split(',').map(word => word);
-	const map_zapret_clients = zapret_clients.split(',').map(word => word);
-	zapret_clients = map_zapret_clients.filter(word => !zapret_clients_allowed.includes(word)).join(',').replace(/\s+/g, '');
-
-	const data_clients = [
-		...zapret_clients_allowed.split(',').filter(Boolean).map(text => ({text, checked: true})),
-		...zapret_clients.split(',').filter(Boolean).map(text => ({text, checked: false}))
-	];
-
-	$j('#zapret_clients_list').multiSelectDropdown({
-		items: data_clients,
-		placeholder: "<#ZapretWORestrictions#>",
-		width: '220px',
-		allowDelete: true,
-		allowAdd: true,
-		addSuggestionText: '<#CTL_add#>',
-		removeSpaces: true,
-		allowedItems: '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\/([0-9]|[1-2][0-9]|3[0-2]))?$',
-		allowedAlert: '<#LANHostConfig_x_DDNS_alarm_9#>',
-		onChange: function(selected){
-			document.form.zapret_clients_allowed.value = selected.join(',');
-			document.form.zapret_clients.value = this.multiSelectDropdown('getAllItems').map(item => item.text).join(',');
-		}
-	});
 }
 
 function applyRule(){
@@ -296,7 +197,6 @@ function applyRule(){
 		showhide_div('row_dnscrypt_force_dns', 0);
 		showhide_div('row_dnscrypt_options', 0);
 	}
-
 }
 
 function validForm(){
@@ -353,7 +253,7 @@ function change_doh_enabled(){
 
 function on_doh_select_change(selectObject, i){
 	if ( !$j(selectObject).val() ) return false;
-	$j('input[name=doh_server_ip' + i +']').val(doh_dataDns);
+	$j('input[name=doh_server_ip' + i +']').val(dohDns);
 	$j('input[name=doh_server' + i +']').val($j(selectObject).val()).focus();
 }
 
@@ -498,6 +398,63 @@ function change_zapret_enabled(){
 	showhide_div('row_zapret_service', v);
 	if (!login_safe()) v = 0;
 	textarea_zapret_enabled(v);
+
+	var zapret_iface = "<% nvram_get_x("", "zapret_iface"); %>";
+	zapret_iface.replace(/\s+/g, '');
+	var iface = net_iface_list();
+
+	const map_zapret_iface = zapret_iface.split(',').map(word => word);
+	const map_iface = iface.split(',').map(word => word);
+	iface = map_iface.filter(word => !map_zapret_iface.includes(word)).join(',').replace(/\s+/g, '');
+
+	const data_iface = [
+		...zapret_iface.split(',').filter(Boolean).map(text => ({text, checked: true})),
+		...iface.split(',').filter(Boolean).map(text => ({text, checked: false}))
+	];
+
+	$j('#zapret_iface_list').multiSelectDropdown({
+		items: data_iface,
+		placeholder: "<#APChnAuto#>",
+		width: '220px',
+		allowDelete: false,
+		allowAdd: false,
+		addSuggestionText: '<#CTL_add#>',
+		removeSpaces: true,
+		allowedItems: '^[a-zA-Z0-9-_.:]+$',
+		allowedAlert: '<#JS_field_noletter#>',
+		onChange: function(selected){
+			document.form.zapret_iface.value = selected.join(',');
+		}
+	});
+
+	var zapret_clients_allowed = "<% nvram_get_x("", "zapret_clients_allowed"); %>";
+	zapret_clients_allowed.replace(/\s+/g, '');
+	var zapret_clients = "<% nvram_get_x("", "zapret_clients"); %>";
+
+	const map_zapret_clients_allowed = zapret_clients_allowed.split(',').map(word => word);
+	const map_zapret_clients = zapret_clients.split(',').map(word => word);
+	zapret_clients = map_zapret_clients.filter(word => !zapret_clients_allowed.includes(word)).join(',').replace(/\s+/g, '');
+
+	const data_clients = [
+		...zapret_clients_allowed.split(',').filter(Boolean).map(text => ({text, checked: true})),
+		...zapret_clients.split(',').filter(Boolean).map(text => ({text, checked: false}))
+	];
+
+	$j('#zapret_clients_list').multiSelectDropdown({
+		items: data_clients,
+		placeholder: "<#ZapretWORestrictions#>",
+		width: '220px',
+		allowDelete: true,
+		allowAdd: true,
+		addSuggestionText: '<#CTL_add#>',
+		removeSpaces: true,
+		allowedItems: '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\/([0-9]|[1-2][0-9]|3[0-2]))?$',
+		allowedAlert: '<#LANHostConfig_x_DDNS_alarm_9#>',
+		onChange: function(selected){
+			document.form.zapret_clients_allowed.value = selected.join(',');
+			document.form.zapret_clients.value = this.multiSelectDropdown('getAllItems').map(item => item.text).join(',');
+		}
+	});
 }
 
 function change_tor_enabled(){
@@ -543,18 +500,50 @@ function zapret_strategy_change(o, v) {
 	if (v == 1) showhide_div('zapretc.strategy' + o.value, 1);
 }
 
-async function dc_loadCSVToSelect() {
+async function loadJSONToSelect(fileName, select) {
 	try {
-		const response = await fetch('/dnscrypt-resolvers.csv');
-		const csvText = await response.text();
-		const firstColumnValues = dc_getFirstColumnFromCSV(csvText);
-		dc_fillSelect(firstColumnValues);
+		const response = await fetch(fileName);
+		let dataJson = await response.json();
+
+		dataJson.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+		dataJson.forEach(obj => {
+			if (obj.dns && select == 'doh_server_list') {
+				dohDns = obj.dns;
+				return false;
+			}
+			const option = document.createElement('option');
+			option.value = obj.url;
+			option.textContent = obj.name;
+			if (select == 'stubby_server_list')
+				option.dataset.dns = obj.dns;
+			$(select+'1').appendChild(option);
+		});
+
+		$j('#'+select+'1 option').clone().appendTo('#'+select+'2');
+		$j('#'+select+'1 option').clone().appendTo('#'+select+'3');
+
+		// fix for firefox
+		$j('#'+select+'1').prop('selectedIndex', -1)
+		$j('#'+select+'2').prop('selectedIndex', -1)
+		$j('#'+select+'3').prop('selectedIndex', -1)
+
 	} catch (error) {
 		console.error('Error:', error);
 	}
 }
 
-function dc_getFirstColumnFromCSV(csvText) {
+async function loadCSVToSelect() {
+	try {
+		const response = await fetch('/dnscrypt-resolvers.csv');
+		const csvText = await response.text();
+		const firstColumnValues = getFirstColumnFromCSV(csvText);
+		fillDNSCryptSelect(firstColumnValues);
+	} catch (error) {
+		console.error('Error:', error);
+	}
+}
+
+function getFirstColumnFromCSV(csvText) {
 	const lines = csvText.split('\n');
 	const result = [];
 
@@ -573,7 +562,7 @@ function dc_getFirstColumnFromCSV(csvText) {
 	return result;
 }
 
-function dc_fillSelect(values) {
+function fillDNSCryptSelect(values) {
 	const select = document.form.dnscrypt_resolver;
 	values.forEach(value => {
 		const option = document.createElement('option');
@@ -994,7 +983,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="doh_server1" value="<% nvram_get_x("", "doh_server1"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="doh_server_ip1" value="<% nvram_get_x("", "doh_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="doh_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_doh_select_change(this, 1)" onclick="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1003,7 +992,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">2:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="doh_server2" value="<% nvram_get_x("", "doh_server2"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="doh_server_ip2" value="<% nvram_get_x("", "doh_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="doh_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_doh_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1012,7 +1001,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">3:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="doh_server3" value="<% nvram_get_x("", "doh_server3"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="doh_server_ip3" value="<% nvram_get_x("", "doh_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="doh_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_doh_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="doh_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_doh_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="doh_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1036,7 +1025,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">1:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="stubby_server1" value="<% nvram_get_x("", "stubby_server1"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="stubby_server_ip1" value="<% nvram_get_x("", "stubby_server_ip1"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="stubby_server_list1" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_stubby_select_change(this, 1)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(1);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1045,7 +1034,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">2:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="stubby_server2" value="<% nvram_get_x("", "stubby_server2"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="stubby_server_ip2" value="<% nvram_get_x("", "stubby_server_ip2"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="stubby_server_list2" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_stubby_select_change(this, 2)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(2);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
@@ -1054,7 +1043,7 @@ function dc_fillSelect(values) {
                                                 <span class="caption-bold">3:</span>
                                                 <input type="text" maxlength="60" class="input" size="10" style="margin-left: 4px; width: 309px;" name="stubby_server3" value="<% nvram_get_x("", "stubby_server3"); %>" onkeypress="return is_string(this,event);"/>
                                                 <input type="text" maxlength="60" class="input" size="10" style="position: relative; border-radius: 3px 0 0 3px; width: 191px;" name="stubby_server_ip3" value="<% nvram_get_x("", "stubby_server_ip3"); %>" onkeypress="return is_string(this,event);"/>&#8203;
-                                                <select class="input" id="stubby_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px;" onchange="on_stubby_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
+                                                <select class="input" id="stubby_server_list3" style="margin-left: -1px; border-radius: 0 3px 3px 0; padding-left: 0px; max-width: 20px; outline:0" onchange="on_stubby_select_change(this, 3)" onfocus="this.selectedIndex=-1;"></select>
                                                 <input type="button" class="btn btn-mini" style="outline:0" onclick="stubby_clean(3);" value="<#CTL_clear#>"/>
                                             </td>
                                         </tr>
