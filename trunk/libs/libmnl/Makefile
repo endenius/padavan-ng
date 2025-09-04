@@ -1,7 +1,24 @@
-SRC_NAME=libmnl-1.0.4
+# https://www.netfilter.org/projects/libmnl
 
-all: config_test
+SRC_NAME = libmnl-1.0.5
+SRC_URL = https://www.netfilter.org/projects/libmnl/files/$(SRC_NAME).tar.bz2
+
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.bz2 ]; then \
+		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.bz2 $(SRC_URL) \
+			|| rm -f $(SRC_NAME).tar.bz2; \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar xjf $(SRC_NAME).tar.bz2; \
+		find "$(shell pwd)"/patches -type f -name "*.patch" -print0 \
+		  | sort -z \
+		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -21,13 +38,12 @@ configure:
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
-	fi ; \
+	if [ -f $(SRC_NAME)/Makefile ]; then \
+		$(MAKE) -C $(SRC_NAME) distclean; \
+	fi; \
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(STAGEDIR) ;
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(STAGEDIR);
 
 romfs:
-
