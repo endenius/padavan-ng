@@ -4,8 +4,16 @@
   "dns": "1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8"
 },
 {
-  "name": "0ms DNS",
-  "url": "https://0ms.dev/dns-query"
+  "name": "v.recipes: unfiltered",
+  "url": "https://v.recipes/dns-query"
+},
+{
+  "name": "v.recipes: security",
+  "url": "https://v.recipes/dns-security"
+},
+{
+  "name": "v.recipes: adblock",
+  "url": "https://v.recipes/dns-adblock"
 },
 {
   "name": "Adguard: ads",
