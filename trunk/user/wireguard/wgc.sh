@@ -238,6 +238,9 @@ start_wg()
     done
 
     wg_setdns
+
+    # trying to sending single packet trought wg interface for activating the connection web-indicator
+    ping -c1 -W1 -I $IF_NAME 8.8.8.8 >/dev/null 2>&1 &
 }
 
 stop_wg()
