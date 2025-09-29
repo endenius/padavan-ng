@@ -4,124 +4,16 @@
   "dns": "1.1.1.1,8.8.8.8,9.9.9.9,208.67.222.222,77.88.8.8"
 },
 {
-  "name": "v.recipes: unfiltered",
+  "name": "v.recipes Unfiltered",
   "url": "https://v.recipes/dns-query"
 },
 {
-  "name": "v.recipes: security",
+  "name": "v.recipes Security",
   "url": "https://v.recipes/dns-security"
 },
 {
-  "name": "v.recipes: adblock",
+  "name": "v.recipes Adblock",
   "url": "https://v.recipes/dns-adblock"
-},
-{
-  "name": "Adguard: ads",
-  "url": "https://dns.adguard-dns.com/dns-query"
-},
-{
-  "name": "Adguard: family filter",
-  "url": "https://family.adguard-dns.com/dns-query"
-},
-{
-  "name": "Adguard: unfiltered",
-  "url": "https://unfiltered.adguard-dns.com/dns-query"
-},
-{
-  "name": "AhaDNS: ads",
-  "url": "https://blitz.ahadns.com/1:1"
-},
-{
-  "name": "AhaDNS: no-Google",
-  "url": "https://blitz.ahadns.com/1:27"
-},
-{
-  "name": "AhaDNS: privacy",
-  "url": "https://blitz.ahadns.com/1:4"
-},
-{
-  "name": "AhaDNS: privacy strict",
-  "url": "https://blitz.ahadns.com/1:5"
-},
-{
-  "name": "Ali DNS",
-  "url": "https://dns.alidns.com/dns-query"
-},
-{
-  "name": "BebasDNS",
-  "url": "https://dns.bebasid.com/dns-query"
-},
-{
-  "name": "BebasDNS: antivirus",
-  "url": "https://antivirus.bebasid.com/dns-query"
-},
-{
-  "name": "BebasDNS: family",
-  "url": "https://internetsehat.bebasid.com/dns-query"
-},
-{
-  "name": "BebasDNS: unfiltered",
-  "url": "https://dns.bebasid.com/unfiltered"
-},
-{
-  "name": "Cisco OpenDNS",
-  "url": "https://doh.opendns.com/dns-query"
-},
-{
-  "name": "Cisco OpenDNS: family",
-  "url": "https://doh.familyshield.opendns.com/dns-query"
-},
-{
-  "name": "Cisco OpenDNS: unfiltered",
-  "url": "https://doh.sandbox.opendns.com/dns-query"
-},
-{
-  "name": "CleanBrowsing: adult",
-  "url": "https://doh.cleanbrowsing.org/doh/adult-filter"
-},
-{
-  "name": "CleanBrowsing: family",
-  "url": "https://doh.cleanbrowsing.org/doh/family-filter"
-},
-{
-  "name": "CleanBrowsing: security",
-  "url": "https://doh.cleanbrowsing.org/doh/security-filter"
-},
-{
-  "name": "Cloudflare",
-  "url": "https://dns.cloudflare.com/dns-query"
-},
-{
-  "name": "Cloudflare: family",
-  "url": "https://family.cloudflare-dns.com/dns-query"
-},
-{
-  "name": "Cloudflare: security",
-  "url": "https://security.cloudflare-dns.com/dns-query"
-},
-{
-  "name": "Comss.one DNS",
-  "url": "https://dns.comss.one/dns-query"
-},
-{
-  "name": "ControlD: ads",
-  "url": "https://freedns.controld.com/p2"
-},
-{
-  "name": "ControlD: family",
-  "url": "https://freedns.controld.com/family"
-},
-{
-  "name": "ControlD: malware",
-  "url": "https://freedns.controld.com/p1"
-},
-{
-  "name": "ControlD: unfiltered",
-  "url": "https://freedns.controld.com/p0"
-},
-{
-  "name": "DeCloudUs DNS",
-  "url": "https://dns.decloudus.com/dns-query"
 },
 {
   "name": "DNSPod Public DNS+",
@@ -132,47 +24,475 @@
   "url": "https://doh.dns.sb/dns-query"
 },
 {
-  "name": "Google",
-  "url": "https://dns.google/dns-query"
-},
-{
-  "name": "NextDNS",
-  "url": "https://dns.nextdns.io"
-},
-{
   "name": "OpenBLD.net DNS",
   "url": "https://ada.openbld.net/dns-query"
 },
 {
-  "name": "Quad9",
-  "url": "https://dns.quad9.net/dns-query"
-},
-{
-  "name": "Rabbit DNS: family",
+  "name": "Rabbit DNS Family",
   "url": "https://family.rabbitdns.org/dns-query"
 },
 {
-  "name": "Rabbit DNS: security",
+  "name": "Rabbit DNS Security",
   "url": "https://security.rabbitdns.org/dns-query"
 },
 {
-  "name": "Rabbit DNS: unfiltered",
+  "name": "Rabbit DNS Unfiltered",
   "url": "https://dns.rabbitdns.org/dns-query"
-},
-{
-  "name": "Wikimedia DNS",
-  "url": "https://wikimedia-dns.org/dns-query"
 },
 {
   "name": "Yandex",
   "url": "https://common.dot.dns.yandex.net/dns-query"
 },
 {
-  "name": "Yandex: family",
+  "name": "Yandex Family",
   "url": "https://family.dot.dns.yandex.net/dns-query"
 },
 {
-  "name": "Yandex: security",
+  "name": "Yandex Security",
   "url": "https://safe.dot.dns.yandex.net/dns-query"
+},
+{
+  "name": "AdGuard Default",
+  "url": "https://dns.adguard-dns.com/dns-query"
+},
+{
+  "name": "AdGuard Family",
+  "url": "https://family.adguard-dns.com/dns-query"
+},
+{
+  "name": "AdGuard Uncensored",
+  "url": "https://unfiltered.adguard-dns.com/dns-query"
+},
+{
+  "name": "AliDNS",
+  "url": "https://dns.alidns.com/dns-query"
+},
+{
+  "name": "Avast",
+  "url": "https://secure.avastdns.com/dns-query"
+},
+{
+  "name": "Blokada DNS",
+  "url": "https://dns.blokada.org/dns-query"
+},
+{
+  "name": "CIRA Canadian Shield Private",
+  "url": "https://private.canadianshield.cira.ca/dns-query"
+},
+{
+  "name": "CIRA Canadian Shield Protected",
+  "url": "https://protected.canadianshield.cira.ca/dns-query"
+},
+{
+  "name": "CIRA Canadian Shield Family",
+  "url": "https://family.canadianshield.cira.ca/dns-query"
+},
+{
+  "name": "Cisco OpenDNS",
+  "url": "https://doh.opendns.com/dns-query"
+},
+{
+  "name": "Cisco OpenDNS Family",
+  "url": "https://doh.familyshield.opendns.com/dns-query"
+},
+{
+  "name": "Cisco OpenDNS Unfiltered",
+  "url": "https://doh.sandbox.opendns.com/dns-query"
+},
+{
+  "name": "CleanBrowsing Family",
+  "url": "https://doh.cleanbrowsing.org/doh/family-filter"
+},
+{
+  "name": "CleanBrowsing Adult",
+  "url": "https://doh.cleanbrowsing.org/doh/adult-filter"
+},
+{
+  "name": "CleanBrowsing Security",
+  "url": "https://doh.cleanbrowsing.org/doh/security-filter"
+},
+{
+  "name": "Cloudflare",
+  "url": "https://cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Cloudflare Mozilla",
+  "url": "https://mozilla.cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Cloudflare Malware",
+  "url": "https://security.cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Cloudflare Malware & Adult",
+  "url": "https://family.cloudflare-dns.com/dns-query"
+},
+{
+  "name": "Comss.one DNS",
+  "url": "https://dns.comss.one/dns-query"
+},
+{
+  "name": "ControlD Unfiltered",
+  "url": "https://freedns.controld.com/p0"
+},
+{
+  "name": "ControlD Malware",
+  "url": "https://freedns.controld.com/p1"
+},
+{
+  "name": "ControlD Ads & Tracking",
+  "url": "https://freedns.controld.com/p2"
+},
+{
+  "name": "ControlD Social",
+  "url": "https://freedns.controld.com/p3"
+},
+{
+  "name": "ControlD Family",
+  "url": "https://freedns.controld.com/family"
+},
+{
+  "name": "ControlD Uncensored",
+  "url": "https://freedns.controld.com/uncensored"
+},
+{
+  "name": "ControlD OISD Full",
+  "url": "https://freedns.controld.com/x-oisd"
+},
+{
+  "name": "ControlD OISD Basic",
+  "url": "https://freedns.controld.com/x-oisd-basic"
+},
+{
+  "name": "ControlD GoodbyeAds",
+  "url": "https://freedns.controld.com/x-goodbyeads"
+},
+{
+  "name": "ControlD AdGuard",
+  "url": "https://freedns.controld.com/x-adguard"
+},
+{
+  "name": "CSS Working Group",
+  "url": "https://dns.csswg.org/dns-query"
+},
+{
+  "name": "dns0.eu Non-blocking",
+  "url": "https://open.dns0.eu"
+},
+{
+  "name": "dns0.eu Malware blocking",
+  "url": "https://dns0.eu"
+},
+{
+  "name": "dns0.eu Hardened security",
+  "url": "https://zero.dns0.eu"
+},
+{
+  "name": "dns0.eu Childsafe",
+  "url": "https://kids.dns0.eu"
+},
+{
+  "name": "DNS4EU Protective",
+  "url": "https://protective.joindns4.eu/dns-query"
+},
+{
+  "name": "DNS4EU Childsafe",
+  "url": "https://child.joindns4.eu/dns-query"
+},
+{
+  "name": "DNS4EU Adblocking",
+  "url": "https://noads.joindns4.eu/dns-query"
+},
+{
+  "name": "DNS4EU Ads & Childsafe",
+  "url": "https://child-noads.joindns4.eu/dns-query"
+},
+{
+  "name": "DNS4EU Unfiltered",
+  "url": "https://unfiltered.joindns4.eu/dns-query"
+},
+{
+  "name": "dnscry.pt US Ashburn",
+  "url": "https://abn01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Greece",
+  "url": "https://ath01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Atlanta",
+  "url": "https://atl01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Colombia",
+  "url": "https://bog01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Slovakia",
+  "url": "https://bts01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Australia Brisbane",
+  "url": "https://bne01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Belgium Brussels",
+  "url": "https://bru01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Canada Calgary",
+  "url": "https://yyc01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Moldova Chișinău",
+  "url": "https://kiv01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Norway Copenhagen",
+  "url": "https://cph01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt UK Coventry",
+  "url": "https://cvt01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Ireland Dublin",
+  "url": "https://dub01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Germany Düsseldorf",
+  "url": "https://dus01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Germany Frankfurt",
+  "url": "https://fra01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Switzerland Geneva",
+  "url": "https://gva01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Iceland Hafnarfjordur",
+  "url": "https://haf01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Canada Halifax",
+  "url": "https://yhz01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Vietnam Hanoi",
+  "url": "https://han01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Vietnam Ho-Chi-Minh City",
+  "url": "https://sgn01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Turkey Istanbul",
+  "url": "https://ist01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Las Vegas",
+  "url": "https://las01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt UK London",
+  "url": "https://lon01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Spain Madrid",
+  "url": "https://mad01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Italy Milan",
+  "url": "https://mil01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt India Mumbai",
+  "url": "https://bom01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Germany Nuremberg",
+  "url": "https://nue01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Romania Oradea",
+  "url": "https://omr01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt France Paris",
+  "url": "https://par01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Philadelphia",
+  "url": "https://phl01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Phoenix",
+  "url": "https://phx01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Portland",
+  "url": "https://pdx01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt UK Redditch",
+  "url": "https://rdd01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Salt Lake City",
+  "url": "https://slc01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Norway Sandefjord",
+  "url": "https://trf01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Santa Clara",
+  "url": "https://sjc01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Brazil São Paulo",
+  "url": "https://gru01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Seattle",
+  "url": "https://sea01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Singapore",
+  "url": "https://sin03.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Bulgaria Sofia",
+  "url": "https://sof01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Spokane",
+  "url": "https://geg01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Sweden",
+  "url": "https://sto01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Australia Sydney",
+  "url": "https://syd02.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Estonia Tallinn",
+  "url": "https://tll01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Tampa",
+  "url": "https://tpa01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt US Taos",
+  "url": "https://tsm01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Georgia",
+  "url": "https://tbs01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Israel",
+  "url": "https://tlv01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Canada Toronto",
+  "url": "https://yyz01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Canada Vancouver",
+  "url": "https://yvr01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Austria Vienna",
+  "url": "https://vie01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Lithuania",
+  "url": "https://vno01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Poland",
+  "url": "https://waw02.dnscry.pt/dns-query"
+},
+{
+  "name": "dnscry.pt Armenia",
+  "url": "https://evn01.dnscry.pt/dns-query"
+},
+{
+  "name": "dnsforge.de Adblocking",
+  "url": "https://dnsforge.de/dns-query"
+},
+{
+  "name": "dnsforge.de Ads & Adult",
+  "url": "https://clean.dnsforge.de/dns-query"
+},
+{
+  "name": "dnsforge.de Hard",
+  "url": "https://hard.dnsforge.de/dns-query"
+},
+{
+  "name": "dnsHome.de",
+  "url": "https://dns.dnshome.de/dns-query"
+},
+{
+  "name": "DNS over Tor Japan",
+  "url": "https://japan.dnsovertor.cc/dns-query"
+},
+{
+  "name": "DNS over Tor Chuncheon",
+  "url": "https://chuncheon.dnsovertor.cc/dns-query"
+},
+{
+  "name": "DNS over Tor Seoul",
+  "url": "https://seoul.dnsovertor.cc/dns-query"
+},
+{
+  "name": "Google",
+  "url": "https://dns.google/dns-query"
+},
+{
+  "name": "mydns.network Uncensored",
+  "url": "https://freedom.mydns.network/dns-query"
+},
+{
+  "name": "mydns.network no Google/Cloudflare",
+  "url": "https://paranoia.mydns.network/dns-query"
+},
+{
+  "name": "mydns.network Adblocking",
+  "url": "https://adblock.mydns.network/dns-query"
+},
+{
+  "name": "mydns.network Family",
+  "url": "https://family.mydns.network/dns-query"
+},
+{
+  "name": "NextDNS",
+  "url": "https://dns.nextdns.io"
+},
+{
+  "name": "Quad9",
+  "url": "https://dns.quad9.net/dns-query"
+},
+{
+  "name": "Quad9 No Threat Blocking",
+  "url": "https://dns10.quad9.net/dns-query"
+},
+{
+  "name": "Quad9 Secure",
+  "url": "https://dns11.quad9.net/dns-query"
+},
+{
+  "name": "Quad9 No Threat Blocking + ECS",
+  "url": "https://dns12.quad9.net/dns-query"
+},
+{
+  "name": "Wikimedia DNS",
+  "url": "https://wikimedia-dns.org/dns-query"
 }
 ]
