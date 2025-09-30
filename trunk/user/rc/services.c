@@ -661,9 +661,6 @@ start_services_once(int is_ap_mode)
 #if defined(APP_SSHD)
 	start_sshd();
 #endif
-#if defined(APP_ZAPRET)
-	start_zapret();
-#endif
 #if defined(APP_DOH)
 	start_doh();
 #endif
@@ -702,6 +699,9 @@ start_services_once(int is_ap_mode)
 	start_crond();
 	start_networkmap(1);
 	start_rstats();
+#if defined(APP_ZAPRET)
+	start_zapret();
+#endif
 	return 0;
 }
 
