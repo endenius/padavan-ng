@@ -536,6 +536,7 @@ fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFQWS" = "y" ] ; then
 	func_enable_kernel_param_as_m "CONFIG_NETFILTER_NETLINK_QUEUE"
 	func_enable_kernel_param_as_m "CONFIG_NETFILTER_XT_TARGET_NFQUEUE"
+	func_enable_kernel_param_as_m "CONFIG_NETFILTER_XT_MATCH_U32"
 fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------
