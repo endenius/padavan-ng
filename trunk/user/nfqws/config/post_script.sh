@@ -3,13 +3,14 @@
 ### Called after executing the zapret.sh, all its variables and functions are available
 ### $1 - action: start/stop/reload/restart
 ###
-### $DESYNC_MARK  - mark of processed packages, default 0x40000000
-### $FILTER_MARK  - mark allowed clients, default 0x10000000
-### $NFQUEUE_NUM  - queue number
-### $ISP_IF       - list of WAN interfaces separated by line breaks
-### $TCP_PORTS    - UDP ports separated by commas
-### $UDP_PORTS    - UDP ports separated by commas
-### $NFQWS_BIN    - nfqws binary
+### $DESYNC_MARK     - mark of processed packages, default 0x40000000
+### $FILTER_MARK     - mark allowed clients, default 0x10000000
+### $CLIENTS_ALLOWED - ip list allowed clients, comma separated
+### $NFQUEUE_NUM     - queue number of current desync strategy
+### $ISP_IF          - list of WAN interfaces separated by line breaks
+### $TCP_PORTS       - UDP ports, comma separated
+### $UDP_PORTS       - UDP ports, comma separated
+### $NFQWS_BIN       - nfqws binary, default: /usr/bin/nfqws
 
 
 ### uncomment required feature
@@ -97,8 +98,13 @@ start_custom_fw()
   # $2 - iptables u32 params
   # $3 - queue number [ 300-309 ]
 
+  local filter
+  if [ "$CLIENTS_ALLOWED" ]; then
+    filter="-m mark --mark $FILTER_MARK/$FILTER_MARK"
+  fi
+
   for i in $ISP_IF; do
-    iptables -t mangle -A POSTROUTING -o $i $1 "$2" -j NFQUEUE --queue-num $3 --queue-bypass
+    iptables -t mangle -A POSTROUTING -o $i $filter $1 "$2" -j NFQUEUE --queue-num $3 --queue-bypass
   done
 }
 
