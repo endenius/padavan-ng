@@ -14,39 +14,18 @@
 
 ### uncomment required feature
 ### don't forget to remove the relevant filters from the strategies
-# STUN4ALL=1
-# WG4ALL=1
-# DISCORD=1
+CUSTOM_STUN4ALL=1
+CUSTOM_WG4ALL=1
+CUSTOM_DISCORD=1
+###
 
 
-post_start()
-{
-  # download additional domain lists
-  # zapret.sh download-list
+### custom desync strategy
+DESYNC_STUN4ALL="--dpi-desync=fake --dpi-desync-repeats=2"
+DESYNC_WG4ALL="--dpi-desync=fake --dpi-desync-repeats=6"
+DESYNC_DISCORD="--dpi-desync=fake --dpi-desync-repeats=2"
+###
 
-  custom_d stop
-  custom_d start
-  return 0
-}
-
-post_stop()
-{
-  custom_d stop
-  return 0
-}
-
-post_reload()
-{
-  custom_d
-  return 0
-}
-
-post_restart()
-{
-  custom_d stop
-  custom_d start
-  return 0
-}
 
 custom_d()
 {
@@ -55,46 +34,62 @@ custom_d()
   modprobe -q xt_u32
   [ "$1" == "stop" ] && stop_custom && return
 
-  [ "$STUN4ALL" ] && stun4all "$1"
-  [ "$WG4ALL" ] && wg4all "$1"
-  [ "$DISCORD" ] && discord "$1"
+  # queue number = [ 300-309 ]
+  [ "$CUSTOM_STUN4ALL" ] && stun4all "$DESYNC_STUN4ALL" 300 "$1"
+  [ "$CUSTOM_WG4ALL" ] && wg4all "$DESYNC_WG4ALL" 301  "$1"
+  [ "$CUSTOM_DISCORD" ] && discord "$DESYNC_DISCORD" 302  "$1"
 }
 
 stun4all()
 {
-  local str="--dpi-desync=fake --dpi-desync-repeats=2"
-  local qnum=300
+  # $1 - desync strategy
+  # $2 - queue number
+  # $3 - action: "start" if need launch nfqws binary
 
-  start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=28:65535&&0>>22&0x3C@12=0x2112A442&&0>>22&0x3C@8&0xC0000003=0" $qnum
-  if [ "$1" == "start" ]; then
-    $NFQWS_BIN --qnum=$qnum --daemon --user=nobody $str >/dev/null 2>&1
-    log "custom rule stun4all started"
-  fi
+  start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=28:65535&&0>>22&0x3C@12=0x2112A442&&0>>22&0x3C@8&0xC0000003=0" $2
+  [ "$3" == "start" ] && start_custom "stun4all" "$1" "$2"
 }
 
 wg4all()
 {
-  local str="--dpi-desync=fake --dpi-desync-repeats=6"
-  local qnum=301
-
-  start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=0x9c&&0>>22&0x3C@8=0x01000000" $qnum
-  if [ "$1" == "start" ]; then
-    $NFQWS_BIN --qnum=$qnum --daemon --user=nobody $str >/dev/null 2>&1
-    log "custom rule wg4all started"
-  fi
+  start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=0x9c&&0>>22&0x3C@8=0x01000000" $2
+  [ "$3" == "start" ] && start_custom "wg4all" "$1" "$2"
 }
 
 discord()
 {
-  local str="--dpi-desync=fake --dpi-desync-repeats=2"
-  local qnum=302
-
-  start_custom_fw "-p udp --dport 50000:50099 -m u32 --u32" "0>>22&0x3C@4>>16=0x52&&0>>22&0x3C@8=0x00010046&&0>>22&0x3C@16=0&&0>>22&0x3C@76=0" $qnum
-  if [ "$1" == "start" ]; then
-    $NFQWS_BIN --qnum=$qnum --daemon --user=nobody $str >/dev/null 2>&1
-    log "custom rule discord started"
-  fi
+  start_custom_fw "-p udp --dport 50000:50099 -m u32 --u32" "0>>22&0x3C@4>>16=0x52&&0>>22&0x3C@8=0x00010046&&0>>22&0x3C@16=0&&0>>22&0x3C@76=0" $2
+  [ "$3" == "start" ] && start_custom "discord" "$1" "$2"
 }
+
+###
+
+post_start()
+{
+  # download additional domain lists
+  # zapret.sh download-list
+
+  custom_d stop
+  custom_d start
+}
+
+post_stop()
+{
+  custom_d stop
+}
+
+post_reload()
+{
+  custom_d
+}
+
+post_restart()
+{
+  custom_d stop
+  custom_d start
+}
+
+###
 
 start_custom_fw()
 {
@@ -113,6 +108,16 @@ stop_custom()
   for i in $(ps | grep "nfqws --qnum=30[0-9]" | cut -d ' ' -f1); do
     kill $i
   done
+}
+
+start_custom()
+{
+  # $1 - custom rule name
+  # $2 - desync strategy
+  # $3 - queue number
+
+  $NFQWS_BIN --qnum=$3 --daemon --user=nobody $2 >/dev/null 2>&1
+  log "custom rule $1 started"
 }
 
 case "$1" in

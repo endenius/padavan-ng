@@ -5,23 +5,12 @@
 
 --new --filter-tcp=443
 --dpi-desync=multisplit
---dpi-desync-split-pos=1
+--dpi-desync-split-pos=1,midsld
 --dpi-desync-split-seqovl=681
---dpi-desync-split-seqovl-pattern=/usr/share/zapret/fake/tls_clienthello_www_google_com.bin
+--dpi-desync-split-seqovl-pattern=/usr/share/zapret/fake/quic_initial_www_google_com.bin
 <HOSTLIST>
 
 --new --filter-udp=443
 --dpi-desync=fake --dpi-desync-repeats=6
 --dpi-desync-fake-quic=/usr/share/zapret/fake/quic_initial_www_google_com.bin
 <HOSTLIST_NOAUTO>
-
---new --filter-udp=50000-50099
---dpi-desync=fake --filter-l7=discord,stun --dpi-desync-cutoff=n2
-
---new --filter-udp=51820,2408,1002
---dpi-desync=fake --filter-l7=wireguard --dpi-desync-repeats=6
---dpi-desync-fake-wireguard=/usr/share/zapret/fake/quic_initial_www_google_com.bin
-
-### calling in telegram, need test
---new --filter-udp=1400
---filter-l7=stun --dpi-desync=fake --dpi-desync-cutoff=n2
