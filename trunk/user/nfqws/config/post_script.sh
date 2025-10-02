@@ -31,10 +31,12 @@ DESYNC_DISCORD="--dpi-desync=fake --dpi-desync-repeats=2"
 custom_d()
 {
   [ "$NFT" ] && return
+  [ "$1" == "stop" ] && stop_custom && return
+  is_running || return
+
+  stop_custom_fw
 
   modprobe -q xt_u32
-  [ "$1" == "stop" ] && stop_custom && return
-
   # queue number = [ 300-309 ]
   [ "$CUSTOM_STUN4ALL" ] && stun4all "$DESYNC_STUN4ALL" 300 "$1"
   [ "$CUSTOM_WG4ALL" ] && wg4all "$DESYNC_WG4ALL" 301  "$1"
@@ -92,6 +94,11 @@ post_restart()
 
 ###
 
+stop_custom_fw()
+{
+  eval "$(iptables-save -t mangle 2>/dev/null | grep "queue-num 30[0-9] " | sed 's/^-A/iptables -t mangle -D/g')"
+}
+
 start_custom_fw()
 {
   # $1 - iptables params (proto, ports, u32)
@@ -110,7 +117,7 @@ start_custom_fw()
 
 stop_custom()
 {
-  eval "$(iptables-save -t mangle 2>/dev/null | grep "queue-num 30[0-9] " | sed 's/^-A/iptables -t mangle -D/g')"
+  stop_custom_fw
   for i in $(ps | grep "nfqws --qnum=30[0-9]" | cut -d ' ' -f1); do
     kill $i
   done
@@ -127,19 +134,19 @@ start_custom()
 }
 
 case "$1" in
-    start)
-        post_start
-    ;;
+  start)
+    post_start
+  ;;
 
-    stop)
-        post_stop
-    ;;
+  stop)
+    post_stop
+  ;;
 
-    reload)
-        post_reload
-    ;;
+  reload)
+    post_reload
+  ;;
 
-    restart)
-        post_restart
-    ;;
+  restart)
+    post_restart
+  ;;
 esac
