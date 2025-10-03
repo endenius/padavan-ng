@@ -1,0 +1,86 @@
+--- tor-0.4.8.18.orig/src/core/mainloop/mainloop.c
++++ tor-0.4.8.18/src/core/mainloop/mainloop.c
+@@ -1137,9 +1137,11 @@
+   if (!router_have_minimum_dir_info()) {
+     int quiet = suppress_logs || from_cache ||
+                 dirclient_too_idle_to_fetch_descriptors(options, now);
++#ifndef DISABLE_TRASH_LOG
+     tor_log(quiet ? LOG_INFO : LOG_NOTICE, LD_DIR,
+         "I learned some more directory information, but not enough to "
+         "build a circuit: %s", get_dir_info_status_string());
++#endif
+     update_all_descriptor_downloads(now);
+     return;
+   } else {
+--- tor-0.4.8.18.orig/src/feature/client/bridges.c
++++ tor-0.4.8.18/src/feature/client/bridges.c
+@@ -907,6 +907,7 @@
+     if (!tor_addr_is_null(&ri->ipv6_addr)) {
+       tor_addr_port_t ap;
+       node_get_pref_orport(node, &ap);
++#ifndef DISABLE_TRASH_LOG
+       log_notice(LD_CONFIG,
+                  "Bridge '%s' has both an IPv4 and an IPv6 address.  "
+                  "Will prefer using its %s address (%s) based on %s.",
+@@ -916,6 +917,7 @@
+                  options->ClientPreferIPv6ORPort == -1 ?
+                  "the configured Bridge address" :
+                  "ClientPreferIPv6ORPort");
++#endif
+     }
+   }
+   if (node->rs) {
+@@ -964,6 +966,7 @@
+     if (!tor_addr_is_null(&rs->ipv6_addr)) {
+       tor_addr_port_t ap;
+       node_get_pref_orport(node, &ap);
++#ifndef DISABLE_TRASH_LOG
+       log_notice(LD_CONFIG,
+                  "Bridge '%s' has both an IPv4 and an IPv6 address.  "
+                  "Will prefer using its %s address (%s) based on %s.",
+@@ -973,6 +976,7 @@
+                  options->ClientPreferIPv6ORPort == -1 ?
+                  "the configured Bridge address" :
+                  "ClientPreferIPv6ORPort");
++#endif
+     }
+   }
+ }
+@@ -1028,9 +1032,11 @@
+                               (const uint8_t*)ri->cache_info.identity_digest);
+ 
+       if (desc_is_new)
++#ifndef DISABLE_TRASH_LOG
+         log_notice(LD_DIR, "new bridge descriptor '%s' (%s): %s",
+                    ri->nickname,
+                    from_cache ? "cached" : "fresh", router_describe(ri));
++#endif
+       /* If we didn't have a reachable bridge before this one, try directory
+        * documents again. */
+       if (first) {
+--- tor-0.4.8.18.orig/src/feature/nodelist/nodelist.c
++++ tor-0.4.8.18/src/feature/nodelist/nodelist.c
+@@ -2645,19 +2645,22 @@
+ 
+   if (old_have_consensus_path != have_consensus_path) {
+     if (have_consensus_path == CONSENSUS_PATH_INTERNAL) {
++#ifndef DISABLE_TRASH_LOG
+       log_notice(LD_NET,
+                  "The current consensus has no exit nodes. "
+                  "Tor can only build internal paths, "
+                  "such as paths to onion services.");
+-
++#endif
+       /* However, exit nodes can reachability self-test using this consensus,
+        * join the network, and appear in a later consensus. This will allow
+        * the network to build exit paths, such as paths for world wide web
+        * browsing (as distinct from hidden service web browsing). */
+     } else if (old_have_consensus_path == CONSENSUS_PATH_INTERNAL) {
++#ifndef DISABLE_TRASH_LOG
+       log_notice(LD_NET,
+                  "The current consensus contains exit nodes. "
+                  "Tor can build exit and internal paths.");
++#endif
+     }
+   }
+ 

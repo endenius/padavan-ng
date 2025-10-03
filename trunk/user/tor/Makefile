@@ -1,11 +1,15 @@
-SRC_NAME=tor-tor-0.4.8.13
-SRC_URL=https://gitlab.torproject.org/tpo/core/tor/-/archive/tor-0.4.8.13/$(SRC_NAME).tar.gz
+# https://www.torproject.org
+# https://gitlab.torproject.org/tpo/core/tor
+# https://deb.torproject.org/torproject.org/pool/main/t/tor
 
-CFLAGS +=$(COPT) -ffunction-sections -fdata-sections -fvisibility=hidden
+SRC_NAME = tor-0.4.8.18
+SRC_URL = https://dist.torproject.org/$(SRC_NAME).tar.gz
+
+CFLAGS += $(COPT) -ffunction-sections -fdata-sections -fvisibility=hidden
+CFLAGS += -DDISABLE_TRASH_LOG
 LDFLAGS += -Wl,--gc-sections
 
 all: download_test extract_test config_test
-#all: config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
@@ -16,6 +20,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar xzf $(SRC_NAME).tar.gz; \
+		cat patches/*.patch | patch -d $(SRC_NAME) -r - -N -p1; \
 	fi )
 
 config_test:
