@@ -59,8 +59,14 @@ func_start()
 
 func_stop()
 {
-	/usr/bin/logger -t tor Stop TOR
-	killall -q tor
+	killall -q tor && /usr/bin/logger -t tor Stop TOR
+
+	local loop=0
+	while test -f /var/run/tor.pid 2>&1 >/dev/null && [ $loop -lt 100 ]; do
+		loop=$((loop+1))
+		read -t 0.2
+	done
+
 	if mountpoint -q /usr/share/tor ; then
 		umount -l /usr/share/tor
 	fi
