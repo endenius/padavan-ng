@@ -1,20 +1,46 @@
 #!/bin/sh
 
-dir_storage="/etc/storage/tor"
-tor_config="$dir_storage/torrc"
+TOR_BIN="/usr/sbin/tor"
+PID_FILE="/var/run/tor.pid"
+
+DATA_DIR="/tmp/tor"
+GEOIP_DIR="/usr/share/tor"
+CONFIG_DIR="/etc/storage/tor"
+CONFIG_FILE="$CONFIG_DIR/torrc"
+
+log()
+{
+    [ -n "$*" ] || return
+    echo "$@"
+    local pid
+    [ -f "$PID_FILE" ] && pid="[$(cat "$PID_FILE" 2>/dev/null)]"
+    logger -t "Tor$pid" "$@"
+}
+
+error()
+{
+    log "error: $@"
+    exit 1
+}
+
+is_running()
+{
+    [ -z "$(pidof $(basename "$TOR_BIN"))" ] && return 1
+    [ "$PID_FILE" ]
+}
 
 func_create_config()
 {
-	ip_address=`ip address show br0 | grep -w inet | sed 's|.* \(.*\)/.*|\1|'`
-	cat > "$tor_config" <<EOF
+    local lan_ip=$(nvram get lan_ipaddr)
+    cat > "$CONFIG_FILE" <<EOF
 ### See https://www.torproject.org/docs/tor-manual.html,
 ### for more options you can use in this file.
 
 #VirtualAddrNetworkIPv4 172.16.0.0/12
 #AutomapHostsOnResolve 1
 SocksPort 127.0.0.1:9050
-SocksPort ${ip_address}:9050
-#TransPort ${ip_address}:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
+SocksPort ${lan_ip}:9050
+#TransPort ${lan_ip}:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
 #DNSPort 127.0.0.1:9053
 Log notice syslog
 #ExitPolicy reject *:*
@@ -39,60 +65,67 @@ Bridge 213.33.114.214:443 0693E0271830CD4FC40094E517D3B13C919FF75D
 Bridge 151.243.109.167:443 0816D426BD84E83B2D55979245BD97A52D276FF2
 
 EOF
-	chmod 644 "$tor_config"
-	/sbin/mtd_storage.sh save
+    chmod 644 "$CONFIG_FILE"
+    /sbin/mtd_storage.sh save
 }
 
 func_start()
 {
-	test -d "$dir_storage" || mkdir -p -m 755 $dir_storage
-	if [ ! -f "$tor_config" ]; then
-		func_create_config
-	fi
-	if [ -d "/opt/share/tor" ]
-	then
-		mount | grep -q /usr/share/tor || mount --bind /opt/share/tor /usr/share/tor
-	fi
-	/usr/bin/logger -t tor Start TOR
-	/usr/sbin/tor --RunAsDaemon 1 --PidFile /var/run/tor.pid --DataDirectory /tmp/tor
+    if is_running; then
+        echo "already running"
+        return
+    fi
+
+    [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
+    [ ! -f "$CONFIG_FILE" ] && func_create_config
+
+    if [ -d "/opt/share/tor" ]
+    then
+        mount | grep -q $GEOIP_DIR || mount --bind /opt/share/tor $GEOIP_DIR
+    fi
+
+    log "started"
+    rm -rf $DATA_DIR
+    $TOR_BIN --RunAsDaemon 1 --PidFile $PID_FILE --DataDirectory $DATA_DIR
 }
 
 func_stop()
 {
-	killall -q tor && /usr/bin/logger -t tor Stop TOR
+    killall -q -SIGKILL $(basename "$TOR_BIN") && log "stopped"
 
-	local loop=0
-	while test -f /var/run/tor.pid && [ $loop -lt 100 ]; do
-		loop=$((loop+1))
-		read -t 0.2
-	done
+    if mountpoint -q $GEOIP_DIR ; then
+        umount -l $GEOIP_DIR
+    fi
 
-	if mountpoint -q /usr/share/tor ; then
-		umount -l /usr/share/tor
-	fi
-	rm -rf /tmp/tor
+    rm -rf $DATA_DIR
+    rm -f $PID_FILE
 }
 
 func_reload()
 {
-	/usr/bin/logger -t tor Restart TOR
-	kill -SIGHUP `cat /var/run/tor.pid`
+    is_running || return
+
+    log "reload"
+    kill -SIGHUP $(cat "$PID_FILE")
 }
 
 case "$1" in
-start)
-	func_start $2
-	;;
-stop)
-	func_stop
-	;;
-reload)
-	func_reload
-	;;
-*)
-	echo "Usage: $0 {start|stop|reload}"
-	exit 1
-	;;
+    start)
+        func_start
+    ;;
+
+    stop)
+        func_stop
+    ;;
+
+    reload)
+        func_reload
+    ;;
+
+    *)
+        echo "Usage: $0 {start|stop|reload}"
+        exit 1
+    ;;
 esac
 
 exit 0
