@@ -107,14 +107,7 @@ start_service()
 
 stop_service()
 {
-    killall -q $(basename "$STUBBY_BIN") && log "stopped"
-
-    local loop=0
-    while pgrep -x "$STUBBY_BIN" 2>&1 >/dev/null && [ $loop -lt 50 ]; do
-        loop=$((loop+1))
-        read -t 0.1
-    done
-
+    killall -q -SIGKILL $(basename "$STUBBY_BIN") && log "stopped"
     rm -f "$PID_FILE"
 }
 
