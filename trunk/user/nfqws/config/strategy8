@@ -12,6 +12,7 @@
 --dpi-desync-badseq-increment=10000000
 <HOSTLIST>
 
+### quic
 --new --filter-udp=443
 --dpi-desync=fake --dpi-desync-repeats=17
 --dpi-desync-fake-quic=/usr/share/zapret/fake/quic_initial_www_google_com.bin

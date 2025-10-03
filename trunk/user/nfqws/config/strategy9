@@ -14,9 +14,12 @@
 --dpi-desync-badseq-increment=10000000
 --dpi-desync-split-seqovl=2
 --dpi-desync-split-seqovl-pattern=0x01d400faf69a3bcb
---dpi-desync-fake-tls-mod=rnd,rndsni,dupsid
+--dpi-desync-fake-tls=0x1603
+--dpi-desync-fake-tls=!
+--dpi-desync-fake-tls-mod=rnd,dupsid,sni=www.google.com
 --hostlist-exclude=/etc/storage/zapret/exclude.list
 
+### quic
 --new --filter-udp=443
 --dpi-desync=fake --dpi-desync-repeats=6
 --dpi-desync-fake-quic=/usr/share/zapret/fake/quic_initial_www_google_com.bin
