@@ -42,13 +42,8 @@ func_start()
 
 func_stop()
 {
-    killall -q $(basename "$DNSCRYPT_BIN") && log "stopped"
-
-    local loop=0
-    while pgrep -x "$DNSCRYPT_BIN" 2>&1 >/dev/null && [ $loop -lt 50 ]; do
-        loop=$((loop+1))
-        read -t 0.1
-    done
+    killall -q -SIGKILL $(basename "$DNSCRYPT_BIN") && log "stopped"
+    rm -f "$PID_FILE"
 }
 
 case "$1" in
