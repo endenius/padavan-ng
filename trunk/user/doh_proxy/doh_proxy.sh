@@ -33,7 +33,7 @@ start_service()
         $DOH_BIN -p $1 -r $2 $bootstrap_dns -a 127.0.0.1 -u nobody -g nogroup -4 -d
         if pgrep -f "$DOH_BIN -p $1 -r $2 " 2>&1 >/dev/null; then
             [ ! -f "$PID_FILE" ] && log "started, version $($DOH_BIN -V)"
-            log "resolver \"$2\", listening on 127.0.0.1:$1"
+            log "resolver $2, listening on 127.0.0.1:$1"
             touch "$PID_FILE"
         fi
     }
@@ -47,14 +47,7 @@ start_service()
 
 stop_service()
 {
-    killall -q $(basename "$DOH_BIN") && log "stopped"
-
-    local loop=0
-    while pgrep -x "$DOH_BIN" 2>&1 >/dev/null && [ $loop -lt 50 ]; do
-        loop=$((loop+1))
-        read -t 0.2
-    done
-
+    killall -q -SIGKILL $(basename "$DOH_BIN") && log "stopped"
     rm -f "$PID_FILE"
 }
 
