@@ -133,7 +133,7 @@ _mangle_rules()
 
 is_running()
 {
-    [ -z "$(pgrep `basename "$NFQWS_BIN"` 2>/dev/null)" ] && return 1
+    [ -z "$(pidof $(basename "$NFQWS_BIN"))" ] && return 1
     [ "$PID_FILE" ]
 }
 
