@@ -6,7 +6,6 @@ SRC_NAME = tor-0.4.8.18
 SRC_URL = https://dist.torproject.org/$(SRC_NAME).tar.gz
 
 CFLAGS += $(COPT) -ffunction-sections -fdata-sections -fvisibility=hidden
-CFLAGS += -DDISABLE_TRASH_LOG
 LDFLAGS += -Wl,--gc-sections
 
 all: download_test extract_test config_test
