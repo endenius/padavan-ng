@@ -193,6 +193,7 @@ func_fill()
 	dir_inadyn="$dir_storage/inadyn"
 	dir_crond="$dir_storage/cron/crontabs"
 	dir_wlan="$dir_storage/wlan"
+	dir_zapret="$dir_storage/zapret"
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -204,6 +205,7 @@ func_fill()
 	script_vpncs="$dir_storage/vpnc_server_script.sh"
 	script_ezbtn="$dir_storage/ez_buttons_script.sh"
 	script_wpad="$dir_storage/wpad.dat"
+	script_zapret="/usr/bin/zapret.sh"
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
@@ -622,6 +624,11 @@ EOF
 EOF
 			chmod 644 "$user_sswan_secrets"
 		fi
+	fi
+
+	# create zapret files
+	if [ -x "$script_zapret" ]; then
+		$script_zapret >/dev/null
 	fi
 }
 
