@@ -4,6 +4,7 @@ TOR_BIN="/usr/sbin/tor"
 PID_FILE="/var/run/tor.pid"
 
 DATA_DIR="/tmp/tor"
+[ -d "/opt/tmp" ] && DATA_DIR="/opt/tmp/tor"
 GEOIP_DIR="/usr/share/tor"
 CONFIG_DIR="/etc/storage/tor"
 CONFIG_FILE="$CONFIG_DIR/torrc"
@@ -47,6 +48,7 @@ Log notice syslog
 #ExitPolicy reject6 *:*
 #ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
 #StrictNodes 1
+AvoidDiskWrites 1
 
 UseBridges 1
 ### https://bridges.torproject.org/bridges?transport=vanilla

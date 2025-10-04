@@ -6,7 +6,7 @@ mount -t sysfs sysfs /sys
 
 size_tmp="24M"
 ### Allocate more space for built-in tor
-[ -x /usr/sbin/tor ] && size_tmp="50M"
+[ -x /usr/sbin/tor ] && size_tmp="50%"
 size_var="4M"
 if [ "$1" == "-l" ] ; then
 	size_tmp="8M"

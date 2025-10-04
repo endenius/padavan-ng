@@ -9,6 +9,28 @@
          "I learned some more directory information, but not enough to "
          "build a circuit: %s", get_dir_info_status_string());
      update_all_descriptor_downloads(now);
+--- tor-0.4.8.18.orig/src/core/or/circuitstats.c
++++ tor-0.4.8.18/src/core/or/circuitstats.c
+@@ -1609,7 +1609,7 @@
+ 
+   cbt_control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
+ 
+-  log_notice(LD_CIRC,
++  log_info(LD_CIRC,
+             "Your network connection speed appears to have changed. Resetting "
+             "timeout to %ldms after %d timeouts and %d buildtimes.",
+             tor_lround(cbt->timeout_ms), timeout_count, total_build_times);
+--- tor-0.4.8.18.orig/src/core/or/connection_edge.c
++++ tor-0.4.8.18/src/core/or/connection_edge.c
+@@ -1201,7 +1201,7 @@
+     conn = ENTRY_TO_EDGE_CONN(entry_conn);
+     /* if it's an internal linked connection, don't yell its status. */
+     severity = (tor_addr_is_null(&base_conn->addr) && !base_conn->port)
+-      ? LOG_INFO : LOG_NOTICE;
++      ? LOG_INFO : LOG_INFO;
+     seconds_idle = (int)( now - base_conn->timestamp_last_read_allowed );
+     seconds_since_born = (int)( now - base_conn->timestamp_created );
+ 
 --- tor-0.4.8.18.orig/src/feature/client/bridges.c
 +++ tor-0.4.8.18/src/feature/client/bridges.c
 @@ -907,7 +907,7 @@
