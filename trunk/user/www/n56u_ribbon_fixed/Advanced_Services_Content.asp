@@ -457,6 +457,27 @@ function change_zapret_enabled(){
 	});
 }
 
+function restoreZapret(){
+	if (!login_safe())
+		return false;
+
+	if(!confirm('<#ZapretRestoreConfirm#>'))
+		return false;
+
+	var v = "<% nvram_get_x("", "zapret_enable"); %>";
+
+	showLoading(2);
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' SystemCmd ',
+		'SystemCmd': 'rm -rf /etc/storage/zapret; zapret.sh ' + (v == 1 ? "restart" : "") + '; mtd_storage.sh save'
+	},
+	function(response){
+		$j.get('/console_response.asp');
+	});
+	setTimeout("location.href = location.href;", 2000);
+}
+
 function change_tor_enabled(){
 	var v = document.form.tor_enable[0].checked;
 	showhide_div('row_tor_conf', v);
@@ -604,6 +625,7 @@ function fillDNSCryptSelect(values) {
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
+    <input type="hidden" name="SystemCmd" value="">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -1105,7 +1127,7 @@ function fillDNSCryptSelect(values) {
                                                                 <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>><#ZapretStrategyProfile#> #8</option>
                                                                 <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>><#ZapretStrategyProfile#> #9</option>
                                                             </select>
-                                                            <a href="https://github.com/bol-van/zapret" target="_blank" rel="noreferrer noopener" class="label label-info"><#CTL_help#></a>
+                                                            <input type="button" class="btn btn-mini" style="outline:0" onclick="restoreZapret();" value="<#CTL_restore#>"/>
                                                         </td>
                                                         <tr>
                                                             <td id="zapret.strategy" colspan="2" style="padding-top: 0px; border-top: 0 none; display:none;">
