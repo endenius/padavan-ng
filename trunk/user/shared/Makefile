@@ -7,6 +7,7 @@ include cflags.mk
 
 CFLAGS += -ffunction-sections -fdata-sections -fPIC
 CFLAGS += -Wall -I. -I./include -I$(ROOTDIR)/$(LINUXDIR)/include/nvram
+CFLAGS += -DCONFIG_VENDOR="$(CONFIG_VENDOR)"
 
 LDFLAGS += -Wl,--gc-sections -L.
 
