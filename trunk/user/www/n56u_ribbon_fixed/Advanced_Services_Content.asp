@@ -625,7 +625,6 @@ function fillDNSCryptSelect(values) {
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="SystemCmd" value="">
 
     <div class="container-fluid">
         <div class="row-fluid">
