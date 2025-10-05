@@ -552,8 +552,8 @@
 			{"zapretc.exclude.list", "File", NULL, EVM_BLOCK_UNSAFE},
 #endif
 #if defined(APP_TOR)
-			{"tor_enable", "", NULL, EVM_RESTART_TOR},
-			{"torconf.torrc", "File", NULL, EVM_RESTART_TOR|EVM_BLOCK_UNSAFE},
+			{"tor_enable", "", NULL, EVM_RESTART_TOR|EVM_RESTART_DHCPD},
+			{"torconf.torrc", "File", NULL, EVM_RESTART_TOR|EVM_BLOCK_UNSAFE|EVM_RESTART_DHCPD},
 #endif
 #if defined(APP_PRIVOXY)
 			{"privoxy_enable", "", NULL, EVM_RESTART_PRIVOXY},

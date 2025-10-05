@@ -380,10 +380,16 @@ start_dns_dhcpd(int is_ap_mode)
 			}
 		}
 #endif
+#if defined(APP_TOR)
+		if (nvram_match("tor_enable", "1"))
+		{
+			// ports 9053 for tor
+			fprintf(fp, "server=127.0.0.1#%d\n", 9053);
+		}
+#endif
 		if (no_resolv)
 		{
 			fprintf(fp, "no-resolv\n");
-			fprintf(fp, "all-servers\n");
 
 			// Use time server update bypassing DoT/DoH
 			srv_addr[0] = nvram_safe_get("ntp_server0");
@@ -398,6 +404,8 @@ start_dns_dhcpd(int is_ap_mode)
 				fprintf(fp, "server=/%s/8.8.8.8\n", srv_addr[1]);
 			}
 		}
+
+		fprintf(fp, "all-servers\n");
 
 		is_dns_used = 1;
 		fprintf(fp, "min-port=%d\n", 4096);

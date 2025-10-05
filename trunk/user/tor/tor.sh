@@ -8,6 +8,7 @@ DATA_DIR="/tmp/tor"
 GEOIP_DIR="/usr/share/tor"
 CONFIG_DIR="/etc/storage/tor"
 CONFIG_FILE="$CONFIG_DIR/torrc"
+DNS_PORT=9053
 
 log()
 {
@@ -52,10 +53,6 @@ SocksPort 127.0.0.1:9050
 SocksPort ${lan_ip}:9050
 # SocksPort 0.0.0.0:9050
 
-DNSPort 127.0.0.1:9053
-DNSPort ${lan_ip}:9053
-# DNSPort 0.0.0.0:9053
-
 Log notice syslog
 AvoidDiskWrites 1
 UseBridges 1
@@ -89,7 +86,7 @@ func_start()
 
     log "started, data directory: $DATA_DIR"
     rm -rf $DATA_DIR
-    $TOR_BIN --RunAsDaemon 1 --PidFile $PID_FILE --DataDirectory $DATA_DIR
+    $TOR_BIN --RunAsDaemon 1 --DataDirectory $DATA_DIR --DNSPort $DNS_PORT --PidFile $PID_FILE
 }
 
 func_stop()
