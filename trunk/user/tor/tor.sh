@@ -33,41 +33,42 @@ is_running()
 func_create_config()
 {
     local lan_ip=$(nvram get lan_ipaddr)
+    [ "$lan_ip" ] || lan_ip="192.168.1.1"
     [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
 
     cat > "$CONFIG_FILE" <<EOF
 ### See https://www.torproject.org/docs/tor-manual.html,
 ### for more options you can use in this file.
 
-#VirtualAddrNetworkIPv4 172.16.0.0/12
-#AutomapHostsOnResolve 1
+# VirtualAddrNetworkIPv4 172.16.0.0/12
+# AutomapHostsOnResolve 1
+# TransPort ${lan_ip}:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
+# ExitPolicy reject *:*
+# ExitPolicy reject6 *:*
+# ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
+# StrictNodes 1
+
 SocksPort 127.0.0.1:9050
 SocksPort ${lan_ip}:9050
-#TransPort ${lan_ip}:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
-#DNSPort 127.0.0.1:9053
-Log notice syslog
-#ExitPolicy reject *:*
-#ExitPolicy reject6 *:*
-#ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
-#StrictNodes 1
-AvoidDiskWrites 1
+# SocksPort 0.0.0.0:9050
 
+DNSPort 127.0.0.1:9053
+DNSPort ${lan_ip}:9053
+# DNSPort 0.0.0.0:9053
+
+Log notice syslog
+AvoidDiskWrites 1
 UseBridges 1
+
 ### https://bridges.torproject.org/bridges?transport=vanilla
 ### https://torscan-ru.ntc.party
-Bridge 168.119.231.166:9001 672FE851D668EA24FBE03018CAB0CA2DFBA1087F
-#Bridge [2a01:4f8:1c1a:dea4::1]:9001 672FE851D668EA24FBE03018CAB0CA2DFBA1087F
-Bridge 78.87.68.213:9001 D38463B7BB0A586974E6BAB28D521E8090581173
-Bridge 159.196.197.176:9001 867212FE3B08E1DF9ED355338617FC628AE82666
-Bridge 50.47.212.0:9001 857D86E69A435F55AEAB3A258B46D49974263F20
-#Bridge [2001:470:e920::2]:9001 857D86E69A435F55AEAB3A258B46D49974263F20
-Bridge 79.117.127.201:9002 45959A38ACAF2ECFB488A3C69D0C04F42438AB9D
-Bridge 45.80.158.53:9200 CFCFA20CDE6BE83CD152FC1559A031CFB0BD0B89
-#Bridge [2a12:a800:2:1:45:80:158:53]:9200 CFCFA20CDE6BE83CD152FC1559A031CFB0BD0B89
-Bridge 213.33.114.214:443 0693E0271830CD4FC40094E517D3B13C919FF75D
-#Bridge [2001:850:461f:30::2]:443 0693E0271830CD4FC40094E517D3B13C919FF75D
-Bridge 151.243.109.167:443 0816D426BD84E83B2D55979245BD97A52D276FF2
-
+Bridge 62.133.60.208:9300 9002E01C0A23349E46B0C3F104FEFFFA53645762
+Bridge 152.53.252.143:9001 99E79C80A38FD7D79D5C047A2B5AFCEFA7D5EAAE
+Bridge 5.181.181.13:30319 0CEA4E6376295B6B22AD73947573335EDD9C0F11
+Bridge 190.120.229.2:443 1EA7A6645619538D286FDBED7688AFA7F82E0A51
+Bridge [2800:ba0:2:ee01::7583]:443 1EA7A6645619538D286FDBED7688AFA7F82E0A51
+Bridge 82.69.44.102:4433 9B3526A418DE61D3BD1719C4E38A29A3BDDCE2DC
+Bridge 91.242.241.228:9003 9490B0B4EA0BE681D520763FC9DA62511348564F
 EOF
     chmod 644 "$CONFIG_FILE"
 }
@@ -125,7 +126,7 @@ case "$1" in
     ;;
 
     config)
-        func_create_config
+        [ ! -f "$CONFIG_FILE" ] && func_create_config
     ;;
 
     *)

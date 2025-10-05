@@ -874,7 +874,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_tor_conf')"><span><#CustomConf#> "torrc"</span></a>
 						    <div id="spoiler_tor_conf" style="display:none;">
-							<textarea rows="16" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="torconf.torrc" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("torconf.torrc",""); %></textarea>
+							<textarea rows="16" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="torconf.torrc" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("torconf.torrc",""); %></textarea>
 						    </div>
 					    </td>
 					</tr>
@@ -897,7 +897,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_privoxy_conf')"><span><#CustomConf#> "config"</span></a>
 						    <div id="spoiler_privoxy_conf" style="display:none;">
-							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.config" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("privoxy.config",""); %></textarea>
+							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.config" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("privoxy.config",""); %></textarea>
 						    </div>
 					    </td>
 					</tr>
@@ -905,7 +905,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_privoxy_action')"><span><#CustomConf#> "user.action"</span></a>
 						    <div id="spoiler_privoxy_action" style="display:none;">
-							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.action" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("privoxy.user.action",""); %></textarea>
+							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.action" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("privoxy.user.action",""); %></textarea>
 						    </div>
 					    </td>
 					</tr>
@@ -913,7 +913,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_privoxy_filter')"><span><#CustomConf#> "user.filter"</span></a>
 						    <div id="spoiler_privoxy_filter" style="display:none;">
-							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.filter" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("privoxy.user.filter",""); %></textarea>
+							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.filter" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("privoxy.user.filter",""); %></textarea>
 						    </div>
 					    </td>
 					</tr>
@@ -921,7 +921,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_privoxy_trust')"><span><#CustomConf#> "user.trust"</span></a>
 						    <div id="spoiler_privoxy_trust" style="display:none;">
-							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.trust" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("privoxy.user.trust",""); %></textarea>
+							<textarea rows="16" wrap="off" spellcheck="false" maxlength="65536" class="span12" name="privoxy.user.trust" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("privoxy.user.trust",""); %></textarea>
 						    </div>
 					    </td>
 					</tr>
