@@ -33,6 +33,8 @@ is_running()
 func_create_config()
 {
     local lan_ip=$(nvram get lan_ipaddr)
+    [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
+
     cat > "$CONFIG_FILE" <<EOF
 ### See https://www.torproject.org/docs/tor-manual.html,
 ### for more options you can use in this file.
@@ -68,7 +70,6 @@ Bridge 151.243.109.167:443 0816D426BD84E83B2D55979245BD97A52D276FF2
 
 EOF
     chmod 644 "$CONFIG_FILE"
-    /sbin/mtd_storage.sh save
 }
 
 func_start()
@@ -78,7 +79,6 @@ func_start()
         return
     fi
 
-    [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
     [ ! -f "$CONFIG_FILE" ] && func_create_config
 
     if [ -d "/opt/share/tor" ]
@@ -86,7 +86,7 @@ func_start()
         mount | grep -q $GEOIP_DIR || mount --bind /opt/share/tor $GEOIP_DIR
     fi
 
-    log "started"
+    log "started, data directory: $DATA_DIR"
     rm -rf $DATA_DIR
     $TOR_BIN --RunAsDaemon 1 --PidFile $PID_FILE --DataDirectory $DATA_DIR
 }
@@ -122,6 +122,10 @@ case "$1" in
 
     reload)
         func_reload
+    ;;
+
+    config)
+        func_create_config
     ;;
 
     *)
