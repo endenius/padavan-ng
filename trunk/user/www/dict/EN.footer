@@ -1784,4 +1784,5 @@ VPNC_RNet_List=List of remote IP addresses/subnets behind the VPN server
 Connecting=Connecting
 ZapretAllowedClients=List of allowed client IP addresses
 ZapretWORestrictions=Without restrictions
+TorRestoreConfirm=Restore the default configuration?
 #Device_type_04_NAS=

@@ -1791,6 +1791,7 @@ VPNC_RNet_List=Список удалённых IP-адресов/подсете�
 Connecting=Подключение
 ZapretAllowedClients=Список разрешенных IP-адресов клиентов
 ZapretWORestrictions=Без ограничений
+TorRestoreConfirm=Восстановить конфигурацию по умолчанию?
 #Device_type_04_NAS=
 #WLANConfig11b_x_rt_airtimefairness=
 #WLANConfig11b_x_turbo_qam=

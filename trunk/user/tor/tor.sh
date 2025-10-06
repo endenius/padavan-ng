@@ -9,6 +9,9 @@ GEOIP_DIR="/usr/share/tor"
 CONFIG_DIR="/etc/storage/tor"
 CONFIG_FILE="$CONFIG_DIR/torrc"
 DNS_PORT=9053
+TRANS_PORT=9040
+LAN_IP=$(nvram get lan_ipaddr)
+[ "$LAN_IP" ] || LAN_IP="192.168.1.1"
 
 log()
 {
@@ -33,26 +36,23 @@ is_running()
 
 func_create_config()
 {
-    local lan_ip=$(nvram get lan_ipaddr)
-    [ "$lan_ip" ] || lan_ip="192.168.1.1"
     [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
 
     cat > "$CONFIG_FILE" <<EOF
 ### See https://www.torproject.org/docs/tor-manual.html,
 ### for more options you can use in this file.
 
-# VirtualAddrNetworkIPv4 172.16.0.0/12
-# AutomapHostsOnResolve 1
-# TransPort ${lan_ip}:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
 # ExitPolicy reject *:*
 # ExitPolicy reject6 *:*
 # ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
 # StrictNodes 1
 
-SocksPort 127.0.0.1:9050
-SocksPort ${lan_ip}:9050
-# SocksPort 0.0.0.0:9050
+SocksPort ${LAN_IP}:9050
+HTTPTunnelPort ${LAN_IP}:8181
 
+VirtualAddrNetworkIPv4 172.16.0.0/12
+VirtualAddrNetworkIPv6 [FC00::]/7
+AutomapHostsOnResolve 1
 Log notice syslog
 AvoidDiskWrites 1
 UseBridges 1
@@ -86,11 +86,12 @@ func_start()
 
     log "started, data directory: $DATA_DIR"
     rm -rf $DATA_DIR
-    $TOR_BIN --RunAsDaemon 1 --DataDirectory $DATA_DIR --DNSPort $DNS_PORT --PidFile $PID_FILE
+    $TOR_BIN --RunAsDaemon 1 --DataDirectory $DATA_DIR --DNSPort $DNS_PORT --TransPort $LAN_IP:$TRANS_PORT --PidFile $PID_FILE
 }
 
 func_stop()
 {
+    redirect_stop
     killall -q -SIGKILL $(basename "$TOR_BIN") && log "stopped"
 
     if mountpoint -q $GEOIP_DIR ; then
@@ -109,6 +110,58 @@ func_reload()
     kill -SIGHUP $(cat "$PID_FILE")
 }
 
+redirect_start()
+{
+    # for testing
+
+    local i
+
+    redirect_stop
+    is_running || return
+
+
+    make_clients_rules()
+    {
+        # get comma separated clients list for nvram
+        local tor_proxy_clients="$(nvram get tor_proxy_clients | tr -s ' ,' '\n')"
+
+        for i in $tor_proxy_clients; do
+            echo "-A tor_proxy -p tcp -s $i -j REDIRECT --to-ports 9040"
+        done
+    }
+
+    make_exclude_rules()
+    {
+        local wan_ipaddr="$(nvram get wan_ipaddr)"
+        [ "$wan_ipaddr" == "0.0.0.0" ] && unset wan_ipaddr
+
+        local wan0_ipaddr="$(nvram get wan0_ipaddr)"
+        [ "$wan0_ipaddr" == "0.0.0.0" ] && unset wan0_ipaddr
+
+        for i in $LAN_IP $wan_ipaddr $wan0_ipaddr "$(nvram get vpns_vnet)/24"; do
+            echo "-A tor_proxy -d $i -j RETURN"
+        done
+    }
+
+
+    iptables-restore -n 2>/dev/null <<EOF
+*nat
+:tor_proxy - [0:0]
+-A PREROUTING -p tcp -m multiport --dports 80,443 -j tor_proxy
+$(make_exclude_rules)
+$(make_clients_rules)
+COMMIT
+EOF
+    [ ! "$?" == "0" ] && error "failed to start transparent proxy redirect, check clients list"
+}
+
+redirect_stop()
+{
+    iptables -t nat -D PREROUTING -p tcp -m multiport --dports 80,443 -j tor_proxy 2>/dev/null
+    iptables -t nat -F tor_proxy 2>/dev/null
+    iptables -t nat -X tor_proxy 2>/dev/null
+}
+
 case "$1" in
     start)
         func_start
@@ -120,6 +173,14 @@ case "$1" in
 
     reload)
         func_reload
+    ;;
+
+    start-redirect)
+        redirect_start
+    ;;
+
+    stop-redirect)
+        redirect_stop
     ;;
 
     config)

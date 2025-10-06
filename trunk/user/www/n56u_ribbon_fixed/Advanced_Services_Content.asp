@@ -478,6 +478,25 @@ function restoreZapret(){
 	setTimeout("location.href = location.href;", 2000);
 }
 
+function restoreTor(){
+	if (!login_safe())
+		return false;
+
+	if(!confirm('<#TorRestoreConfirm#>'))
+		return false;
+
+	showLoading(1);
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' SystemCmd ',
+		'SystemCmd': 'rm -f /etc/storage/tor/torrc; tor.sh config; mtd_storage.sh save'
+	},
+	function(response){
+		$j.get('/console_response.asp');
+	});
+	setTimeout("location.href = location.href;", 1000);
+}
+
 function change_tor_enabled(){
 	var v = document.form.tor_enable[0].checked;
 	showhide_div('row_tor_conf', v);
@@ -872,10 +891,13 @@ function fillDNSCryptSelect(values) {
                                         </tr>
 					<tr id="row_tor_conf" style="display:none">
 					    <td colspan="2">
-						<a href="javascript:spoiler_toggle('spoiler_tor_conf')"><span><#CustomConf#> "torrc"</span></a>
-						    <div id="spoiler_tor_conf" style="display:none;">
+						<a href="javascript:spoiler_toggle('spoiler_tor_conf')"><span><#CustomConf#> "torrc"</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
+						<span style="float: right; width: 102px">
+							<input type="button" class="btn btn-mini" style="outline:0" onclick="restoreTor();" value="<#CTL_restore#>"/>
+						</span>
+						<div id="spoiler_tor_conf" style="display:none; padding-top: 8px;">
 							<textarea rows="16" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="torconf.torrc" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("torconf.torrc",""); %></textarea>
-						    </div>
+						</div>
 					    </td>
 					</tr>
 
@@ -1180,7 +1202,7 @@ function fillDNSCryptSelect(values) {
                                                     <tr>
                                                         <td colspan="2">
                                                             <a href="javascript:spoiler_toggle('zapret.post_script')"><span><#ZapretPostScript#>:</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
-                                                            <div id="zapret.post_script" style="display:none;">
+                                                            <div id="zapret.post_script" style="display:none;  padding-top: 8px;">
                                                                 <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="zapretc.post_script.sh" style="resize:vertical; font-family:'Courier New'; font-size:12px;"><% nvram_dump("zapretc.post_script.sh",""); %></textarea>
                                                             </div>
                                                         </td>
