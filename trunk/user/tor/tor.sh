@@ -10,6 +10,7 @@ CONFIG_DIR="/etc/storage/tor"
 CONFIG_FILE="$CONFIG_DIR/torrc"
 DNS_PORT=9053
 TRANS_PORT=9040
+
 LAN_IP=$(nvram get lan_ipaddr)
 [ "$LAN_IP" ] || LAN_IP="192.168.1.1"
 
@@ -64,7 +65,6 @@ Bridge 152.53.252.143:9001 99E79C80A38FD7D79D5C047A2B5AFCEFA7D5EAAE
 Bridge 5.181.181.13:30319 0CEA4E6376295B6B22AD73947573335EDD9C0F11
 Bridge 190.120.229.2:443 1EA7A6645619538D286FDBED7688AFA7F82E0A51
 Bridge [2800:ba0:2:ee01::7583]:443 1EA7A6645619538D286FDBED7688AFA7F82E0A51
-Bridge 82.69.44.102:4433 9B3526A418DE61D3BD1719C4E38A29A3BDDCE2DC
 Bridge 91.242.241.228:9003 9490B0B4EA0BE681D520763FC9DA62511348564F
 EOF
     chmod 644 "$CONFIG_FILE"
@@ -86,7 +86,15 @@ func_start()
 
     log "started, data directory: $DATA_DIR"
     rm -rf $DATA_DIR
-    $TOR_BIN --RunAsDaemon 1 --DataDirectory $DATA_DIR --DNSPort $DNS_PORT --TransPort $LAN_IP:$TRANS_PORT --PidFile $PID_FILE
+    rm -rf /tmp/tor
+
+    # 0.0.0.0 for TransPort, because REDIRECT between interfaces does not work
+    $TOR_BIN --RunAsDaemon 1 \
+        --DataDirectory $DATA_DIR \
+        --DNSPort $DNS_PORT \
+        --TransPort 0.0.0.0:$TRANS_PORT \
+        --TransPort [::]:$TRANS_PORT \
+        --PidFile $PID_FILE
 }
 
 func_stop()
@@ -99,6 +107,7 @@ func_stop()
     fi
 
     rm -rf $DATA_DIR
+    rm -rf /tmp/tor
     rm -f $PID_FILE
 }
 
@@ -106,8 +115,7 @@ func_reload()
 {
     is_running || return
 
-    log "reload"
-    kill -SIGHUP $(cat "$PID_FILE")
+    kill -SIGHUP $(cat "$PID_FILE") && log "reload"
 }
 
 redirect_start()
@@ -119,30 +127,23 @@ redirect_start()
     redirect_stop
     is_running || return
 
-
     make_clients_rules()
     {
         # get comma separated clients list for nvram
-        local tor_proxy_clients="$(nvram get tor_proxy_clients | tr -s ' ,' '\n')"
-
-        for i in $tor_proxy_clients; do
-            echo "-A tor_proxy -p tcp -s $i -j REDIRECT --to-ports 9040"
+        for i in $(nvram get tor_proxy_clients | tr -s ' ,' '\n'); do
+            echo "-A tor_proxy -p tcp -s $i -j REDIRECT --to-port $TRANS_PORT"
         done
     }
 
     make_exclude_rules()
     {
-        local wan_ipaddr="$(nvram get wan_ipaddr)"
-        [ "$wan_ipaddr" == "0.0.0.0" ] && unset wan_ipaddr
-
         local wan0_ipaddr="$(nvram get wan0_ipaddr)"
         [ "$wan0_ipaddr" == "0.0.0.0" ] && unset wan0_ipaddr
 
-        for i in $LAN_IP $wan_ipaddr $wan0_ipaddr "$(nvram get vpns_vnet)/24"; do
+        for i in $LAN_IP $wan0_ipaddr; do
             echo "-A tor_proxy -d $i -j RETURN"
         done
     }
-
 
     iptables-restore -n 2>/dev/null <<EOF
 *nat
@@ -152,7 +153,7 @@ $(make_exclude_rules)
 $(make_clients_rules)
 COMMIT
 EOF
-    [ ! "$?" == "0" ] && error "failed to start transparent proxy redirect, check clients list"
+    [ ! "$?" == "0" ] && error "failed to start transparent proxy redirect"
 }
 
 redirect_stop()
