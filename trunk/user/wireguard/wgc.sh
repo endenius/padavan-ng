@@ -35,6 +35,13 @@ WAN0_GW=$(nvram get wan0_gateway)
 # if iproute2 is not available
 IPBB=$(ip 2>&1 | grep -i busybox)
 
+IPSET="/sbin/ipset"
+USER_IPSET="wireguard"
+DNSMASQ_IPSET="unblock"
+FWMARK_IPSET=51821
+PREF_IPSET=5183
+TABLE_IPSET=52
+
 ###
 
 log()
@@ -64,10 +71,14 @@ is_started()
 
 prepare_wg()
 {
+    [ -x "$IPSET" ] && ipset -N $DNSMASQ_IPSET iphash timeout 3600 2>/dev/null
+    [ -x "$IPSET" ] && ipset -N $USER_IPSET nethash 2>/dev/null
+
     modprobe -q wireguard >/dev/null 2>&1
     sysctl -q net.ipv4.conf.all.src_valid_mark=1
     sysctl -q net.ipv6.conf.all.disable_ipv6=0 2>/dev/null
     sysctl -q net.ipv6.conf.all.forwarding=1 2>/dev/null
+    sysctl -q net.ipv4.conf.${IF_NAME}.rp_filter=0 2>/dev/null
 }
 
 wg_setdns()
@@ -139,6 +150,7 @@ start_wg()
 
     ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
     ip link set dev $IF_NAME mtu $IF_MTU
+    sysctl -q net.ipv4.conf.${IF_NAME}.rp_filter=0 2>/dev/null
 
     for i in $(echo "$IF_ADDR" | tr ',' '\n'); do
         p=4; [ "$i" != "${i#*:}" ] && p=6
@@ -181,6 +193,9 @@ start_wg()
             done
         fi
     else
+        [ -x "$IPSET" ] && ip -4 rule add fwmark $FWMARK_IPSET table $TABLE_IPSET pref $PREF_IPSET
+        [ -x "$IPSET" ] && ip -4 route add default dev $IF_NAME table $TABLE_IPSET
+
         iplist=$(cat "$REMOTE_NETWORK_LIST" | grep -v "^#")
         for i in $iplist; do
             if [ "$IPBB" ]; then
@@ -205,6 +220,8 @@ start_wg()
                 ip -$p route add "$i" dev $IF_NAME table $TABLE || msg_unable "$i" "allowed ips"
             fi
         done
+
+        start_fw
     fi
 
     iplist=$(cat "$EXCLUDE_NETWORK_LIST" | grep -v "^#")
@@ -251,7 +268,7 @@ stop_wg()
 
     [ "$IPBB" ] && ip route del default table $TABLE 2>/dev/null
 
-    for i in $PREF_SUPPRESS $PREF_MAIN $PREF_WG; do
+    for i in $PREF_SUPPRESS $PREF_MAIN $PREF_WG $PREF_IPSET; do
         for p in 4 6; do
             while ip -$p rule del pref $i 2>/dev/null; do true; done
         done
@@ -260,7 +277,31 @@ stop_wg()
     ip link set $IF_NAME down
     ip link del dev $IF_NAME
 
+    stop_fw
+
     log "client stopped"
+}
+
+stop_fw()
+{
+    eval "$(iptables-save -t mangle 2>/dev/null | grep "mark 0xca6d" | sed 's/^-A/iptables -t mangle -D/g')"
+}
+
+set_ipt_rules()
+{
+    for i in "PREROUTING" "OUTPUT"; do
+        iptables -A $i -t mangle -m set --match-set $1 dst -j MARK --set-mark $FWMARK_IPSET
+    done
+}
+
+start_fw()
+{
+    [ -x "$IPSET" ] || return
+
+    stop_fw
+
+    set_ipt_rules $DNSMASQ_IPSET
+    set_ipt_rules $USER_IPSET
 }
 
 case $1 in
@@ -276,15 +317,12 @@ case $1 in
         stop_wg
         start_wg
     ;;
+
+    reload)
+        start_fw
+    ;;
 esac
 
 IFNAME=$IF_NAME
-# first interface address
-IPLOCAL=$(echo "$IF_ADDR" | tr ',' '\n' | head -n1)
-# IF_PRIVATE
-# PEER_PUBLIC
-# PEER_ENDPOINT
-# PEER_KEEPALIVE
-# PEER_ALLOWEDIPS
 
 [ -s "$POST_SCRIPT" -a -x "$POST_SCRIPT" ] && . "$POST_SCRIPT"

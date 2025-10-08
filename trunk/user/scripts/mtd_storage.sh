@@ -209,6 +209,7 @@ func_fill()
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
+	user_dnsmasq_ipset="$dir_dnsmasq/dnsmasq.ipset"
 	user_dnsmasq_serv="$dir_dnsmasq/dnsmasq.servers"
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
@@ -235,14 +236,6 @@ func_fill()
 
 ### Custom user script
 ### Called after router started and network is ready
-
-### Example - load ipset modules
-#modprobe ip_set
-#modprobe ip_set_hash_ip
-#modprobe ip_set_hash_net
-#modprobe ip_set_bitmap_ip
-#modprobe ip_set_list_set
-#modprobe xt_set
 
 EOF
 		chmod 755 "$script_started"
@@ -479,10 +472,34 @@ EOF
 # Custom user servers file for dnsmasq
 # Example:
 #server=/mit.ru/izmuroma.ru/10.25.11.30
-
 EOF
 		chmod 644 "$user_dnsmasq_serv"
 	fi
+
+	# create user ipsets
+	if [ ! -f "$user_dnsmasq_ipset" ] ; then
+		cat > "$user_dnsmasq_ipset" <<EOF
+### Custom user ipsets for dnsmasq
+### Built-in wireguard client uses an "unblock" ipset
+### For clean ipset reboot router  or launch: ipset flush unblock && restart_dns
+
+#ipset=/4pda.to/unblock
+#ipset=/rutracker.org/unblock
+#ipset=/instagram.com/unblock
+#ipset=/cdninstagram.com/unblock
+#ipset=/fb.com/unblock
+#ipset=/facebook.com/unblock
+#ipset=/static.xx.fbcdn.net/unblock
+#ipset=/x.com/unblock
+#ipset=/twimg.com/unblock
+#ipset=/awsstatic.com/unblock
+#ipset=/aws.amazon.com/unblock
+#ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
+#ipset=/challenges.cloudflare.com/unblock
+#ipset=/static-cdn.jtvnw.net/unblock
+EOF
+	fi
+	chmod 644 "$user_dnsmasq_ipset"
 
 	# create user inadyn.conf"
 	[ ! -d "$dir_inadyn" ] && mkdir -p -m 755 "$dir_inadyn"

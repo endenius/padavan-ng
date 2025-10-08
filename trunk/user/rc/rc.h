@@ -419,10 +419,11 @@ int ovpn_server_expcli_main(int argc, char **argv);
 
 #if defined (APP_WIREGUARD)
 /* wireguard.c */
-int start_wireguard_server(void);
 int start_wireguard_client(void);
-void stop_wireguard_server(void);
 void stop_wireguard_client(void);
+void reload_wireguard_client(void);
+int start_wireguard_server(void);
+void stop_wireguard_server(void);
 void restart_wireguard_server(void);
 #endif
 

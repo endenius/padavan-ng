@@ -811,6 +811,9 @@ restart_firewall(void)
 #if defined(APP_ZAPRET)
         reload_zapret();
 #endif
+#if defined(APP_WIREGUARD)
+        reload_wireguard_client();
+#endif
 }
 
 void

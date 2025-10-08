@@ -54,3 +54,10 @@ restart_wireguard_client(void)
 {
     doSystem("/usr/bin/wgc.sh %s", "restart");
 }
+
+void
+reload_wireguard_client(void)
+{
+    if (nvram_get_int("vpnc_enable") == 1 && nvram_get_int("vpnc_type") == 3)
+        doSystem("/usr/bin/wgc.sh %s", "reload");
+}
