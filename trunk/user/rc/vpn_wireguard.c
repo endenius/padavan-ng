@@ -22,42 +22,48 @@
 int
 start_wireguard_server(void)
 {
-    return doSystem("/usr/bin/wgs.sh %s", "start");
+    return eval("/usr/bin/wgs.sh", "start");
 }
 
 void
 stop_wireguard_server(void)
 {
-    doSystem("/usr/bin/wgs.sh %s", "stop");
+    eval("/usr/bin/wgs.sh", "stop");
 }
 
 void
 restart_wireguard_server(void)
 {
-    doSystem("/usr/bin/wgs.sh %s", "restart");
+    eval("/usr/bin/wgs.sh", "restart");
 }
 
 int
 start_wireguard_client(void)
 {
-    return doSystem("/usr/bin/wgc.sh %s", "start");
+    return eval("/usr/bin/wgc.sh", "start");
 }
 
 void
 stop_wireguard_client(void)
 {
-    doSystem("/usr/bin/wgc.sh %s", "stop");
+    eval("/usr/bin/wgc.sh", "stop");
 }
 
 void
 restart_wireguard_client(void)
 {
-    doSystem("/usr/bin/wgc.sh %s", "restart");
+    eval("/usr/bin/wgc.sh", "restart");
 }
 
 void
 reload_wireguard_client(void)
 {
     if (nvram_get_int("vpnc_enable") == 1 && nvram_get_int("vpnc_type") == 3)
-        doSystem("/usr/bin/wgc.sh %s", "reload");
+        eval("/usr/bin/wgc.sh", "reload");
+}
+
+void
+ipset_update_wireguard_client(void)
+{
+    eval("/usr/bin/wgc.sh", "ipset-update");
 }

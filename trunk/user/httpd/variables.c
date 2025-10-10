@@ -663,6 +663,7 @@
 			{"vpnc_wg_peer_allowedips", "", NULL, EVM_RESTART_VPNCLI},
 			{"scripts.vpnc_remote_network.list", "File", NULL, EVM_RESTART_VPNCLI},
 			{"scripts.vpnc_exclude_network.list", "File", NULL, EVM_RESTART_VPNCLI},
+			{"scripts.vpnc_clients.list", "File", NULL, EVM_RESTART_VPNCLI},
 #endif
 #if defined(APP_OPENVPN)
 			{"vpns_ov_mode", "", NULL, EVM_RESTART_VPNSVR},

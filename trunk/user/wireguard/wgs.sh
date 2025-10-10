@@ -352,9 +352,4 @@ case "$1" in
     ;;
 esac
 
-# IF_NAME
-# IF_ADDR
-# PORT
-# WAN_ADDR
-
 [ -s "$POST_SCRIPT" -a -x "$POST_SCRIPT" ] && . "$POST_SCRIPT"

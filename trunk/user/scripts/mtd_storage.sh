@@ -207,6 +207,10 @@ func_fill()
 	script_zapret="/usr/bin/zapret.sh"
 	script_tor="/usr/bin/tor.sh"
 
+	list_vpncc="$dir_storage/vpnc_clients.list"
+	list_vpncr="$dir_storage/vpnc_remote_network.list"
+	list_vpnce="$dir_storage/vpnc_exclude_network.list"
+
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
 	user_dnsmasq_ipset="$dir_dnsmasq/dnsmasq.ipset"
@@ -396,6 +400,47 @@ EOF
 		chmod 755 "$script_vpncs"
 	fi
 
+	# wiregiard storage files
+	if [ -s /lib/modules/3.4.113/kernel/net/wireguard/wireguard.ko ] ; then
+		# create wireguard clients list
+		if [ ! -f "$list_vpncc" ] ; then
+		cat > "$list_vpncc" <<EOF
+### List of IP addresses/subnets of clients using a VPN server connection
+### Example:
+# 192.168.1.0/24
+# 192.168.1.234
+# 10.8.0.0/24
+# 10.8.0.2
+
+192.168.1.0/24
+EOF
+			chmod 644 "$list_vpncc"
+		fi
+
+		# create wireguard remote ip list
+		if [ ! -f "$list_vpncr" ] ; then
+			cat > "$list_vpncr" <<EOF
+### List of remote IP addresses/subnets behind the VPN server
+### Example:
+# 8.8.8.8
+EOF
+			chmod 644 "$list_vpncr"
+		fi
+
+		# create wireguard exclusion list of remote ip
+		if [ ! -f "$list_vpnce" ] ; then
+			cat > "$list_vpnce" <<EOF
+### Exclusion list of remote IP addresses/subnets behind the VPN server
+### Example:
+# 8.8.8.8
+# 192.168.0.0/16
+# 172.16.0.0/12
+# 10.0.0.0/8
+EOF
+			chmod 644 "$list_vpnce"
+		fi
+	fi
+
 	# create Ez-Buttons script
 	if [ ! -f "$script_ezbtn" ] ; then
 		cat > "$script_ezbtn" <<EOF
@@ -477,29 +522,32 @@ EOF
 	fi
 
 	# create user ipsets
-	if [ ! -f "$user_dnsmasq_ipset" ] ; then
-		cat > "$user_dnsmasq_ipset" <<EOF
+	if [ -x /sbin/ipset ] ; then
+		if [ ! -f "$user_dnsmasq_ipset" ] ; then
+			cat > "$user_dnsmasq_ipset" <<EOF
 ### Custom user ipsets for dnsmasq
-### Built-in wireguard client uses an "unblock" ipset
+### Built-in wireguard client uses an "unblock" ipset, if ipset is built into the firmware
 ### For clean ipset reboot router  or launch: ipset flush unblock && restart_dns
-
-#ipset=/4pda.to/unblock
-#ipset=/rutracker.org/unblock
-#ipset=/instagram.com/unblock
-#ipset=/cdninstagram.com/unblock
-#ipset=/fb.com/unblock
-#ipset=/facebook.com/unblock
-#ipset=/static.xx.fbcdn.net/unblock
-#ipset=/x.com/unblock
-#ipset=/twimg.com/unblock
-#ipset=/awsstatic.com/unblock
-#ipset=/aws.amazon.com/unblock
-#ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
-#ipset=/challenges.cloudflare.com/unblock
-#ipset=/static-cdn.jtvnw.net/unblock
+### Example:
+# ipset=/4pda.to/unblock
+# ipset=/4pda.ws/unblock
+# ipset=/rutracker.org/unblock
+# ipset=/instagram.com/unblock
+# ipset=/cdninstagram.com/unblock
+# ipset=/fb.com/unblock
+# ipset=/facebook.com/unblock
+# ipset=/static.xx.fbcdn.net/unblock
+# ipset=/x.com/unblock
+# ipset=/twimg.com/unblock
+# ipset=/awsstatic.com/unblock
+# ipset=/aws.amazon.com/unblock
+# ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
+# ipset=/challenges.cloudflare.com/unblock
+# ipset=/static-cdn.jtvnw.net/unblock
 EOF
+			chmod 644 "$user_dnsmasq_ipset"
+		fi
 	fi
-	chmod 644 "$user_dnsmasq_ipset"
 
 	# create user inadyn.conf"
 	[ ! -d "$dir_inadyn" ] && mkdir -p -m 755 "$dir_inadyn"

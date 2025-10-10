@@ -272,6 +272,7 @@ function change_vpnc_type() {
 
 	showhide_div('row_vpnc_wg', is_wg);
 	showhide_div('vpnc_peer_row', !is_wg);
+	showhide_div('row_vpnc_clients', is_wg);
 	showhide_div('row_vpnc_exclude_network', is_wg);
 	showhide_div('row_vpnc_remote_network', is_wg);
 
@@ -1078,11 +1079,21 @@ function wg_conf_import() {
                                         </select>
                                     </td>
                                 </tr>
+
+                                <tr id="row_vpnc_clients" style="display: none">
+                                    <td colspan="2"">
+                                        <a href="javascript:spoiler_toggle('spoiler_vpnc_clients')"><span><#VPNC_ClientsList#>:</span></a>
+                                        <div id="spoiler_vpnc_clients" style="display: none">
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_clients.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_clients.list",""); %></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+
                                 <tr id="row_vpnc_remote_network" style="display: none">
                                     <td colspan="2"">
                                         <a href="javascript:spoiler_toggle('spoiler_vpnc_remote_network')"><span><#VPNC_RNet_List#>:</span></a>
                                         <div id="spoiler_vpnc_remote_network" style="display: none">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="32768" class="span12" name="scripts.vpnc_remote_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_remote_network.list",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>
@@ -1090,7 +1101,7 @@ function wg_conf_import() {
                                     <td colspan="2"">
                                         <a href="javascript:spoiler_toggle('spoiler_vpnc_exclude_network')"><span><#VPNC_ExcludeList#>:</span></a>
                                         <div id="spoiler_vpnc_exclude_network" style="display: none">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_exclude_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_exclude_network.list",""); %></textarea>
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="16384" class="span12" name="scripts.vpnc_exclude_network.list" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("scripts.vpnc_exclude_network.list",""); %></textarea>
                                         </div>
                                     </td>
                                 </tr>
