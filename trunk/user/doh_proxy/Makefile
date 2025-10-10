@@ -1,6 +1,6 @@
 # https://github.com/aarond10
 
-SRC_VER = daa0d39
+SRC_VER = 7b27ecd
 SRC_NAME = https_dns_proxy-$(SRC_VER)
 SRC_URL = https://github.com/aarond10/https_dns_proxy/archive/refs/heads/master.tar.gz
 
@@ -18,9 +18,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		mkdir -p $(SRC_NAME) && tar -zx --strip-components=1 -f $(SRC_NAME).tar.gz -C $(SRC_NAME); \
-		find "$(shell pwd)"/patches -type f -name '*.patch' -print0 \
-		  | sort -z \
-		  | xargs -r -t -0 -n 1 patch -d $(SRC_NAME) -p1 -i; \
+		cat patches/*.patch | patch -d $(SRC_NAME) -r - -N -p1; \
 	fi )
 
 config_test:
