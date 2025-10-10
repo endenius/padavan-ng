@@ -303,7 +303,7 @@ wg_export()
 [Interface]
 PrivateKey = $(nvram get vpns_pass_x$i)
 Address = $(nvram get vpns_vnet | sed 's/\.0$/./')$(nvram get vpns_addr_x$i)/24
-DNS = 1.1.1.1,8.8.8.8,9.9.9.9,77.88.8.8
+DNS = $(nvram get lan_ipaddr)
 
 [Peer]
 PublicKey = $(nvram get vpns_wg_public)
