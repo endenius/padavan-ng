@@ -38,7 +38,6 @@ WAN0_GW=$(nvram get wan0_gateway)
 
 # if iproute2 is not available, when ipv6 disable
 IPBB=$(ip 2>&1 | grep -i busybox)
-IPV6=$(ip -6 route show default)
 
 IPSET="/sbin/ipset"
 
@@ -135,10 +134,13 @@ AllowedIPs = $PEER_ALLOWEDIPS
 EOF
     [ "$IF_PRESHARED" ] && echo "PresharedKey = $IF_PRESHARED" >> "/tmp/${IF_NAME}.conf.$$"
 
-    [ ! "$IPV6" ] && echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
+    local ipv6=$(ip -6 route show default)
+
+    [ ! "$ipv6" ] && echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f "/tmp/${IF_NAME}.conf.$$"
-    [ ! "$IPV6" ] && rm -f /etc/gai.conf
+
+    [ ! "$ipv6" ] && rm -f /etc/gai.conf
 
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
@@ -167,7 +169,7 @@ add_route()
 
     # for local cloudflare warp support on the router
     # padavan does not support nat64
-    [ ! "$IPV6" ] && ip addr show $IF_NAME | grep -q "inet6" \
+    ip addr show $IF_NAME | grep -q "inet6" \
         && ip -6 route add default dev $IF_NAME metric 1024
 }
 
@@ -239,7 +241,6 @@ stop_wg()
     is_started || return
 
     [ "$IPBB" ] && ip route del default table $TABLE 2>/dev/null
-
     for i in $PREF_MAIN $PREF_WG; do
         while ip rule del pref $i 2>/dev/null; do true; done
     done
@@ -256,8 +257,8 @@ stop_fw()
 {
     local i
 
-    iptables -t mangle -D PREROUTING -t mangle -j $IPT_WG_CHAIN 2>/dev/null
-    iptables -t mangle -D OUTPUT -t mangle -j $IPT_WG_CHAIN 2>/dev/null
+    iptables -t mangle -D PREROUTING -j $IPT_WG_CHAIN 2>/dev/null
+    iptables -t mangle -D OUTPUT -j $IPT_WG_CHAIN 2>/dev/null
 
     for i in $IPT_WG_CHAIN $IPT_WG_REMOTE; do
         iptables -t mangle -F $i 2>/dev/null
@@ -267,8 +268,8 @@ stop_fw()
 
 filter_ipv4()
 {
-    grep -E -x '^\s*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})(/(3[0-2]|[12]?[0-9]))?\s*$' \
-    | sed -r 's#/32|/0##g' | sort | uniq
+    grep -E -x '^[[:space:]]*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})(/(3[0-2]|[12]?[0-9]))?[[:space:]]*$' \
+    | sed -E 's#/32|/0##g' | sort | uniq
 }
 
 ipset_load()
@@ -279,7 +280,7 @@ ipset_load()
     [ -s "$list" ] || return
 
     echo -n > /tmp/$name.ipset.$$
-    for i in $(cat "$list" | filter_ipv4); do
+    for i in $(filter_ipv4 < $list); do
         echo "add $name $i" >> /tmp/$name.ipset.$$
     done
 
@@ -328,30 +329,37 @@ ipt_set_rules()
     if [ -x "$IPSET" ]; then
         echo "-A $IPT_WG_CHAIN -m set --match-set $VPN_EXCLUDE_IPSET dst -j RETURN"
         echo "-A $IPT_WG_CHAIN -m set ! --match-set $VPN_CLIENTS_IPSET src -j RETURN"
+        [ -n "$DEFAULT" ] || echo "-A $IPT_WG_CHAIN \
+                 -m set ! --match-set $DNSMASQ_IPSET dst \
+                 -m set ! --match-set $VPN_REMOTE_IPSET dst \
+                 -m set ! --match-set $CUSTOM_REMOTE_IPSET dst \
+                 -j RETURN"
 
-        if [ "$DEFAULT" ]; then
-            echo "-A $IPT_WG_CHAIN -j MARK --set-mark $FWMARK"
-        else
-            echo "-A $IPT_WG_CHAIN -m set --match-set $DNSMASQ_IPSET dst -j MARK --set-mark $FWMARK"
-            echo "-A $IPT_WG_CHAIN -m set --match-set $VPN_REMOTE_IPSET dst -j MARK --set-mark $FWMARK"
-            echo "-A $IPT_WG_CHAIN -m set --match-set $CUSTOM_REMOTE_IPSET dst -j MARK --set-mark $FWMARK"
-        fi
+        echo "-A $IPT_WG_CHAIN -j CONNMARK --restore-mark"
+        echo "-A $IPT_WG_CHAIN -m mark --mark $FWMARK -j RETURN"
+        echo "-A $IPT_WG_CHAIN -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
+        echo "-A $IPT_WG_CHAIN -m mark --mark $FWMARK -j CONNMARK --save-mark"
     else
-        for i in $(cat "$EXCLUDE_NETWORK_LIST" | filter_ipv4); do
+        for i in $(filter_ipv4 < "$EXCLUDE_NETWORK_LIST"); do
             echo "-A $IPT_WG_CHAIN -d $i -j RETURN"
         done
 
-        for i in $(cat "$CLIENTS_LIST" | filter_ipv4); do
-            echo "-A $IPT_WG_CHAIN -s \"$i\" -j $IPT_WG_REMOTE"
+        for i in $(filter_ipv4 < "$CLIENTS_LIST"); do
+            echo "-A $IPT_WG_CHAIN -s $i -j $IPT_WG_REMOTE"
         done
 
-        if [ "$DEFAULT" ]; then
-            echo "-A $IPT_WG_REMOTE -j MARK --set-mark $FWMARK"
+        echo "-A $IPT_WG_REMOTE -j CONNMARK --restore-mark"
+        echo "-A $IPT_WG_REMOTE -m mark --mark $FWMARK -j RETURN"
+
+        if [ -n "$DEFAULT" ]; then
+            echo "-A $IPT_WG_REMOTE -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
         else
-            for i in $(cat "$REMOTE_NETWORK_LIST" | filter_ipv4); do
-                echo "-A $IPT_WG_REMOTE -d \"$i\" -j MARK --set-mark $FWMARK"
+            for i in $(filter_ipv4 < "$REMOTE_NETWORK_LIST"); do
+                echo "-A $IPT_WG_REMOTE -d $i -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
             done
         fi
+
+        echo "-A $IPT_WG_REMOTE -m mark --mark $FWMARK -j CONNMARK --save-mark"
     fi
 }
 
@@ -363,8 +371,8 @@ start_fw()
 *mangle
 :$IPT_WG_CHAIN - [0:0]
 :$IPT_WG_REMOTE - [0:0]
--I PREROUTING -j $IPT_WG_CHAIN
--I OUTPUT -j $IPT_WG_CHAIN
+-A PREROUTING -j $IPT_WG_CHAIN
+-A OUTPUT -j $IPT_WG_CHAIN
 -A $IPT_WG_CHAIN -p udp --dport 53 -j RETURN
 -A $IPT_WG_CHAIN -p tcp --dport 53 -j RETURN
 -A $IPT_WG_CHAIN -p udp --dport 123 -j RETURN
