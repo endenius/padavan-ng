@@ -23,7 +23,7 @@ CUSTOM_DISCORD=1
 
 ### custom desync strategy
 DESYNC_STUN4ALL="--dpi-desync=fake --dpi-desync-repeats=2"
-DESYNC_WG4ALL="--dpi-desync=fake --dpi-desync-repeats=6"
+DESYNC_WG4ALL="--dpi-desync=fake --dpi-desync-repeats=11"
 DESYNC_DISCORD="--dpi-desync=fake --dpi-desync-repeats=2"
 ###
 
