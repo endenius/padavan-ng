@@ -136,11 +136,11 @@ EOF
 
     local ipv6=$(ip -6 route show default)
 
-    [ ! "$ipv6" ] && echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
+    echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
+    rm -f /etc/gai.conf
     rm -f "/tmp/${IF_NAME}.conf.$$"
 
-    [ ! "$ipv6" ] && rm -f /etc/gai.conf
 
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
@@ -373,6 +373,11 @@ start_fw()
 :$IPT_WG_REMOTE - [0:0]
 -A PREROUTING -j $IPT_WG_CHAIN
 -A OUTPUT -j $IPT_WG_CHAIN
+-A $IPT_WG_CHAIN -d 0.0.0.0/8 -j RETURN
+-A $IPT_WG_CHAIN -d 127.0.0.0/8 -j RETURN
+-A $IPT_WG_CHAIN -d 169.254.0.0/16 -j RETURN
+-A $IPT_WG_CHAIN -d 224.0.0.0/4 -j RETURN
+-A $IPT_WG_CHAIN -d 240.0.0.0/4 -j RETURN
 -A $IPT_WG_CHAIN -p udp --dport 53 -j RETURN
 -A $IPT_WG_CHAIN -p tcp --dport 53 -j RETURN
 -A $IPT_WG_CHAIN -p udp --dport 123 -j RETURN

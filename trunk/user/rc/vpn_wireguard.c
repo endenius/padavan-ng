@@ -22,7 +22,10 @@
 int
 start_wireguard_server(void)
 {
-    return eval("/usr/bin/wgs.sh", "start");
+    int ret = eval("/usr/bin/wgs.sh", "start");
+    if (ret == 0)
+        set_vpn_balancing(IFNAME_SERVER_WG, 1);
+    return ret;
 }
 
 void
@@ -40,7 +43,13 @@ restart_wireguard_server(void)
 int
 start_wireguard_client(void)
 {
-    return eval("/usr/bin/wgc.sh", "start");
+    int ret = eval("/usr/bin/wgc.sh", "start");
+    if (ret == 0)
+    {
+        set_vpn_balancing(IFNAME_CLIENT_WG, 0);
+        nvram_set_int_temp("vpnc_state_t", 2);
+    }
+    return ret;
 }
 
 void

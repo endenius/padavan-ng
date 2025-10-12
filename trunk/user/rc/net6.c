@@ -41,7 +41,8 @@
 void init_ipv6(void)
 {
 	int ipv6_type = get_ipv6_type();
-	control_if_ipv6_all((ipv6_type == IPV6_DISABLED) ? 0 : 1);
+//	control_if_ipv6_all((ipv6_type == IPV6_DISABLED) ? 0 : 1);
+	control_if_ipv6_all(1);
 	set_libc_gai((ipv6_type == IPV6_DISABLED) ? 1 : 0);
 	reset_lan6_vars();
 }
@@ -54,9 +55,11 @@ void control_if_ipv6_all(int enable)
 	char* if6_off[] = { "default", "all", NULL };
 	char* rad_off[] = { "default", "lo", "sit0", IFNAME_MAC, NULL };
 
+	set_interface_conf_int("ipv6", "all", "disable_ipv6", 0);
+
 	if (!enable) {
-		for (i=0; if6_off[i] != NULL; i++)
-			set_interface_conf_int("ipv6", if6_off[i], "disable_ipv6", 1);
+//		for (i=0; if6_off[i] != NULL; i++)
+//			set_interface_conf_int("ipv6", if6_off[i], "disable_ipv6", 1);
 		
 		for (i=0; rad_off[i] != NULL; i++) {
 			set_interface_conf_int("ipv6", rad_off[i], "accept_ra", 0);
@@ -67,8 +70,8 @@ void control_if_ipv6_all(int enable)
 	} else {
 		set_interface_conf_int("ipv6", "all", "forwarding", 1);
 		
-		for (i=0; if6_on[i] != NULL; i++)
-			set_interface_conf_int("ipv6", if6_on[i], "disable_ipv6", 0);
+//		for (i=0; if6_on[i] != NULL; i++)
+//			set_interface_conf_int("ipv6", if6_on[i], "disable_ipv6", 0);
 		
 		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/%s", IFNAME_BR, "gc_stale_time");
 		fput_int(tmp, 900); // ARP cache 15m
@@ -163,19 +166,18 @@ void full_restart_ipv6(int ipv6_type_old)
 		control_if_ipv6_all(0);
 		set_libc_gai(1);
 		update_resolvconf(0, 1);
-		reload_nat_modules();
-		restart_firewall();
-		start_dns_dhcpd(0);
 	} else {
 		set_libc_gai(0);
 		control_if_ipv6_all(1);
 		clear_all_addr6();
 		reset_lan6_vars();
 		reload_lan_addr6();
-		full_restart_wan();
-		if (!is_dns_dhcpd_run())
-			start_dns_dhcpd(0);
 	}
+
+	full_restart_wan();
+	if (!is_dns_dhcpd_run())
+		start_dns_dhcpd(0);
+
 #if defined (APP_NFSD)
 	run_nfsd();
 #endif
@@ -289,4 +291,3 @@ int ipv6_compact(const char *str6, char *p_comp6, int allow_prefix)
 
 
 #endif
-
