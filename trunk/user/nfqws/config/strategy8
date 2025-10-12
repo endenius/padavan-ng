@@ -3,7 +3,7 @@
 ### works with options ended -pattern,-syndata,-unknown,-unknown-udp
 --filter-tcp=80,443
 --dpi-desync=fake,fakedsplit
-#--dpi-desync-fakedsplit-mod=altorder=0
+--dpi-desync-fakedsplit-mod=altorder=0
 --dpi-desync-fakedsplit-pattern=/tmp/rnd.bin
 --dpi-desync-split-seqovl=666
 --dpi-desync-split-seqovl-pattern=/tmp/rnd1.bin

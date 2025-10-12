@@ -7,14 +7,14 @@
 ### https: filter all domains, exept exclude.list
 --new --filter-tcp=443
 --dpi-desync=fake,fakedsplit
-#--dpi-desync-fakedsplit-mod=altorder=0
+--dpi-desync-fakedsplit-mod=altorder=0
 --dpi-desync-fakedsplit-pattern=0x43307e8f3c5c5f4c
 --dpi-desync-split-pos=1,midsld
 --dpi-desync-fooling=badseq
 --dpi-desync-badseq-increment=10000000
 --dpi-desync-split-seqovl=2
 --dpi-desync-split-seqovl-pattern=0x01d400faf69a3bcb
---dpi-desync-fake-tls=0x16030000
+--dpi-desync-fake-tls=0x00000000
 --dpi-desync-fake-tls=!
 --dpi-desync-fake-tls-mod=rnd,dupsid,sni=www.google.com
 --hostlist-exclude=/etc/storage/zapret/exclude.list
