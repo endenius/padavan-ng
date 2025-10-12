@@ -893,7 +893,7 @@ function fillDNSCryptSelect(values) {
 					    <td colspan="2">
 						<a href="javascript:spoiler_toggle('spoiler_tor_conf')"><span><#CustomConf#> "torrc"</span> <i style="scale: 75%;" class="icon-chevron-down"></i></a>
 						<span style="float: right; width: 102px">
-							<input type="button" class="btn btn-mini" style="outline:0" onclick="restoreTor();" value="<#CTL_restore#>"/>
+							<input type="button" class="btn btn-mini btn-danger" style="outline:0" onclick="restoreTor();" value="<#CTL_restore#>"/>
 						</span>
 						<div id="spoiler_tor_conf" style="display:none; padding-top: 8px;">
 							<textarea rows="16" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="torconf.torrc" style="font-family:'Courier New'; font-size:12px; resize:vertical;"><% nvram_dump("torconf.torrc",""); %></textarea>
@@ -1148,7 +1148,7 @@ function fillDNSCryptSelect(values) {
                                                                 <option value="8" <% nvram_match_x("", "zapret_strategy", "8","selected"); %>><#ZapretStrategyProfile#> #8</option>
                                                                 <option value="9" <% nvram_match_x("", "zapret_strategy", "9","selected"); %>><#ZapretStrategyProfile#> #9</option>
                                                             </select>
-                                                            <input type="button" class="btn btn-mini" style="outline:0" onclick="restoreZapret();" value="<#CTL_restore#>"/>
+                                                            <input type="button" class="btn btn-mini btn-danger" style="outline:0" onclick="restoreZapret();" value="<#CTL_restore#>"/>
                                                         </td>
                                                         <tr>
                                                             <td id="zapret.strategy" colspan="2" style="padding-top: 0px; border-top: 0 none; display:none;">
