@@ -464,18 +464,14 @@ function restoreZapret(){
 	if(!confirm('<#ZapretRestoreConfirm#>'))
 		return false;
 
-	var v = "<% nvram_get_x("", "zapret_enable"); %>";
+	var v, cmd;
 
-	showLoading(2);
-	$j.post('/apply.cgi',
-	{
-		'action_mode': ' SystemCmd ',
-		'SystemCmd': 'rm -rf /etc/storage/zapret; zapret.sh ' + (v == 1 ? "restart" : "") + '; mtd_storage.sh save'
-	},
-	function(response){
-		$j.get('/console_response.asp');
-	});
-	setTimeout("location.href = location.href;", 2000);
+	v = "<% nvram_get_x("", "zapret_enable"); %>";
+	cmd = 'rm -rf /etc/storage/zapret;';
+	cmd += 'zapret.sh ' + (v == 1 ? 'restart' : '') + ';';
+	cmd += 'mtd_storage.sh save';
+
+	sendSystemCmd(cmd, true);
 }
 
 function restoreTor(){
@@ -485,16 +481,12 @@ function restoreTor(){
 	if(!confirm('<#TorRestoreConfirm#>'))
 		return false;
 
-	showLoading(1);
-	$j.post('/apply.cgi',
-	{
-		'action_mode': ' SystemCmd ',
-		'SystemCmd': 'rm -f /etc/storage/tor/torrc; tor.sh config; mtd_storage.sh save'
-	},
-	function(response){
-		$j.get('/console_response.asp');
-	});
-	setTimeout("location.href = location.href;", 1000);
+	var cmd
+	cmd = 'rm -f /etc/storage/tor/torrc;';
+	cmd += 'tor.sh config;';
+	cmd += 'mtd_storage.sh save';
+
+	sendSystemCmd(cmd, true);
 }
 
 function change_tor_enabled(){

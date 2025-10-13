@@ -36,6 +36,24 @@ var cookie = {
 
 <% firmware_caps_hook(); %>
 
+function sendSystemCmd(cmd, reload){
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' SystemCmd ',
+		'SystemCmd': cmd
+	},
+	function(response){
+		$j.get('/console_response.asp', function(data){
+			if (!reload)
+				return;
+			showLoading(1);
+			setTimeout("location.href = location.href;", 1500);
+		});
+		if (reload)
+			showLoading();
+	});
+}
+
 function get_ap_mode(){
 	return (wan_route_x == 'IP_Bridged' || sw_mode == '3') ? true : false;
 }

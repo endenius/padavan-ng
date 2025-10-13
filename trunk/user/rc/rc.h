@@ -421,6 +421,7 @@ int ovpn_server_expcli_main(int argc, char **argv);
 /* wireguard.c */
 int start_wireguard_client(void);
 void stop_wireguard_client(void);
+void restart_wireguard_client(void);
 void reload_wireguard_client(void);
 void ipset_update_wireguard_client(void);
 int start_wireguard_server(void);
@@ -712,6 +713,7 @@ void ez_event_long(int btn_id);
 #endif
 int  is_ntpc_updated(void);
 int  ntpc_updated_main(int argc, char *argv[]);
+int  ntpc_syncnow_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);

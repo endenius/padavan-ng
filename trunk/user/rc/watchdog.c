@@ -316,9 +316,10 @@ btn_check_ez(int btn_pin, int btn_id, int *p_btn_state)
 }
 #endif
 
-static void
+static int
 refresh_ntp(void)
 {
+	int result = 0;
 	char *svcs[] = { "ntpd", NULL };
 	char *ntp_addr[2], *ntp_server;
 
@@ -340,9 +341,16 @@ refresh_ntp(void)
 	ntp_server = (ntpc_server_idx) ? ntp_addr[1] : ntp_addr[0];
 	ntpc_server_idx = (ntpc_server_idx + 1) % 2;
 
-	eval("/usr/sbin/ntpd", "-qt", "-S", NTPC_DONE_SCRIPT, "-p", ntp_server);
-
+	result = eval("/usr/sbin/ntpd", "-qt", "-S", NTPC_DONE_SCRIPT, "-p", ntp_server);
 	logmessage("NTP Client", "Synchronizing time to %s.", ntp_server);
+
+	return result;
+}
+
+int
+ntpc_syncnow_main(int argc, char *argv[])
+{
+	return refresh_ntp();
 }
 
 int

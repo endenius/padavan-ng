@@ -142,6 +142,14 @@ function openLink(s) {
 	if (!link.opener) link.opener = self;
 }
 
+function ntpSyncNow(){
+        if (!login_safe())
+                return false;
+
+        var cmd = '/sbin/ntpc_syncnow';
+        sendSystemCmd(cmd);
+}
+
 </script>
 <style>
     .table th, .table td{vertical-align: middle;}
@@ -350,6 +358,7 @@ function openLink(s) {
                                                     <option value="336" <% nvram_match_x("","ntp_period","336","selected"); %>>2 weeks</option>
                                                     <option value="0"   <% nvram_match_x("","ntp_period",  "0","selected"); %>><#btn_Disable#></option>
                                                 </select>
+                                                <input type="button" class="btn btn-mini" style="outline:0" onclick="ntpSyncNow();" value="<#CTL_refresh#>"/>
                                             </td>
                                         </tr>
                                         <tr>
