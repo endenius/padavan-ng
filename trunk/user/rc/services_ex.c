@@ -384,7 +384,8 @@ start_dns_dhcpd(int is_ap_mode)
 		if (nvram_match("tor_enable", "1"))
 		{
 			// ports 9053 for tor
-			fprintf(fp, "server=127.0.0.1#%d\n", 9053);
+			fprintf(fp, "server=/onion/127.0.0.1#%d\n", 9053);
+			fprintf(fp, "server=/exit/127.0.0.1#%d\n", 9053);
 		}
 #endif
 		if (no_resolv)

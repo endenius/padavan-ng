@@ -1,6 +1,13 @@
 --- tor-0.4.8.18.orig/src/app/config/config.c
 +++ tor-0.4.8.18/src/app/config/config.c
-@@ -5904,7 +5904,7 @@
+@@ -5898,13 +5898,13 @@
+     if (port->is_unix_addr) {
+       /* Unix sockets aren't accessible over a network. */
+     } else if (!tor_addr_is_internal(&port->addr, 1)) {
+-      log_warn(LD_CONFIG, "You specified a public address '%s' for %sPort. "
++      log_info(LD_CONFIG, "You specified a public address '%s' for %sPort. "
+                "Other people on the Internet might find your computer and "
+                "use it as an open proxy. Please don't allow this unless you "
                 "have a good reason.",
                 fmt_addrport(&port->addr, port->port), portname);
      } else if (!tor_addr_is_loopback(&port->addr)) {
@@ -132,6 +139,15 @@
 +        log_info(LD_DIR, "Ignoring directory request, since no bridge "
                             "nodes are available yet.");
        }
+ 
+@@ -1996,7 +1996,7 @@
+ 
+     if (smartlist_len(lines) > 0) {
+       char *log_line = smartlist_join_strings(lines, "; ", 0, NULL);
+-      log_notice(LD_NET, "While %sbootstrapping, fetched this many bytes: %s",
++      log_info(LD_NET, "While %sbootstrapping, fetched this many bytes: %s",
+                  bootstrapped?"not ":"", log_line);
+       tor_free(log_line);
  
 --- tor-0.4.8.18.orig/src/feature/hs/hs_client.c
 +++ tor-0.4.8.18/src/feature/hs/hs_client.c

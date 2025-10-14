@@ -4,13 +4,16 @@ TOR_BIN="/usr/sbin/tor"
 PID_FILE="/var/run/tor.pid"
 
 DATA_DIR="/tmp/tor"
-[ -d "/opt/tmp" ] && DATA_DIR="/opt/tmp/tor"
+unset OPT
+[ -d "/opt/tmp" ] && OPT="/opt"
+
 GEOIP_DIR="/usr/share/tor"
 CONFIG_DIR="/etc/storage/tor"
 CONFIG_FILE="$CONFIG_DIR/torrc"
 DNS_PORT=9053
 TRANS_PORT=9040
 
+CLIENTS="$(nvram get tor_clients | tr -s ' ,' '\n')"
 LAN_IP=$(nvram get lan_ipaddr)
 [ "$LAN_IP" ] || LAN_IP="192.168.1.1"
 
@@ -40,19 +43,18 @@ func_create_config()
     [ ! -d "$CONFIG_DIR" ] && mkdir -p -m 755 $CONFIG_DIR
 
     cat > "$CONFIG_FILE" <<EOF
-### See https://www.torproject.org/docs/tor-manual.html,
-### for more options you can use in this file.
+### https://www.torproject.org/docs/tor-manual.html
+### reserved: network 172.16.0.0/12, ports 80,443/TCP
 
-# ExitPolicy reject *:*
-# ExitPolicy reject6 *:*
 # ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
 # StrictNodes 1
 
 SocksPort ${LAN_IP}:9050
 HTTPTunnelPort ${LAN_IP}:8181
 
-VirtualAddrNetworkIPv4 172.16.0.0/12
-VirtualAddrNetworkIPv6 [FC00::]/7
+ExitRelay 0
+ExitPolicy reject *:*
+ExitPolicy reject6 *:*
 AutomapHostsOnResolve 1
 Log notice syslog
 AvoidDiskWrites 1
@@ -84,17 +86,20 @@ func_start()
         mount | grep -q $GEOIP_DIR || mount --bind /opt/share/tor $GEOIP_DIR
     fi
 
-    log "started, data directory: $DATA_DIR"
+    log "started, data directory: ${OPT}${DATA_DIR}"
+    rm -rf ${OPT}${DATA_DIR}
     rm -rf $DATA_DIR
-    rm -rf /tmp/tor
 
     # 0.0.0.0 for TransPort, because REDIRECT between interfaces does not work
     $TOR_BIN --RunAsDaemon 1 \
-        --DataDirectory $DATA_DIR \
+        --DataDirectory ${OPT}${DATA_DIR} \
         --DNSPort $DNS_PORT \
+        --VirtualAddrNetworkIPv4 172.16.0.0/12 \
         --TransPort 0.0.0.0:$TRANS_PORT \
         --TransPort [::]:$TRANS_PORT \
         --PidFile $PID_FILE
+
+    # [ "$?" == "0" ] && redirect_start
 }
 
 func_stop()
@@ -106,8 +111,8 @@ func_stop()
         umount -l $GEOIP_DIR
     fi
 
+    rm -rf ${OPT}${DATA_DIR}
     rm -rf $DATA_DIR
-    rm -rf /tmp/tor
     rm -f $PID_FILE
 }
 
@@ -115,52 +120,71 @@ func_reload()
 {
     is_running || return
 
+    # redirect_start
     kill -SIGHUP $(cat "$PID_FILE") && log "reload"
+}
+
+### transparent proxy
+
+make_exclude_rules()
+{
+    local i
+    local wan0_ipaddr="$(nvram get wan0_ipaddr)"
+
+    [ "$wan0_ipaddr" == "0.0.0.0" ] && unset wan0_ipaddr
+
+    for i in $LAN_IP $wan0_ipaddr \
+             0.0.0.0/8 127.0.0.0/8 169.254.0.0/16 224.0.0.0/4 240.0.0.0/4 \
+             10.0.0.0/8 192.168.0.0/16; do
+        echo "-A tor_proxy -d $i -j RETURN"
+    done
+
+#    echo "-A tor_proxy -m set ! --match-set tor.remote dst -j RETURN"
+    echo "-A tor_proxy -m set ! --match-set unblock dst -j RETURN"
+}
+
+make_clients_rules()
+{
+    local i
+
+    # get comma separated clients list for nvram
+    for i in $CLIENTS; do
+        echo "-A tor_proxy -s $i -j MARK --set-mark $TRANS_PORT"
+    done
 }
 
 redirect_start()
 {
-    # for testing
-
-    local i
-
     redirect_stop
     is_running || return
 
-    make_clients_rules()
-    {
-        # get comma separated clients list for nvram
-        for i in $(nvram get tor_proxy_clients | tr -s ' ,' '\n'); do
-            echo "-A tor_proxy -p tcp -s $i -j REDIRECT --to-port $TRANS_PORT"
-        done
-    }
-
-    make_exclude_rules()
-    {
-        local wan0_ipaddr="$(nvram get wan0_ipaddr)"
-        [ "$wan0_ipaddr" == "0.0.0.0" ] && unset wan0_ipaddr
-
-        for i in $LAN_IP $wan0_ipaddr; do
-            echo "-A tor_proxy -d $i -j RETURN"
-        done
-    }
-
-    iptables-restore -n 2>/dev/null <<EOF
+    # using the raw table due to a very old kernel
+    res=$(iptables-restore 2>&1 -n <<EOF
 *nat
+-A PREROUTING -p tcp -m mark --mark $TRANS_PORT -j REDIRECT --to-port $TRANS_PORT
+COMMIT
+*raw
 :tor_proxy - [0:0]
 -A PREROUTING -p tcp -m multiport --dports 80,443 -j tor_proxy
+-A tor_proxy -d 172.16.0.0/12 -j MARK --set-mark $TRANS_PORT
 $(make_exclude_rules)
 $(make_clients_rules)
 COMMIT
 EOF
-    [ ! "$?" == "0" ] && error "failed to start transparent proxy redirect"
+    )
+
+    [ ! "$?" == "0" ] && error "firewall rules failed to start: $(echo "$res" | head -n1 | cut -d ':' -f2-)"
 }
 
 redirect_stop()
 {
-    iptables -t nat -D PREROUTING -p tcp -m multiport --dports 80,443 -j tor_proxy 2>/dev/null
-    iptables -t nat -F tor_proxy 2>/dev/null
-    iptables -t nat -X tor_proxy 2>/dev/null
+    iptables -t raw -D PREROUTING -p tcp -m multiport --dports 80,443 -j tor_proxy 2>/dev/null
+    iptables -t nat -D PREROUTING -p tcp -m mark --mark $TRANS_PORT -j REDIRECT --to-port $TRANS_PORT 2>/dev/null
+
+    for i in tor_proxy tor_redirect; do
+        iptables -t raw -F $i 2>/dev/null
+        iptables -t raw -X $i 2>/dev/null
+    done
 }
 
 case "$1" in
@@ -172,19 +196,24 @@ case "$1" in
         func_stop
     ;;
 
+    restart)
+        func_stop
+        func_start
+    ;;
+
     reload)
         func_reload
     ;;
 
-    start-redirect)
+    redirect-start)
         redirect_start
     ;;
 
-    stop-redirect)
+    redirect-stop)
         redirect_stop
     ;;
 
-    config)
+    config|config-create)
         [ ! -f "$CONFIG_FILE" ] && func_create_config
     ;;
 
