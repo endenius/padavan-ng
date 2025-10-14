@@ -17,6 +17,7 @@
 ### don't forget to remove the relevant filters from the strategies
 CUSTOM_STUN4ALL=1
 CUSTOM_WG4ALL=1
+CUSTOM_QUICK4ALL=1
 CUSTOM_DISCORD=1
 ###
 
@@ -24,6 +25,7 @@ CUSTOM_DISCORD=1
 ### custom desync strategy
 DESYNC_STUN4ALL="--dpi-desync=fake --dpi-desync-repeats=2"
 DESYNC_WG4ALL="--dpi-desync=fake --dpi-desync-repeats=11"
+DESYNC_QUICK4ALL="--dpi-desync=fake --dpi-desync-repeats=6"
 DESYNC_DISCORD="--dpi-desync=fake --dpi-desync-repeats=2"
 ###
 
@@ -40,7 +42,8 @@ custom_d()
   # queue number = [ 300-309 ]
   [ "$CUSTOM_STUN4ALL" ] && stun4all "$DESYNC_STUN4ALL" 300 "$1"
   [ "$CUSTOM_WG4ALL" ] && wg4all "$DESYNC_WG4ALL" 301  "$1"
-  [ "$CUSTOM_DISCORD" ] && discord "$DESYNC_DISCORD" 302  "$1"
+  [ "$CUSTOM_QUICK4ALL" ] && quick4all "$DESYNC_QUICK4ALL" 302  "$1"
+  [ "$CUSTOM_DISCORD" ] && discord "$DESYNC_DISCORD" 303  "$1"
 }
 
 stun4all()
@@ -57,6 +60,12 @@ wg4all()
 {
   start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=0x9c&&0>>22&0x3C@8=0x01000000" $2
   [ "$3" == "start" ] && start_custom "wg4all" "$1" "$2"
+}
+
+quick4all()
+{
+  start_custom_fw "-p udp -m u32 --u32" "0>>22&0x3C@4>>16=264:65535&&0>>22&0x3C@8>>28=0xC&&0>>22&0x3C@9=0x00000001" $2
+  [ "$3" == "start" ] && start_custom "quick4all" "$1" "$2"
 }
 
 discord()
