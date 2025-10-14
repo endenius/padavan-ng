@@ -138,8 +138,12 @@ start_custom()
   # $2 - desync strategy
   # $3 - queue number
 
-  $NFQWS_BIN --qnum=$3 --daemon --user=nobody $2 >/dev/null 2>&1
-  log "custom rule $1 started"
+  $NFQWS_BIN --qnum=$3 --daemon --user=$USER $2 >/dev/null 2>&1
+  if pgrep -f "$NFQWS_BIN --qnum=$3 " 2>&1 >/dev/null; then
+    log "custom rule $1 started"
+  else
+    log "failed to start custom rule $1"
+  fi
 }
 
 case "$1" in
