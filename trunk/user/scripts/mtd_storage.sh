@@ -406,13 +406,8 @@ EOF
 		if [ ! -f "$list_vpncc" ] ; then
 		cat > "$list_vpncc" <<EOF
 ### List of IP addresses/subnets of clients using a VPN server connection
-### Example:
-# 192.168.1.0/24
-# 192.168.1.234
-# 10.8.0.0/24
-# 10.8.0.2
-
 192.168.1.0/24
+10.8.0.0/24
 EOF
 			chmod 644 "$list_vpncc"
 		fi
@@ -524,24 +519,32 @@ EOF
 		if [ ! -f "$user_dnsmasq_ipset" ] ; then
 			cat > "$user_dnsmasq_ipset" <<EOF
 ### Custom user ipsets for dnsmasq
-### Built-in wireguard client uses an "unblock" ipset, if ipset is built into the firmware
+### Built-in Wireguard client uses an "unblock" ipset, if ipset is present in the firmware
 ### For clean ipset reboot router  or launch: ipset flush unblock && restart_dns
-### Example:
-# ipset=/4pda.to/unblock
-# ipset=/4pda.ws/unblock
-# ipset=/rutracker.org/unblock
-# ipset=/instagram.com/unblock
-# ipset=/cdninstagram.com/unblock
-# ipset=/fb.com/unblock
-# ipset=/facebook.com/unblock
-# ipset=/static.xx.fbcdn.net/unblock
-# ipset=/x.com/unblock
-# ipset=/twimg.com/unblock
-# ipset=/awsstatic.com/unblock
-# ipset=/aws.amazon.com/unblock
-# ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
-# ipset=/challenges.cloudflare.com/unblock
-# ipset=/static-cdn.jtvnw.net/unblock
+
+ipset=/4pda.to/unblock
+ipset=/4pda.ws/unblock
+ipset=/rutracker.org/unblock
+ipset=/instagram.com/unblock
+ipset=/cdninstagram.com/unblock
+ipset=/comet-ai.ru/unblock
+ipset=/fb.com/unblock
+ipset=/facebook.com/unblock
+ipset=/facebook.net/unblock
+ipset=/cdn.fbsbx.com/unblock
+ipset=/fbcdn.net/unblock
+ipset=/whatsapp.net/unblock
+ipset=/x.com/unblock
+ipset=/t.co/unblock
+ipset=/twimg.com/unblock
+ipset=/api.tweetdeck.com/unblock
+ipset=/static.ads-twitter.com/unblock
+ipset=/awsstatic.com/unblock
+ipset=/aws.amazon.com/unblock
+ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
+ipset=/challenges.cloudflare.com/unblock
+ipset=/static-cdn.jtvnw.net/unblock
+ipset=/culuscdn.com/unblock
 EOF
 			chmod 644 "$user_dnsmasq_ipset"
 		fi
