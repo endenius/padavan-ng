@@ -305,7 +305,7 @@ ipset_create()
 
     [ -x "$IPSET" ] || return
 
-    ipset -N $DNSMASQ_IPSET iphash timeout 3600 2>/dev/null
+    ipset -N $DNSMASQ_IPSET nethash timeout 3600 2>/dev/null
     ipset -N $CUSTOM_REMOTE_IPSET nethash 2>/dev/null
 
     ipset -N $VPN_REMOTE_IPSET nethash 2>/dev/null
