@@ -1,0 +1,29 @@
+--- ipset-7.24.orig/kernel/net/netfilter/ipset/ip_set_core.c
++++ ipset-7.24/kernel/net/netfilter/ipset/ip_set_core.c
+@@ -2498,17 +2498,11 @@
+ }
+ 
+ static void __net_exit
+-ip_set_net_pre_exit(struct net *net)
++ip_set_net_exit(struct net *net)
+ {
+ 	struct ip_set_net *inst = ip_set_pernet(net);
+ 
+ 	inst->is_deleted = true; /* flag for ip_set_nfnl_put */
+-}
+-
+-static void __net_exit
+-ip_set_net_exit(struct net *net)
+-{
+-	struct ip_set_net *inst = ip_set_pernet(net);
+ 
+ 	_destroy_all_sets(inst);
+ 	kvfree(rcu_dereference_protected(inst->ip_set_list, 1));
+@@ -2519,7 +2513,6 @@
+ 
+ static struct pernet_operations ip_set_net_ops = {
+ 	.init	= ip_set_net_init,
+-	.pre_exit = ip_set_net_pre_exit,
+ 	.exit   = ip_set_net_exit,
+ #ifdef HAVE_NET_OPS_ID
+ 	.id	= &ip_set_net_id,

@@ -1,0 +1,18 @@
+--- ipset-7.24.orig/kernel/net/netfilter/ipset/Kbuild
++++ ipset-7.24/kernel/net/netfilter/ipset/Kbuild
+@@ -1,5 +1,5 @@
+ NOSTDINC_FLAGS += -I$(KDIR)/include
+-EXTRA_CFLAGS := -DIP_SET_MAX=$(IP_SET_MAX)
++EXTRA_CFLAGS := -DIP_SET_MAX=$(IP_SET_MAX) -Wno-strict-prototypes
+ 
+ ip_set-y := ip_set_core.o ip_set_getport.o pfxlen.o
+ obj-m += ip_set.o
+--- ipset-7.24.orig/kernel/net/netfilter/Kbuild
++++ ipset-7.24/kernel/net/netfilter/Kbuild
+@@ -1,5 +1,5 @@
+ NOSTDINC_FLAGS += -I$(KDIR)/include
+-EXTRA_CFLAGS := -DCONFIG_IP_SET_MAX=$(IP_SET_MAX)
++EXTRA_CFLAGS := -DCONFIG_IP_SET_MAX=$(IP_SET_MAX) -Wno-strict-prototypes
+ 
+ obj-m += xt_set.o
+ obj-m += ipset/

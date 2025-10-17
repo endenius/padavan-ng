@@ -24,10 +24,22 @@ if [ ! -x "$depmod_bin" ]; then
 fi
 
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" = "y" ] ; then
-	ipset_dir="${ROOTDIR}/user/ipset/ipset-6.x/kernel/net/netfilter"
+	ipset_dir="${ROOTDIR}/user/ipset/ipset-7.24/kernel/net/netfilter"
 	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
 	cp -f "$ipset_dir/xt_set.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter"
-	cp -f "$ipset_dir/ipset/"*.ko "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
+	if [ "$CONFIG_CC_OPTIMIZE_FOR_SIZE" = "y" ] ; then
+		for i in \
+			ip_set \
+			ip_set_hash_ip \
+			ip_set_hash_net \
+			ip_set_bitmap_ip \
+			ip_set_list_set
+		do
+			cp -f "$ipset_dir/ipset/$i.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
+		done
+	else
+		cp -f "$ipset_dir/ipset/"*.ko "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
+	fi
 fi
 
 # call depmod

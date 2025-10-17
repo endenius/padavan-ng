@@ -1,12 +1,22 @@
-SRC_NAME=ipset-6.x
+# https://ipset.netfilter.org
 
-THISDIR = $(shell pwd)
+SRC_NAME=ipset-7.24
+SRC_URL=https://ipset.netfilter.org/$(SRC_NAME).tar.bz2
 
-CFLAGS += -fvisibility=hidden
-
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 	$(MAKE) modules -j$(HOST_NCPU) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.bz2 ]; then \
+		wget -t5 -T20 --no-check-certificate -O $(SRC_NAME).tar.bz2 $(SRC_URL) || rm -f $(SRC_NAME).tar.bz2; \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar xjf $(SRC_NAME).tar.bz2; \
+		cat patches/*.patch | patch -d $(SRC_NAME) -r - -N -p1; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -18,6 +28,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./autogen.sh ; \
+	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	./configure \
 		--prefix= \
 		--enable-static \
@@ -38,5 +49,4 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/ipset /sbin/ipset
-
+	$(ROMFSINST) $(SRC_NAME)/src/ipset /sbin/ipset
