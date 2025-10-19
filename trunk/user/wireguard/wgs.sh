@@ -143,8 +143,6 @@ wg_stop()
 
 wg_start()
 {
-    [ "$(nvram get vpns_type)" == "3" -a "$(nvram get vpns_enable)" == "1" ] || die "disabled"
-
     is_started && die "already started"
     wg_prepare
 

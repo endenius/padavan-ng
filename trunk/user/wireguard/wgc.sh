@@ -12,7 +12,7 @@ IF_PRESHARED=$(nvram get vpnc_wg_if_preshared)
 IF_DNS=$(nvram get vpnc_wg_if_dns | tr -d ' ')
 
 unset DEFAULT
-[ "$(nvram get vpnc_dgw)" == "1" ] && DEFAULT=1
+[ "$(nvram get vpnc_dgw)" = "1" ] && DEFAULT=1
 
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
 PEER_PORT=$(nvram get vpnc_wg_peer_port)
@@ -24,29 +24,12 @@ REMOTE_NETWORK_LIST="/etc/storage/vpnc_remote_network.list"
 EXCLUDE_NETWORK_LIST="/etc/storage/vpnc_exclude_network.list"
 CLIENTS_LIST="/etc/storage/vpnc_clients.list"
 
-FWMARK=51820
 TABLE=51
-
+FWMARK=51820
 PREF_WG=5182
 PREF_MAIN=5181
 
-LAN_ADDR=$(nvram get lan_ipaddr)
-WAN_ADDR=$(nvram get wan_ipaddr)
-WAN0_ADDR=$(nvram get wan0_ipaddr)
-WAN0_IFNAME=$(nvram get wan0_ifname)
-WAN0_GW=$(nvram get wan0_gateway)
-
-# if iproute2 is not available, when ipv6 disable
-IPBB=$(ip 2>&1 | grep -i busybox)
-
-IPSET="/sbin/ipset"
-
-IPT_WG_CHAIN="vpnc_wireguard"
-IPT_WG_REMOTE="vpnc_wireguard_remote"
-
-# iphash from dnsmasq
-DNSMASQ_IPSET="unblock"
-# nethash custom list of remote networks, filled in by user from console
+DNSMASQ_REMOTE_IPSET="unblock"
 CUSTOM_REMOTE_IPSET="custom.remote"
 
 # nethash remote networks
@@ -58,6 +41,9 @@ VPN_CLIENTS_IPSET="vpn.clients"
 
 ###
 
+unset IPSET
+[ -x "/sbin/ipset" ] && IPSET=1
+
 log()
 {
     [ -n "$*" ] || return
@@ -67,13 +53,13 @@ log()
 
 error()
 {
-    log "error: $@"
+    log "error: $@" >&2
     exit 1
 }
 
 die()
 {
-    echo "$@" >&2
+    [ -n "$*" ] && echo "$@" >&2
     exit 1
 }
 
@@ -85,7 +71,7 @@ is_started()
 
 prepare_wg()
 {
-    modprobe -q wireguard >/dev/null 2>&1
+    modprobe -q wireguard
     sysctl -q net.ipv4.conf.all.src_valid_mark=1
     sysctl -q net.ipv6.conf.all.disable_ipv6=0 2>/dev/null
     sysctl -q net.ipv6.conf.all.forwarding=1 2>/dev/null
@@ -96,11 +82,11 @@ wg_setdns()
     [ "$IF_DNS" ] || return
 
     local getdns=$(nvram get vpnc_pdns)
-    [ "$getdns" == "0" ] && return
+    [ "$getdns" = "0" ] && return
 
     nvram set vpnc_dns_t="$IF_DNS"
 
-    if [ "$getdns" == "2" ]; then
+    if [ "$getdns" = "2" ]; then
         sed -i "/nameserver/d" /etc/resolv.conf
         echo "nameserver 127.0.0.1" >> /etc/resolv.conf
     fi
@@ -134,13 +120,12 @@ AllowedIPs = $PEER_ALLOWEDIPS
 EOF
     [ "$IF_PRESHARED" ] && echo "PresharedKey = $IF_PRESHARED" >> "/tmp/${IF_NAME}.conf.$$"
 
-    local ipv6=$(ip -6 route show default)
-
     echo "precedence ::ffff:0:0/96  100" > /etc/gai.conf
     local res=$($WG setconf $IF_NAME "/tmp/${IF_NAME}.conf.$$" 2>&1)
     rm -f /etc/gai.conf
     rm -f "/tmp/${IF_NAME}.conf.$$"
 
+    [ "$1" = "reconnect" ] && return
 
     if ! echo $res | grep -q "error"; then
         log "configuration $IF_NAME applied successfully"
@@ -155,6 +140,47 @@ EOF
     fi
 }
 
+reconnect_wg()
+{
+    # reconnect using current config
+
+    if ! check_connected; then
+        log "trying reconnect to $PEER_ENDPOINT"
+        setconf_wg reconnect
+        check_connected
+        if [ $? -eq 0 ]; then
+            log "successfully connected"
+            return 0
+        else
+            log "unable connect"
+            return 1
+        fi
+    fi
+}
+
+get_latest_handshake()
+{
+    # return latest handshake in sec
+
+    is_started || return 1
+
+    local lh=$($WG show $IF_NAME latest-handshakes | cut -f2)
+    local delta=$(( $(date +'%s') - $lh ))
+
+    case "$lh" in
+        0) return 1 ;;
+
+        [0-9]*)
+            echo $delta
+            if [ "$delta" -gt "300" ]; then
+                return 1
+            fi
+        ;;
+
+        *) return 1 ;;
+    esac
+}
+
 add_default_route()
 {
     ip rule add fwmark $FWMARK table $TABLE pref $PREF_WG
@@ -165,25 +191,26 @@ add_default_route()
 
 add_route()
 {
+    # ¯\_(ツ)_/¯
+    sync && sysctl -q vm.drop_caches=3
+    usleep 100000
+
     add_default_route
 
     # for local cloudflare warp support on the router
     # padavan does not support nat64
     ip addr show $IF_NAME | grep -q "inet6" \
         && ip -6 route add default dev $IF_NAME metric 1024
-}
 
-prevent_access_loss()
-{
-    local i endpoint
+    local ep
+    ep=$($WG show $IF_NAME endpoints | sed -r 's/^.+\t//; s/:[0-9]+$//; s/[][]*//g')
+    [ -n "$ep" ] || return
 
-    endpoint=$($WG show $IF_NAME endpoints | sed -r 's/^.+\t//; s/:[0-9]+$//')
-    [ "$endpoint" ] && ip rule add to "$endpoint" table main pref $PREF_MAIN
-
-    for i in $LAN_ADDR $WAN_ADDR $WAN0_ADDR; do
-        [ "$i" = "0.0.0.0" ] && continue
-            ip rule add from "$i" lookup main pref $PREF_MAIN
-    done
+    if [ "$ep" == "${ep#*:}" ]; then
+        ip rule add to "$ep" table main pref $PREF_MAIN
+    else
+        ip -6 rule add to "$ep" table main pref $PREF_MAIN
+    fi
 }
 
 wg_if_init()
@@ -192,7 +219,7 @@ wg_if_init()
 
     prepare_wg
 
-    ip link add dev $IF_NAME type wireguard || error "cannot create $IF_NAME"
+    ip link add dev $IF_NAME type wireguard 2>/dev/null || error "cannot create $IF_NAME"
     ip link set dev $IF_NAME mtu $IF_MTU
 
     for i in $(echo "$IF_ADDR" | tr ',' '\n'); do
@@ -215,152 +242,159 @@ wg_if_init()
 send_ping()
 {
     # trying to sending single packet trought wg interface for activating the connection web-indicator
-    ping -c1 -W1 -I $IF_NAME 8.8.8.8 >/dev/null 2>&1 &
+    ping -c1 -W3 -I $IF_NAME 8.8.8.8 >/dev/null 2>&1
+}
+
+check_connected()
+{
+    send_ping && get_latest_handshake >/dev/null
 }
 
 start_wg()
 {
-    [ "$(nvram get vpnc_type)" == "3" -a "$(nvram get vpnc_enable)" == "1" ] || die "disabled"
     is_started && die "already started"
 
     wg_if_init
-
-    prevent_access_loss
     add_route
-    ipset_create
-    start_fw
 
-    wg_setdns
-    send_ping
+    if check_connected; then
+        log "successfully connected"
+        wg_setdns
+        ipset_create
+        start_fw
+    else
+        log "connection may be blocked: $PEER_ENDPOINT"
+    fi
+}
+
+reload_wg()
+{
+    is_started || return 1
+
+    ipset_create
+    update_wg
+}
+
+update_wg()
+{
+    is_started || return 1
+
+    if reconnect_wg; then
+        start_fw
+    else
+        stop_fw
+        return 1
+    fi
 }
 
 stop_wg()
 {
-    local i p
-
-    is_started || return
-
-    [ "$IPBB" ] && ip route del default table $TABLE 2>/dev/null
-    for i in $PREF_MAIN $PREF_WG; do
-        while ip rule del pref $i 2>/dev/null; do true; done
-    done
-
-    ip link set $IF_NAME down
-    ip link del dev $IF_NAME
-
     stop_fw
 
-    log "client stopped"
-}
+    ip route flush table $TABLE 2>/dev/null
+    ip -6 route del default dev $IF_NAME 2>/dev/null
 
-stop_fw()
-{
-    local i
+    while ip rule del pref $PREF_WG 2>/dev/null; do true; done
+    while ip rule del pref $PREF_MAIN 2>/dev/null; do true; done
+    while ip -6 rule del pref $PREF_MAIN 2>/dev/null; do true; done
 
-    iptables -t mangle -D PREROUTING -j $IPT_WG_CHAIN 2>/dev/null
-    iptables -t mangle -D OUTPUT -j $IPT_WG_CHAIN 2>/dev/null
-
-    for i in $IPT_WG_CHAIN $IPT_WG_REMOTE; do
-        iptables -t mangle -F $i 2>/dev/null
-        iptables -t mangle -X $i 2>/dev/null
-    done
+    ip link set $IF_NAME down 2>/dev/null
+    ip link del dev $IF_NAME 2>/dev/null \
+        && log "client stopped"
 }
 
 filter_ipv4()
 {
     grep -E -x '^[[:space:]]*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{1,2})(/(3[0-2]|[12]?[0-9]))?[[:space:]]*$' \
-    | sed -E 's#/32|/0##g' | sort | uniq
+        | sed -E 's#/32|/0##g' | sort | uniq
 }
 
 ipset_load()
 {
-    local name="$1"
-    local list="$2"
+    # $1: "list" - file list; "" - var with line break
 
-    [ -s "$list" ] || return
+    local mode="$1"
+    local name="$2"
+    local list="$3"
 
-    echo -n > /tmp/$name.ipset.$$
-    for i in $(filter_ipv4 < $list); do
-        echo "add $name $i" >> /tmp/$name.ipset.$$
-    done
+    [ -n "$name" ] || return
+    ipset -N $name nethash 2>/dev/null \
+        && log "ipset '$name' created successfully"
+    ipset flush $name
 
-    if [ ! -s /tmp/$name.ipset.$$ ]; then
-        rm -f /tmp/$name.ipset.$$
-        return
-    fi
-
-    res=$(cat /tmp/$name.ipset.$$ | ipset restore 2>&1)
-    if [ $? = 0 ]; then
-        log "ipset $name updated"
+    if [ "$mode" = "list" ]; then
+        [ -s "$list" ] || return
+        filter_ipv4 < $list \
+            | sed -E 's#^(.*)$#add '"$name"' \1#' \
+            | ipset restore
     else
-        log "ipset $name: $res"
+        [ -n "$list" ] || return
+        printf '%s\n' "$list" | filter_ipv4 \
+            | sed -E 's#^(.*)$#add '"$name"' \1#' \
+            | ipset restore
     fi
-
-    rm -f /tmp/$name.ipset.$$
+    [ $? -ne 0 ] && log "ipset '$name' failed to update"
 }
 
 ipset_create()
 {
     # create ipset ipv4 entrys
 
-    [ -x "$IPSET" ] || return
+    [ -n "$IPSET" ] || return
 
-    ipset -N $DNSMASQ_IPSET nethash timeout 3600 2>/dev/null
+    ipset -N $DNSMASQ_REMOTE_IPSET nethash timeout 3600 2>/dev/null
     ipset -N $CUSTOM_REMOTE_IPSET nethash 2>/dev/null
 
-    ipset -N $VPN_REMOTE_IPSET nethash 2>/dev/null
-    ipset flush $VPN_REMOTE_IPSET 2>/dev/null
-
-    ipset -N $VPN_EXCLUDE_IPSET nethash 2>/dev/null
-    ipset flush $VPN_EXCLUDE_IPSET 2>/dev/null
-
-    ipset -N $VPN_CLIENTS_IPSET nethash 2>/dev/null
-    ipset flush $VPN_CLIENTS_IPSET 2>/dev/null
-
-    ipset_load $VPN_REMOTE_IPSET $REMOTE_NETWORK_LIST
-    ipset_load $VPN_EXCLUDE_IPSET $EXCLUDE_NETWORK_LIST
-    ipset_load $VPN_CLIENTS_IPSET $CLIENTS_LIST
+    ipset_load "list" $VPN_REMOTE_IPSET $REMOTE_NETWORK_LIST
+    ipset_load "list" $VPN_EXCLUDE_IPSET $EXCLUDE_NETWORK_LIST
+    ipset_load "list" $VPN_CLIENTS_IPSET $CLIENTS_LIST
 }
 
 ipt_set_rules()
 {
     local i
 
-    if [ -x "$IPSET" ]; then
-        echo "-A $IPT_WG_CHAIN -m set --match-set $VPN_EXCLUDE_IPSET dst -j RETURN"
-        echo "-A $IPT_WG_CHAIN -m set ! --match-set $VPN_CLIENTS_IPSET src -j RETURN"
-        [ -n "$DEFAULT" ] || echo "-A $IPT_WG_CHAIN \
-                 -m set ! --match-set $DNSMASQ_IPSET dst \
-                 -m set ! --match-set $VPN_REMOTE_IPSET dst \
-                 -m set ! --match-set $CUSTOM_REMOTE_IPSET dst \
-                 -j RETURN"
+    if [ -n "$IPSET" ]; then
+        echo "-A vpnc_wireguard -m set ! --match-set $VPN_CLIENTS_IPSET src -j RETURN"
+        echo "-A vpnc_wireguard -m set --match-set $VPN_EXCLUDE_IPSET dst -j RETURN"
 
-        echo "-A $IPT_WG_CHAIN -j CONNMARK --restore-mark"
-        echo "-A $IPT_WG_CHAIN -m mark --mark $FWMARK -j RETURN"
-        echo "-A $IPT_WG_CHAIN -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
-        echo "-A $IPT_WG_CHAIN -m mark --mark $FWMARK -j CONNMARK --save-mark"
+        if [ -n "$DEFAULT" ]; then
+            echo "-A vpnc_wireguard -j vpnc_wireguard_mark"
+        else
+            for i in "$DNSMASQ_REMOTE_IPSET" "$VPN_REMOTE_IPSET" "$CUSTOM_REMOTE_IPSET"; do
+                [ -n "$i" ] && echo "-A vpnc_wireguard -m set --match-set $i dst -j vpnc_wireguard_mark"
+            done
+        fi
     else
         for i in $(filter_ipv4 < "$EXCLUDE_NETWORK_LIST"); do
-            echo "-A $IPT_WG_CHAIN -d $i -j RETURN"
+            echo "-A vpnc_wireguard -d $i -j RETURN"
         done
 
         for i in $(filter_ipv4 < "$CLIENTS_LIST"); do
-            echo "-A $IPT_WG_CHAIN -s $i -j $IPT_WG_REMOTE"
+            echo "-A vpnc_wireguard -s $i -j vpnc_wireguard_remote"
         done
 
-        echo "-A $IPT_WG_REMOTE -j CONNMARK --restore-mark"
-        echo "-A $IPT_WG_REMOTE -m mark --mark $FWMARK -j RETURN"
-
         if [ -n "$DEFAULT" ]; then
-            echo "-A $IPT_WG_REMOTE -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
+            echo "-A vpnc_wireguard_remote -j vpnc_wireguard_mark"
         else
             for i in $(filter_ipv4 < "$REMOTE_NETWORK_LIST"); do
-                echo "-A $IPT_WG_REMOTE -d $i -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK"
+                echo "-A vpnc_wireguard_remote -d $i -j vpnc_wireguard_mark"
             done
         fi
-
-        echo "-A $IPT_WG_REMOTE -m mark --mark $FWMARK -j CONNMARK --save-mark"
     fi
+}
+
+stop_fw()
+{
+    ipt_remove_rule(){ while iptables -t $1 -C $2 2>/dev/null; do iptables -t $1 -D $2; done }
+    ipt_remove_chain(){ iptables -t $1 -F $2 2>/dev/null && iptables -t $1 -X $2 2>/dev/null; }
+
+    ipt_remove_rule "mangle" "PREROUTING -j vpnc_wireguard"
+    ipt_remove_rule "mangle" "OUTPUT -j vpnc_wireguard"
+
+    ipt_remove_chain "mangle" "vpnc_wireguard"
+    ipt_remove_chain "mangle" "vpnc_wireguard_remote"
+    ipt_remove_chain "mangle" "vpnc_wireguard_mark"
 }
 
 start_fw()
@@ -369,22 +403,27 @@ start_fw()
 
     iptables-restore -n <<EOF
 *mangle
-:$IPT_WG_CHAIN - [0:0]
-:$IPT_WG_REMOTE - [0:0]
--A PREROUTING -j $IPT_WG_CHAIN
--A OUTPUT -j $IPT_WG_CHAIN
--A $IPT_WG_CHAIN -d 0.0.0.0/8 -j RETURN
--A $IPT_WG_CHAIN -d 127.0.0.0/8 -j RETURN
--A $IPT_WG_CHAIN -d 169.254.0.0/16 -j RETURN
--A $IPT_WG_CHAIN -d 224.0.0.0/4 -j RETURN
--A $IPT_WG_CHAIN -d 240.0.0.0/4 -j RETURN
--A $IPT_WG_CHAIN -p udp --dport 53 -j RETURN
--A $IPT_WG_CHAIN -p tcp --dport 53 -j RETURN
--A $IPT_WG_CHAIN -p udp --dport 123 -j RETURN
+:vpnc_wireguard - [0:0]
+:vpnc_wireguard_remote - [0:0]
+:vpnc_wireguard_mark - [0:0]
+-A PREROUTING -j vpnc_wireguard
+-A OUTPUT -j vpnc_wireguard
+-A vpnc_wireguard -d 0.0.0.0/8 -j RETURN
+-A vpnc_wireguard -d 127.0.0.0/8 -j RETURN
+-A vpnc_wireguard -d 169.254.0.0/16 -j RETURN
+-A vpnc_wireguard -d 224.0.0.0/4 -j RETURN
+-A vpnc_wireguard -d 240.0.0.0/4 -j RETURN
+-A vpnc_wireguard -p udp --dport 53 -j RETURN
+-A vpnc_wireguard -p tcp --dport 53 -j RETURN
+-A vpnc_wireguard -p udp --dport 123 -j RETURN
 $(ipt_set_rules)
+-A vpnc_wireguard_mark -j CONNMARK --restore-mark
+-A vpnc_wireguard_mark -m mark --mark $FWMARK -j RETURN
+-A vpnc_wireguard_mark -m conntrack --ctstate NEW -j MARK --set-mark $FWMARK
+-A vpnc_wireguard_mark -m mark --mark $FWMARK -j CONNMARK --save-mark
 COMMIT
 EOF
-    [ $? -eq 0 ] || error "firewall rules update failed"
+    [ $? -ne 0 ] && error "firewall rules update failed"
 }
 
 case $1 in
@@ -401,12 +440,24 @@ case $1 in
         start_wg
     ;;
 
-    reload)
-        is_started && start_fw
+    update)
+        update_wg
     ;;
 
-    ipset-update)
-        ipset_create
+    reload)
+        reload_wg
+    ;;
+
+    connected)
+        check_connected || exit 1
+    ;;
+
+    reconnect)
+        reconnect_wg || exit 1
+    ;;
+
+    handshake)
+        get_latest_handshake || exit 1
     ;;
 esac
 
