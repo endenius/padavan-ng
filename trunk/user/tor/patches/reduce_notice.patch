@@ -1,5 +1,23 @@
 --- tor-0.4.8.18.orig/src/app/config/config.c
 +++ tor-0.4.8.18/src/app/config/config.c
+@@ -3870,7 +3870,7 @@
+       !options->HashedControlPassword &&
+       !options->HashedControlSessionPassword &&
+       !options->CookieAuthentication) {
+-    log_warn(LD_CONFIG, "Control%s is %s, but no authentication method "
++    log_info(LD_CONFIG, "Control%s is %s, but no authentication method "
+              "has been configured.  This means that any program on your "
+              "computer can reconfigure your Tor.  That's bad!  You should "
+              "upgrade your Tor controller as soon as possible.",
+@@ -3879,7 +3879,7 @@
+   }
+ 
+   if (options->CookieAuthFileGroupReadable && !options->CookieAuthFile) {
+-    log_warn(LD_CONFIG, "CookieAuthFileGroupReadable is set, but will have "
++    log_info(LD_CONFIG, "CookieAuthFileGroupReadable is set, but will have "
+              "no effect: you must specify an explicit CookieAuthFile to "
+              "have it group-readable.");
+   }
 @@ -5898,13 +5898,13 @@
      if (port->is_unix_addr) {
        /* Unix sockets aren't accessible over a network. */
@@ -36,6 +54,26 @@
               "and you probably shouldn't.");
  #endif
  
+--- tor-0.4.8.18.orig/src/core/mainloop/connection.c
++++ tor-0.4.8.18/src/core/mainloop/connection.c
+@@ -2055,7 +2055,7 @@
+       log_info(LD_NET, "New SOCKS AF_UNIX connection opened");
+     }
+     if (new_type == CONN_TYPE_CONTROL) {
+-      log_notice(LD_CONTROL, "New control connection opened from %s.",
++      log_info(LD_CONTROL, "New control connection opened from %s.",
+                  fmt_and_decorate_addr(&addr));
+     }
+     if (new_type == CONN_TYPE_METRICS) {
+@@ -2066,7 +2066,7 @@
+   } else if (conn->socket_family == AF_UNIX && conn->type != CONN_TYPE_AP) {
+     tor_assert(conn->type == CONN_TYPE_CONTROL_LISTENER);
+     tor_assert(new_type == CONN_TYPE_CONTROL);
+-    log_notice(LD_CONTROL, "New control connection opened.");
++    log_info(LD_CONTROL, "New control connection opened.");
+ 
+     newconn = connection_new(new_type, conn->socket_family);
+     newconn->s = news;
 --- tor-0.4.8.18.orig/src/core/mainloop/mainloop.c
 +++ tor-0.4.8.18/src/core/mainloop/mainloop.c
 @@ -1137,7 +1137,7 @@
@@ -69,6 +107,15 @@
        /* Retry some stuff that might help the connection work. */
        /* If we are configured with EntryNodes or UseBridges */
        if (entry_list_is_constrained(options)) {
+@@ -2404,7 +2404,7 @@
+       static ratelim_t delay_limit = RATELIM_INIT(10*60);
+       char *m;
+       if ((m = rate_limit_log(&delay_limit, approx_time()))) {
+-        log_notice(LD_APP, "We'd like to launch a circuit to handle a "
++        log_info(LD_APP, "We'd like to launch a circuit to handle a "
+                    "connection, but we already have %d general-purpose client "
+                    "circuits pending. Waiting until some finish.%s",
+                    n_pending, m);
 --- tor-0.4.8.18.orig/src/core/or/connection_edge.c
 +++ tor-0.4.8.18/src/core/or/connection_edge.c
 @@ -1201,7 +1201,7 @@
@@ -129,6 +176,17 @@
                     ri->nickname,
                     from_cache ? "cached" : "fresh", router_describe(ri));
        /* If we didn't have a reachable bridge before this one, try directory
+--- tor-0.4.8.18.orig/src/feature/client/entrynodes.c
++++ tor-0.4.8.18/src/feature/client/entrynodes.c
+@@ -2167,7 +2167,7 @@
+            * anyway and log. */
+           if (smartlist_len(usable_primary_guards) == 0) {
+             static ratelim_t guardlog = RATELIM_INIT(60);
+-            log_fn_ratelim(&guardlog, LOG_NOTICE, LD_GUARD,
++            log_fn_ratelim(&guardlog, LOG_INFO, LD_GUARD,
+                            "All current guards excluded by path restriction "
+                            "type %d; using an additonal guard.",
+                            rst->type);
 --- tor-0.4.8.18.orig/src/feature/dirclient/dirclient.c
 +++ tor-0.4.8.18/src/feature/dirclient/dirclient.c
 @@ -500,7 +500,7 @@
@@ -180,3 +238,21 @@
                   "The current consensus contains exit nodes. "
                   "Tor can build exit and internal paths.");
      }
+@@ -2885,7 +2885,7 @@
+   if (res && !have_min_dir_info) {
+     control_event_client_status(LOG_NOTICE, "ENOUGH_DIR_INFO");
+     control_event_boot_dir(BOOTSTRAP_STATUS_ENOUGH_DIRINFO, 0);
+-    tor_log(be_loud_when_things_work_again ? LOG_NOTICE : LOG_INFO, LD_DIR,
++    tor_log(LOG_INFO, LD_DIR,
+             "We now have enough directory information to build circuits.");
+     be_loud_when_things_work_again = 0;
+   }
+@@ -2893,7 +2893,7 @@
+   /* If paths have just become unavailable in this update. */
+   if (!res && have_min_dir_info) {
+     int quiet = dirclient_too_idle_to_fetch_descriptors(options, now);
+-    tor_log(quiet ? LOG_INFO : LOG_NOTICE, LD_DIR,
++    tor_log(LOG_INFO, LD_DIR,
+         "Our directory information is no longer up-to-date "
+         "enough to build circuits: %s", dir_info_status);
+     if (!quiet) {

@@ -1,4 +1,4 @@
-# https://www.torproject.org
+# https://www.torproject.org/download/tor
 # https://gitlab.torproject.org/tpo/core/tor
 # https://deb.torproject.org/torproject.org/pool/main/t/tor
 
