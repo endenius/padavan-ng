@@ -394,6 +394,24 @@ start_tor(void)
 }
 
 void
+reload_tor(void)
+{
+	int tor_mode = nvram_get_int("tor_enable");
+
+	if (tor_mode == 1)
+		eval("/usr/bin/tor.sh", "reload");
+}
+
+void
+update_tor(void)
+{
+	int tor_mode = nvram_get_int("tor_enable");
+
+	if (tor_mode == 1)
+		eval("/usr/bin/tor.sh", "update");
+}
+
+void
 restart_tor(void)
 {
 	stop_tor();
@@ -667,9 +685,6 @@ start_services_once(int is_ap_mode)
 #if defined(APP_STUBBY)
 	start_stubby();
 #endif
-#if defined(APP_TOR)
-	start_tor();
-#endif
 #if defined(APP_PRIVOXY)
 	start_privoxy();
 #endif
@@ -701,6 +716,9 @@ start_services_once(int is_ap_mode)
 	start_rstats();
 #if defined(APP_ZAPRET)
 	start_zapret();
+#endif
+#if defined(APP_TOR)
+	start_tor();
 #endif
 	return 0;
 }

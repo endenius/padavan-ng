@@ -594,7 +594,7 @@ function wg_conf_import() {
 		return;
 	}
 
-	if( fileInput.files[0].size > 2048) {
+	if( fileInput.files[0].size > 8192) {
 		alert("File is too big");
 		return;
 	}
@@ -625,7 +625,7 @@ function wg_conf_import() {
 		document.form.vpnc_wg_peer_public.value = "";
 		document.form.vpnc_wg_peer_endpoint.value = "";
 		document.form.vpnc_wg_peer_port.value = "";
-		document.form.vpnc_wg_peer_keepalive.value = "";
+		document.form.vpnc_wg_peer_keepalive.value = "25";
 		document.form.vpnc_wg_peer_allowedips.value = "";
 		document.form.vpnc_wg_if_dns.value = "";
 

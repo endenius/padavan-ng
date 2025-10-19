@@ -610,11 +610,18 @@ struct nvram_pair router_defaults[] = {
 	{ "zapret_enable", "0" },
 	{ "zapret_iface", "" },
 	{ "zapret_log", "0" },
-	{ "zapret_clients", "192.168.1.0/24" },
+	{ "zapret_clients", "192.168.1.0/24,10.8.0.0/24" },
 	{ "zapret_clients_allowed", "" },
 #endif
 #if defined (APP_TOR)
 	{ "tor_enable", "0" },
+	{ "tor_proxy_mode", "0" }, // transparent proxy: 0 - disabled, 1 - redirect allowed, 2 - redirect all
+	{ "tor_clients", "192.168.1.0/24,10.8.0.0/24" },
+	{ "tor_clients_allowed", "192.168.1.0/24,10.8.0.0/24" },
+#if defined(SUPPORT_IPSET)
+	{ "tor_ipset_remote", "tor,unblock" },
+	{ "tor_ipset_remote_allowed", "tor" },
+#endif
 #endif
 #if defined (APP_PRIVOXY)
 	{ "privoxy_enable", "0" },
@@ -798,8 +805,16 @@ struct nvram_pair router_defaults[] = {
 	{ "vpnc_wg_peer_public", "" },
 	{ "vpnc_wg_peer_endpoint", "" },
 	{ "vpnc_wg_peer_port", "51820" },
-	{ "vpnc_wg_peer_keepalive", "" },
+	{ "vpnc_wg_peer_keepalive", "25" },
 	{ "vpnc_wg_peer_allowedips", "" },
+	{ "vpnc_wg_clients", "192.168.1,0/24,10.8.0.0/24" },
+	{ "vpnc_wg_clients_allowed", "192.168.1,0/24,10.8.0.0/24" },
+#if defined(SUPPORT_IPSET)
+	{ "vpnc_wg_ipset_remote", "unblock,custom.remote" },
+	{ "vpnc_wg_ipset_remote_allowed", "unblock,custom.remote" },
+	{ "vpnc_wg_ipset_exclude", "" },
+	{ "vpnc_wg_ipset_exclude_allowed", "" },
+#endif
 #endif
 	{ 0, 0 }
 };

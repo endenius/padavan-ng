@@ -41,6 +41,12 @@ restart_wireguard_server(void)
 }
 
 int
+is_enabled_wireguard_client(void)
+{
+    return (nvram_get_int("vpnc_enable") == 1 && nvram_get_int("vpnc_type") == 3);
+}
+
+int
 start_wireguard_client(void)
 {
     int ret = eval("/usr/bin/wgc.sh", "start");
@@ -67,12 +73,31 @@ restart_wireguard_client(void)
 void
 reload_wireguard_client(void)
 {
-    if (nvram_get_int("vpnc_enable") == 1 && nvram_get_int("vpnc_type") == 3)
+    // update ipset + fw rules + posible reconnect
+    if (is_enabled_wireguard_client())
         eval("/usr/bin/wgc.sh", "reload");
 }
 
 void
-ipset_update_wireguard_client(void)
+update_wireguard_client(void)
 {
-    eval("/usr/bin/wgc.sh", "ipset-update");
+    // update fw rules + posible reconnect
+    if (is_enabled_wireguard_client())
+        eval("/usr/bin/wgc.sh", "update");
+}
+
+void
+handshake_wireguard_client(void)
+{
+    // get latest handshake in sec
+    if (is_enabled_wireguard_client())
+        eval("/usr/bin/wgc.sh", "handshake");
+}
+
+void
+reconnect_wireguard_client(void)
+{
+    // try force reconnect
+    if (is_enabled_wireguard_client())
+        eval("/usr/bin/wgc.sh", "reconnect");
 }

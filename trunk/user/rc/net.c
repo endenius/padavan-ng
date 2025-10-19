@@ -812,7 +812,10 @@ restart_firewall(void)
         reload_zapret();
 #endif
 #if defined(APP_WIREGUARD)
-        reload_wireguard_client();
+        update_wireguard_client();
+#endif
+#if defined(APP_TOR)
+        update_tor();
 #endif
 }
 

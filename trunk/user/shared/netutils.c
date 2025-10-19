@@ -85,6 +85,7 @@ static const struct ifname_desc_t {
 	{ IFNAME_CLIENT_PPP, IFDESC_VPNC,      1, 0, 1, 0 },
 	{ IFNAME_CLIENT_TAP, IFDESC_VPNC,      1, 0, 1, 0 },
 	{ IFNAME_CLIENT_TUN, IFDESC_VPNC,      1, 0, 1, 0 },
+	{ IFNAME_CLIENT_WG,  IFDESC_VPNC,      1, 0, 1, 0 },
 
 	{ NULL, NULL, 0, 0, 0, 0 }
 };

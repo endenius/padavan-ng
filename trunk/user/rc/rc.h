@@ -423,7 +423,9 @@ int start_wireguard_client(void);
 void stop_wireguard_client(void);
 void restart_wireguard_client(void);
 void reload_wireguard_client(void);
-void ipset_update_wireguard_client(void);
+void update_wireguard_client(void);
+void handshake_wireguard_client(void);
+void reconnect_wireguard_client(void);
 int start_wireguard_server(void);
 void stop_wireguard_server(void);
 void restart_wireguard_server(void);
@@ -558,6 +560,8 @@ int is_tor_run(void);
 void stop_tor(void);
 void start_tor(void);
 void restart_tor(void);
+void update_tor(void);
+void reload_tor(void);
 #endif
 #if defined(APP_PRIVOXY)
 int is_privoxy_run(void);
