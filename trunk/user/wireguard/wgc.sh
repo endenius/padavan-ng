@@ -14,6 +14,8 @@ IF_DNS=$(nvram get vpnc_wg_if_dns | tr -d ' ')
 unset DEFAULT
 [ "$(nvram get vpnc_dgw)" = "1" ] && DEFAULT=1
 
+PID_WATCHDOG="/var/run/wg_watchdog.pid"
+
 PEER_PUBLIC=$(nvram get vpnc_wg_peer_public)
 PEER_PORT=$(nvram get vpnc_wg_peer_port)
 PEER_ENDPOINT="$(nvram get vpnc_wg_peer_endpoint)${PEER_PORT:+":$PEER_PORT"}"
@@ -91,8 +93,8 @@ wg_setdns()
         echo "nameserver 127.0.0.1" >> /etc/resolv.conf
     fi
 
-    for i in $(echo "$IF_DNS" | tr ',' '\n'); do
-        grep -qE "nameserver ${i}\s*$" /etc/resolv.conf \
+    for i in $(echo "$IF_DNS" | tr ', ' '\n'); do
+        grep -q "nameserver[[:space:]]*${i}[[:space:]]*$" /etc/resolv.conf \
             || echo "nameserver $i" >> /etc/resolv.conf
     done
 
@@ -210,7 +212,6 @@ reconnect_wg()
             log "successfully connected"
             return 0
         else
-            log "unable connect"
             return 1
         fi
     fi
@@ -266,6 +267,30 @@ start_wg()
         stop_fw
         log "connection may be blocked: $PEER_ENDPOINT"
     fi
+
+    start_watchdog &
+    echo $! > "$PID_WATCHDOG"
+}
+
+start_watchdog()
+{
+    [ -f "$PID_WATCHDOG" ] || return
+    log "connection watchdog timer started"
+    sleep 10
+
+    local no_log
+    while is_started; do
+        if reconnect_wg $no_log; then
+            start_fw
+            no_log=
+        else
+            stop_fw
+            no_log=1
+        fi
+        sleep 10
+    done
+
+    rm -f "$PID_WATCHDOG"
 }
 
 reload_wg()
@@ -280,11 +305,10 @@ update_wg()
 {
     is_started || return 1
 
-    if reconnect_wg; then
+    if reconnect_wg no_log; then
         start_fw
     else
         stop_fw
-        return 1
     fi
 }
 
@@ -302,6 +326,12 @@ stop_wg()
     ip link set $IF_NAME down 2>/dev/null
     ip link del dev $IF_NAME 2>/dev/null \
         && log "client stopped"
+
+    if [ -f "$PID_WATCHDOG" ]; then
+        kill "$(cat "$PID_WATCHDOG")" 2>/dev/null
+        rm -f "$PID_WATCHDOG"
+        log "connection watchdog timer stopped"
+    fi
 }
 
 filter_ipv4()
