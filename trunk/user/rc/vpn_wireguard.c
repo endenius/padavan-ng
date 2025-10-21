@@ -75,7 +75,7 @@ reload_wireguard_client(void)
 {
     // update ipset + fw rules + posible reconnect
     if (is_enabled_wireguard_client())
-        eval("/usr/bin/wgc.sh", "reload");
+        doSystem("/usr/bin/wgc.sh reload &");
 }
 
 void
@@ -83,7 +83,7 @@ update_wireguard_client(void)
 {
     // update fw rules + posible reconnect
     if (is_enabled_wireguard_client())
-        eval("/usr/bin/wgc.sh", "update");
+        doSystem("/usr/bin/wgc.sh update &");
 }
 
 void
@@ -99,5 +99,5 @@ reconnect_wireguard_client(void)
 {
     // try force reconnect
     if (is_enabled_wireguard_client())
-        eval("/usr/bin/wgc.sh", "reconnect");
+        doSystem("/usr/bin/wgc.sh reconnect &");
 }

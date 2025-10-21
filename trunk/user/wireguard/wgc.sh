@@ -140,47 +140,6 @@ EOF
     fi
 }
 
-reconnect_wg()
-{
-    # reconnect using current config
-
-    if ! check_connected; then
-        log "trying reconnect to $PEER_ENDPOINT"
-        setconf_wg reconnect
-        check_connected
-        if [ $? -eq 0 ]; then
-            log "successfully connected"
-            return 0
-        else
-            log "unable connect"
-            return 1
-        fi
-    fi
-}
-
-get_latest_handshake()
-{
-    # return latest handshake in sec
-
-    is_started || return 1
-
-    local lh=$($WG show $IF_NAME latest-handshakes | cut -f2)
-    local delta=$(( $(date +'%s') - $lh ))
-
-    case "$lh" in
-        0) return 1 ;;
-
-        [0-9]*)
-            echo $delta
-            if [ "$delta" -gt "300" ]; then
-                return 1
-            fi
-        ;;
-
-        *) return 1 ;;
-    esac
-}
-
 add_default_route()
 {
     ip rule add fwmark $FWMARK table $TABLE pref $PREF_WG
@@ -239,15 +198,56 @@ wg_if_init()
     fi
 }
 
+reconnect_wg()
+{
+    # reconnect using current config
+
+    if ! check_connected; then
+        [ "$1" ] || log "trying reconnect to $PEER_ENDPOINT"
+        setconf_wg reconnect
+        check_connected
+        if [ $? -eq 0 ]; then
+            log "successfully connected"
+            return 0
+        else
+            log "unable connect"
+            return 1
+        fi
+    fi
+}
+
+get_latest_handshake()
+{
+    # return latest handshake in sec
+
+    is_started || return 1
+
+    local lh=$($WG show $IF_NAME latest-handshakes | cut -f2)
+    local delta=$(( $(date +'%s') - $lh ))
+
+    case "$lh" in
+        0) return 1 ;;
+
+        [0-9]*)
+            echo $delta
+            if [ "$delta" -gt "300" ]; then
+                return 1
+            fi
+        ;;
+
+        *) return 1 ;;
+    esac
+}
+
 send_ping()
 {
     # trying to sending single packet trought wg interface for activating the connection web-indicator
-    ping -c1 -W3 -I $IF_NAME 8.8.8.8 >/dev/null 2>&1
+    ping -c1 -W8 -I $IF_NAME 8.8.8.8 >/dev/null 2>&1
 }
 
 check_connected()
 {
-    send_ping && get_latest_handshake >/dev/null
+    get_latest_handshake >/dev/null || send_ping || return 1
 }
 
 start_wg()
@@ -256,13 +256,14 @@ start_wg()
 
     wg_if_init
     add_route
+    wg_setdns
+    ipset_create
 
     if check_connected; then
-        log "successfully connected"
-        wg_setdns
-        ipset_create
         start_fw
+        log "successfully connected"
     else
+        stop_fw
         log "connection may be blocked: $PEER_ENDPOINT"
     fi
 }
@@ -400,6 +401,7 @@ stop_fw()
 start_fw()
 {
     stop_fw
+    is_started || return 1
 
     iptables-restore -n <<EOF
 *mangle
@@ -424,6 +426,7 @@ $(ipt_set_rules)
 COMMIT
 EOF
     [ $? -ne 0 ] && error "firewall rules update failed"
+    return 0
 }
 
 case $1 in
