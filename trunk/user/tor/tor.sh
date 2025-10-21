@@ -76,13 +76,22 @@ func_create_config()
     cat > "$CONFIG_FILE" <<EOF
 ### https://www.torproject.org/docs/tor-manual.html
 ### reserved: network $TOR_NETWORK_IPV4, ports 80,443/TCP
-
 # ExcludeExitNodes {RU}, {UA}, {BY}, {KZ}, {MD}, {AZ}, {AM}, {GE}, {LY}, {LT}, {TM}, {UZ}, {EE}
 # StrictNodes 1
 
 SocksPort ${LAN_IP}:9050
 HTTPTunnelPort ${LAN_IP}:8181
 
+# custom Padavan firmware option to save RAM when the data directory is in RAM
+NotSaveMicrodescs 1
+
+KeepalivePeriod 30
+MaxCircuitDirtiness 600
+NumEntryGuards 1
+MaxClientCircuitsPending 8
+ReducedConnectionPadding 1
+UseMicrodescriptors 1
+HiddenServiceStatistics 0
 ClientOnly 1
 ExitRelay 0
 ExitPolicy reject *:*
@@ -94,27 +103,33 @@ UseBridges 1
 
 ### https://bridges.torproject.org/bridges?transport=vanilla
 ### https://torscan-ru.ntc.party
-Bridge 82.128.141.87:455 07C17F0B045F155DA6D8D1D564EC16FEB8B2FADD
-Bridge 185.153.217.157:4430 BBD95F38CF91C4A6200FE09A3951C68BE118FF9E
-Bridge 79.197.245.126:24192 67510E534191C9115F080C4565B2F1F348CDF9E7
-Bridge 46.29.238.31:9200 FDE95763209EF45814C7A389D0CC6CB2A2F17413
-Bridge 172.103.94.101:993 014BD09636373B78CC28BA70E36C7190E3DE236A
-Bridge 79.201.24.162:9001 161B67AD2BFBD43602903088A330EFA642E7D98D
-Bridge 140.233.190.71:9002 85E8B33D75C31E30A0F14D7D5117370E1D45CE2A
+
 Bridge 62.133.60.208:9300 9002E01C0A23349E46B0C3F104FEFFFA53645762
 Bridge 152.53.252.143:9001 99E79C80A38FD7D79D5C047A2B5AFCEFA7D5EAAE
-Bridge 5.181.181.13:30319 0CEA4E6376295B6B22AD73947573335EDD9C0F11
 Bridge 190.120.229.2:443 1EA7A6645619538D286FDBED7688AFA7F82E0A51
 Bridge 91.242.241.228:9003 9490B0B4EA0BE681D520763FC9DA62511348564F
+Bridge 94.105.96.105:9001 A975613110AB41484022E18D51E007AB55D0802E
+Bridge 88.80.135.68:443 750BA1F82CCFE611B8505620486ABCDFD524961A
+Bridge 156.246.18.209:443 0FAC4600D8579B2FAF639AFC8E095D1CB85CA13E
+Bridge 142.120.207.113:9001 DBC741AE96A5812E367BB86700BD787B3D5BB380
+Bridge 213.211.140.67:9001 678DC97B93C90C8C9C95226832CB389BF22A82FF
+Bridge 45.133.73.63:443 874DCE52C49B07D5FF806973942B916481803BC3
 EOF
     chmod 644 "$CONFIG_FILE"
 }
 
-tor_get_status()
+tor_control()
 {
     nc -z 127.0.0.1 $CONTROL_PORT >/dev/null 2>&1 || die
-    printf 'AUTHENTICATE ""\r\nGETINFO status/bootstrap-phase\r\nQUIT\r\n' \
-        | nc -w 5 127.0.0.1 $CONTROL_PORT 2>/dev/null | sed -n 's|250-status/||p'
+    [ -n "$1" ] || return
+    printf 'AUTHENTICATE ""\r\n%s\r\nQUIT\r\n' "$1" \
+        | nc -w 5 127.0.0.1 $CONTROL_PORT 2>/dev/null
+}
+
+tor_get_status()
+{
+    tor_control 'GETINFO status/bootstrap-phase' \
+        | sed -n 's|250-status/||p'
 }
 
 tor_ready() {
@@ -142,6 +157,7 @@ tor_waiting_bootstrap()
     echo "done"
 
     rm -f "$PID_WAIT_SYNC_FILE"
+    sync && sysctl -q vm.drop_caches=3
     start_redirect
 }
 
@@ -251,7 +267,7 @@ create_ipset()
     fill_ipset "list" "$TOR_IPSET_REMOTE" "$TOR_REMOTE_LIST"
 
     local name
-    for name in $NV_IPSET_REMOTE $TOR_IPSET_CLIENTS $TOR_IPSET_REMOTE; do
+    for name in $NV_IPSET_REMOTE; do
         ipset -q -N $name nethash \
             && log "ipset '$name' created successfully"
     done
@@ -272,7 +288,7 @@ stop_redirect()
 
 make_exclude_rules()
 {
-    local i wan_ip
+    local i
 
     for i in \
         0.0.0.0/8 127.0.0.0/8 169.254.0.0/16 \
@@ -341,9 +357,9 @@ EOF
     )
 
     if [ "$?" -eq 0 ]; then
-        log "firewall rules successfully updated"
+        log "firewall rules updated"
     else
-        error "firewall rules failed to start: $(echo "$res" | head -n1 | cut -d':' -f2-)"
+        error "firewall rules failed to update: $(echo "$res" | head -n1 | cut -d':' -f2-)"
     fi
 }
 
@@ -374,12 +390,16 @@ case "$1" in
         tor_get_status
     ;;
 
+    control)
+        tor_control
+    ;;
+
     config|create-config)
         [ ! -f "$CONFIG_FILE" ] && func_create_config
     ;;
 
     *)
-        echo "Usage: $0 {start|stop|reload|update}"
+        echo "Usage: $0 {start|stop|restart|reload|update|status|create-config}"
         exit 1
     ;;
 esac

@@ -1,0 +1,36 @@
+--- tor-0.4.8.18.orig/src/app/config/config.c
++++ tor-0.4.8.18/src/app/config/config.c
+@@ -314,6 +314,7 @@
+  * be chosen first.
+  */
+ static const config_var_t option_vars_[] = {
++  V(NotSaveMicrodescs,           BOOL,     "0"),
+   V(AccountingMax,               MEMUNIT,  "0 bytes"),
+   VAR("AccountingRule",          STRING,   AccountingRule_option,  "max"),
+   V(AccountingStart,             STRING,   NULL),
+--- tor-0.4.8.18.orig/src/app/config/or_options_st.h
++++ tor-0.4.8.18/src/app/config/or_options_st.h
+@@ -70,6 +70,9 @@
+ 
+   struct config_line_t *Logs; /**< New-style list of configuration lines
+                         * for logs */
++
++  int NotSaveMicrodescs; /**< Boolean: not save microdescs* on disk in DataDirectory */
++
+   int LogTimeGranularity; /**< Log resolution in milliseconds. */
+ 
+   int LogMessageDomains; /**< Boolean: Should we log the domain(s) in which
+--- tor-0.4.8.18.orig/src/feature/nodelist/microdesc.c
++++ tor-0.4.8.18/src/feature/nodelist/microdesc.c
+@@ -299,6 +299,11 @@
+   void * const DIGEST_RECEIVED = (void*)2;
+   void * const DIGEST_INVALID = (void*)3;
+ 
++  const or_options_t *options = get_options();
++  if (options->NotSaveMicrodescs) {
++    no_save = 1;
++  }
++
+   smartlist_t *descriptors, *added;
+   const int allow_annotations = (where != SAVED_NOWHERE);
+   smartlist_t *invalid_digests = smartlist_new();
