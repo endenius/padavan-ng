@@ -85,13 +85,15 @@ HTTPTunnelPort ${LAN_IP}:8181
 # custom Padavan firmware option to save RAM when the data directory is in RAM
 NotSaveMicrodescs 1
 
-KeepalivePeriod 30
+KeepalivePeriod 60
 MaxCircuitDirtiness 600
-NumEntryGuards 1
+LongLivedPorts 80,443
+NumEntryGuards 8
 MaxClientCircuitsPending 8
 ReducedConnectionPadding 1
 UseMicrodescriptors 1
 HiddenServiceStatistics 0
+
 ClientOnly 1
 ExitRelay 0
 ExitPolicy reject *:*
