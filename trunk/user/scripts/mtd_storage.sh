@@ -519,21 +519,35 @@ EOF
 		if [ ! -f "$user_dnsmasq_ipset" ] ; then
 			cat > "$user_dnsmasq_ipset" <<EOF
 ### Custom user ipsets for dnsmasq
-### Built-in Wireguard client uses an "unblock" ipset, if ipset is present in the firmware
+### Built-in wireguard client uses an "unblock" ipset, if ipset is built into the firmware
 ### For clean ipset reboot router  or launch: ipset flush unblock && restart_dns
 
-ipset=/4pda.to/unblock
-ipset=/4pda.ws/unblock
+### for testing
+# ipset=/myip.ru/unblock,tor
+# ipset=/ifconfig.me/unblock
+
+ipset=/onion/tor
+ipset=/exit/tor
+ipset=/warpgen.net/unblock,tor
+ipset=/4pda.to/unblock,tor
+ipset=/4pda.ws/unblock,tor
+ipset=/chatgpt.com/unblock,tor
+ipset=/cdn.oaistatic.com/unblock,tor
+ipset=/instagram.com/unblock,tor
+ipset=/ig.me/unblock,tor
+ipset=/cdninstagram.com/unblock,tor
+ipset=/instagramstatic.com/unblock,tor
+ipset=/rutor.is/unblock
 ipset=/rutracker.org/unblock
-ipset=/instagram.com/unblock
-ipset=/cdninstagram.com/unblock
-ipset=/comet-ai.ru/unblock
+ipset=/meta.com/unblock
+ipset=/meta.ai/unblock
+ipset=/fbcdn.net/unblock
 ipset=/fb.com/unblock
 ipset=/facebook.com/unblock
-ipset=/facebook.net/unblock
 ipset=/cdn.fbsbx.com/unblock
-ipset=/fbcdn.net/unblock
 ipset=/whatsapp.net/unblock
+ipset=/whatsapp.com/unblock
+ipset=/whatsapp.patchcdn.com/unblock
 ipset=/x.com/unblock
 ipset=/t.co/unblock
 ipset=/twimg.com/unblock
@@ -543,8 +557,13 @@ ipset=/awsstatic.com/unblock
 ipset=/aws.amazon.com/unblock
 ipset=/amazonwebservices.d2.sc.omtrdc.net/unblock
 ipset=/challenges.cloudflare.com/unblock
-ipset=/static-cdn.jtvnw.net/unblock
+ipset=/jtvnw.net/unblock
+ipset=/ttvnw.net/unblock
 ipset=/culuscdn.com/unblock
+ipset=/discord.com/unblock
+ipset=/cdn.discordapp.com/unblock
+ipset=/cloudfront.net/unblock
+ipset=/cdn.localizeapi.com/unblock
 EOF
 			chmod 644 "$user_dnsmasq_ipset"
 		fi
